@@ -140,6 +140,7 @@ int main(int argc, const char * argv[]) {
     const char * opt_com_path = NULL;
     _u32         opt_com_baudrate = 115200;
     u_result     op_result;
+    int          ret=0;
 
     char viewer_addr_str[40];
     double theta_correction = 0.0f;
@@ -234,6 +235,14 @@ int main(int argc, const char * argv[]) {
     drv->startMotor();
     // start scan...
     drv->startScan();
+
+
+    ret=pthread_create(&g_slave_thread1, NULL, &g_slave_proc1, NULL);
+    if(ret!=0) {
+        printf("Unable to create slave thread 1\n");
+        exit(-3);
+    }
+
 
     // fetch result
     while (1) {

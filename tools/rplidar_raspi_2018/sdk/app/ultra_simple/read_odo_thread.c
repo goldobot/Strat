@@ -13,6 +13,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <time.h>
 
 #ifndef EMBED
 #include <sys/select.h>
@@ -157,7 +158,7 @@ typedef enum _read_odo_state {
     READ_ODO_STATE_THETA0,
     READ_ODO_STATE_THETA1,
     READ_ODO_STATE_THETA2,
-    READ_ODO_STATE_THETA3,
+    /*READ_ODO_STATE_THETA3,*/
 } read_odo_state_t;
 #endif
 
@@ -229,7 +230,7 @@ int saveremotetermios(void)
  *    Set local port to raw mode, no input mappings.
  */
 
-int setlocaltermios()
+int setlocaltermios(void)
 {
     struct termios    tio;
 
@@ -255,7 +256,7 @@ int setlocaltermios()
     return(0);
 }
 
-int setremotetermios()
+int setremotetermios(void)
 {
 	struct termios	tio;
 
@@ -398,7 +399,7 @@ int translatewrite(unsigned char *ip, unsigned char *op, int n)
  *    ports.
  */
 
-int loopit()
+int loopit(void)
 {
     fd_set infds;
     int maxfd, n;
@@ -441,7 +442,7 @@ int loopit()
         }
 
         if (FD_ISSET(rfd, &infds)) {
-            if (n = read(rfd, ibuf, 1) < 0) {
+            if ((n = read(rfd, ibuf, 1)) < 0) {
                 fprintf(stderr, "ERROR: read(fd=%d) failed, "
                         "errno=%d\n", rfd, errno);
                 exit(1);
@@ -619,49 +620,49 @@ int loopit()
                 cp[3] = ibuf[0];
                 break;
             case READ_ODO_STATE_TS3:
-                swp = &cur_odo_x_16;
+                swp = (unsigned short *) &cur_odo_x_16;
                 cp = (unsigned char *) swp;
                 read_odo_state = READ_ODO_STATE_X0;
                 cp[0] = ibuf[0];
                 break;
             case READ_ODO_STATE_X0:
-                swp = &cur_odo_x_16;
+                swp = (unsigned short *) &cur_odo_x_16;
                 cp = (unsigned char *) swp;
                 read_odo_state = READ_ODO_STATE_X1;
                 cp[1] = ibuf[0];
                 break;
             case READ_ODO_STATE_X1:
-                swp = &cur_odo_y_16;
+                swp = (unsigned short *) &cur_odo_y_16;
                 cp = (unsigned char *) swp;
                 read_odo_state = READ_ODO_STATE_Y0;
                 cp[0] = ibuf[0];
                 break;
             case READ_ODO_STATE_Y0:
-                swp = &cur_odo_y_16;
+                swp = (unsigned short *) &cur_odo_y_16;
                 cp = (unsigned char *) swp;
                 read_odo_state = READ_ODO_STATE_Y1;
                 cp[1] = ibuf[0];
                 break;
             case READ_ODO_STATE_Y1:
-                wp = &cur_odo_theta_32;
+                wp = (unsigned int *) &cur_odo_theta_32;
                 cp = (unsigned char *) wp;
                 read_odo_state = READ_ODO_STATE_THETA0;
                 cp[0] = ibuf[0];
                 break;
             case READ_ODO_STATE_THETA0:
-                wp = &cur_odo_theta_32;
+                wp = (unsigned int *) &cur_odo_theta_32;
                 cp = (unsigned char *) wp;
                 read_odo_state = READ_ODO_STATE_THETA1;
                 cp[1] = ibuf[0];
                 break;
             case READ_ODO_STATE_THETA1:
-                wp = &cur_odo_theta_32;
+                wp = (unsigned int *) &cur_odo_theta_32;
                 cp = (unsigned char *) wp;
                 read_odo_state = READ_ODO_STATE_THETA2;
                 cp[2] = ibuf[0];
                 break;
             case READ_ODO_STATE_THETA2:
-                wp = &cur_odo_theta_32;
+                wp = (unsigned int *) &cur_odo_theta_32;
                 cp = (unsigned char *) wp;
                 //read_odo_state = READ_ODO_STATE_THETA3;
                 read_odo_state = READ_ODO_STATE_INIT;
@@ -694,7 +695,7 @@ int loopit()
         }
 
         if (FD_ISSET(ifd, &infds)) {
-            char *bp = ibuf;
+            char *bp = (char *) ibuf;
             if ((n = read(ifd, ibuf, sizeof(ibuf))) < 0) {
                 fprintf(stderr, "ERROR: read(fd=%d) failed, "
                         "errno=%d\n", 1, errno);
@@ -716,10 +717,9 @@ int loopit()
 
 /*****************************************************************************/
 
-int main(int argc, char *argv[])
+int read_odo_main(void)
 {
     struct stat statbuf;
-    int c;
     size_t len;
     char *path = NULL;
 
@@ -729,14 +729,9 @@ int main(int argc, char *argv[])
 
     baud = 115200;
 
-    if (argc>1) {
+    if (((devname = getenv("ODOMETRY_DEV"))!=NULL) && (devname[0]!='\0')) {
         gotdevice++;
-        devname = argv[1];
-    } else {
-        if (((devname = getenv("ODOMETRY_DEV"))!=NULL) && (devname[0]!='\0')) {
-            gotdevice++;
-            printf("INFO: using odometry device : %s\n", devname);
-        }
+        printf("INFO: using odometry device : %s\n", devname);
     }
 
     if (gotdevice == 0) {

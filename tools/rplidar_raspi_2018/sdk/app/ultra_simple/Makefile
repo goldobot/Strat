@@ -22,6 +22,8 @@ MODULE_NAME := $(notdir $(CURDIR))
 
 include $(HOME_TREE)/mak_def.inc
 
+CSRC += read_odo_thread.c
+
 CXXSRC += main.cpp
 C_INCLUDES += -I$(CURDIR)/../../sdk/include
 

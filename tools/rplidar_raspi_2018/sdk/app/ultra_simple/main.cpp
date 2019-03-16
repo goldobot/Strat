@@ -46,6 +46,7 @@
 
 pthread_t g_slave_thread1;
 void *g_slave_proc1(void*);
+bool g_slave_running(void);
 
 float my_x[720];
 float my_y[720];
@@ -304,7 +305,7 @@ int main(int argc, const char * argv[]) {
 
         }
 
-        if (ctrl_c_pressed){ 
+        if (ctrl_c_pressed || (!g_slave_running())) { 
             break;
         }
     }
@@ -320,6 +321,7 @@ on_finished:
 
 
 extern "C" {
+    extern int read_odo_flag_running;
     extern void read_odo_main(void);
 }
 
@@ -333,3 +335,8 @@ void *g_slave_proc1(void*)
     return NULL;
 }
 
+
+bool g_slave_running(void)
+{
+    return (read_odo_flag_running!=0);
+}

@@ -15,9 +15,13 @@
 #include <arpa/inet.h>
 #include <time.h>
 
+#define __USE_GNU
+#include <pthread.h>
+
 #ifndef EMBED
 #include <sys/select.h>
 #endif
+
 
 /*****************************************************************************/
 
@@ -166,6 +170,17 @@ read_odo_state_t read_odo_state;
 
 /*****************************************************************************/
 
+int read_odo_flag_running = 0;
+
+void exit_thread(int err_code)
+{
+    while (1) {
+        read_odo_flag_running = 0;
+        pthread_yield();
+    }
+}
+
+
 /*
  *    Verify that the supplied baud rate is valid.
  */
@@ -198,7 +213,7 @@ void savelocaltermios(void)
     if (tcgetattr(1, &savetio_local) < 0) {
         fprintf(stderr, "ERROR: local tcgetattr() failed, errno=%d\n",
             errno);
-        exit(0);
+        exit_thread(0);
     }
 }
 
@@ -237,7 +252,7 @@ int setlocaltermios(void)
     if (tcgetattr(1, &tio) < 0) {
         fprintf(stderr, "ERROR: local tcgetattr() failed, errno=%d\n",
             errno);
-        exit(1);
+        exit_thread(1);
     }
 
     if (passflow)
@@ -253,7 +268,7 @@ int setlocaltermios(void)
     if (tcsetattr(1, TCSAFLUSH, &tio) < 0) {
         fprintf(stderr, "ERROR: local tcsetattr(TCSAFLUSH) failed, "
             "errno=%d\n", errno);
-        exit(1);
+        exit_thread(1);
     }
     return(0);
 }
@@ -311,7 +326,7 @@ void sighandler(int signal)
     printf("Cleaning up...");
     restorelocaltermios();
     printf("Done\n");
-    exit(1);
+    exit_thread(1);
 }
 
 /*****************************************************************************/
@@ -440,14 +455,14 @@ int loopit(void)
 
         if (select(maxfd, &infds, NULL, NULL, NULL) < 0) {
             fprintf(stderr, "ERROR: select() failed, errno=%d\n", errno);
-            exit(1);
+            exit_thread(1);
         }
 
         if (FD_ISSET(rfd, &infds)) {
             if ((n = read(rfd, ibuf, 1)) < 0) {
                 fprintf(stderr, "ERROR: read(fd=%d) failed, "
                         "errno=%d\n", rfd, errno);
-                exit(1);
+                exit_thread(1);
             }
 
             //printf ("%.2x\n", ibuf[0]);
@@ -701,7 +716,7 @@ int loopit(void)
             if ((n = read(ifd, ibuf, sizeof(ibuf))) < 0) {
                 fprintf(stderr, "ERROR: read(fd=%d) failed, "
                         "errno=%d\n", 1, errno);
-                exit(1);
+                exit_thread(1);
             }
 
             if (n == 0)
@@ -725,6 +740,8 @@ int read_odo_main(void)
     size_t len;
     char *path = NULL;
 
+    read_odo_flag_running = 1;
+
     ifd = 0;
     ofd = 1;
     gotdevice = 0;
@@ -738,7 +755,7 @@ int read_odo_main(void)
 
     if (gotdevice == 0) {
         fprintf(stderr, "ERROR: no device specified\n");
-        exit (-1);
+        exit_thread (-1);
     }
 
     /*
@@ -756,7 +773,7 @@ int read_odo_main(void)
     if (path == NULL) {
         fprintf(stderr, "ERROR: failed to alloc() path, "
                 "errno=%d\n", errno);
-        exit(1);
+        exit_thread(1);
     }
     if ((rfd = open(path, (O_RDWR | O_NDELAY))) < 0) {
         fprintf(stderr, "ERROR: failed to open() %s, "
@@ -766,7 +783,7 @@ int read_odo_main(void)
         free(path);
     }
     if (rfd < 0) {
-        exit(1);
+        exit_thread(1);
     }
 
     savelocaltermios();
@@ -792,7 +809,7 @@ int read_odo_main(void)
     restorelocaltermios();
 
     close(rfd);
-    exit(0);
+    return 0;
 }
 
 /*****************************************************************************/

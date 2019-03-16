@@ -38,7 +38,7 @@ char *version = "1.1.0";
 int        clocal;
 int        hardware;
 int        software;
-int        passflow;
+int        passflow=0;
 int        parity = PARITY_NONE;
 int        databits = 8;
 int        twostopb;
@@ -244,7 +244,9 @@ int setlocaltermios(void)
         tio.c_iflag &= ~(ICRNL|IXON);
     else
         tio.c_iflag &= ~ICRNL;
+#if 0 /* FIXME : DEBUG */
     tio.c_lflag = 0;
+#endif
     tio.c_cc[VMIN] = 1;
     tio.c_cc[VTIME] = 0;
 

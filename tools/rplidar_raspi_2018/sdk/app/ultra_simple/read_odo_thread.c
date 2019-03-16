@@ -58,6 +58,7 @@ int        net_connection = 0;
 int        gotdevice;
 int        ifd, ofd;
 int        rfd;
+FILE       *dump_file;
 
 /*
  *    Working termios settings.
@@ -693,6 +694,14 @@ int loopit(void)
                         cur_odo_time, 
                         cur_odo_x_mm, cur_odo_y_mm, 
                         cur_odo_theta_deg);
+                if (dump_file) {
+                    fprintf (dump_file, 
+                             "ts = %u ; pos = < %f , %f > ; theta = %f\n",
+                             cur_odo_time, 
+                             cur_odo_x_mm, cur_odo_y_mm, 
+                             cur_odo_theta_deg);
+                }
+
                 {
                     struct timespec my_tp;
                     unsigned int my_time_ms;
@@ -702,6 +711,9 @@ int loopit(void)
                     my_time_ms = my_tp.tv_sec*1000 + my_tp.tv_nsec/1000000;
 
                     printf ("my_time_ms = %u\n\n", my_time_ms);
+                    if (dump_file) {
+                        fprintf (dump_file, "my_time_ms = %u\n\n", my_time_ms);
+                    }
                 }
 
 
@@ -741,6 +753,8 @@ int read_odo_main(void)
     char *path = NULL;
 
     read_odo_flag_running = 1;
+
+    dump_file = 0;
 
     ifd = 0;
     ofd = 1;
@@ -786,6 +800,11 @@ int read_odo_main(void)
         exit_thread(1);
     }
 
+    if ((dump_file = fopen("dump_odom.txt", "w")) == NULL) {
+        fprintf(stderr, "ERROR: failed to open odom capture file, errno=%d\n",
+                errno);
+    }
+
     savelocaltermios();
     setlocaltermios();
     printf("Connected.\n");
@@ -810,6 +829,8 @@ int read_odo_main(void)
     printf("Disconnected.\n");
     restorelocaltermios();
 
+	if (dump_file)
+		fclose(dump_file);
     close(rfd);
     return 0;
 }

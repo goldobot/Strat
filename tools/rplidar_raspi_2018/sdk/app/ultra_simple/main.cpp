@@ -131,7 +131,7 @@ bool checkRPLIDARHealth(RPlidarDriver * drv)
 }
 
 #include <signal.h>
-bool ctrl_c_pressed;
+bool ctrl_c_pressed = false;
 void ctrlc(int)
 {
     ctrl_c_pressed = true;
@@ -145,6 +145,8 @@ int main(int argc, const char * argv[]) {
 
     char viewer_addr_str[40];
     double theta_correction = 0.0f;
+
+    ctrl_c_pressed = false;
 
     printf("Ultra simple LIDAR data grabber for RPLIDAR.\n"
            "Version: Goldo EXPERIMENTAL\n");
@@ -306,6 +308,7 @@ int main(int argc, const char * argv[]) {
         }
 
         if (ctrl_c_pressed || (!g_slave_running())) { 
+            printf ("Bye!\n");
             break;
         }
     }

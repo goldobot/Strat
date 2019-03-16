@@ -170,7 +170,7 @@ read_odo_state_t read_odo_state;
 
 /*****************************************************************************/
 
-int read_odo_flag_running = 0;
+volatile int read_odo_flag_running = 0;
 
 void exit_thread(int err_code)
 {
@@ -259,7 +259,7 @@ int setlocaltermios(void)
         tio.c_iflag &= ~(ICRNL|IXON);
     else
         tio.c_iflag &= ~ICRNL;
-#if 0 /* FIXME : DEBUG */
+#if 0 /* FIXME : TODO : usefull? (ca bloque le CTRL_C sur la console sinon..) */
     tio.c_lflag = 0;
 #endif
     tio.c_cc[VMIN] = 1;
@@ -793,6 +793,7 @@ int read_odo_main(void)
     saveremotetermios();
     setremotetermios();
 
+#if 0 /* FIXME : TODO : usefull? */
     /*
      *    Set the signal handler to restore the old termios .
      */
@@ -802,6 +803,7 @@ int read_odo_main(void)
     sigaction(SIGQUIT, &sact, NULL);
     sigaction(SIGPIPE, &sact, NULL);
     sigaction(SIGTERM, &sact, NULL);
+#endif
 
     loopit();
 

@@ -171,6 +171,13 @@ read_odo_state_t read_odo_state;
 
 /*****************************************************************************/
 
+volatile unsigned int g_odo_thread_time_ms;
+volatile unsigned int g_odo_time_ms;
+volatile unsigned int g_odo_x_mm;
+volatile unsigned int g_odo_y_mm;
+volatile double       g_odo_theta_deg;
+
+
 volatile int read_odo_flag_running = 0;
 
 void exit_thread(int err_code)
@@ -690,10 +697,17 @@ int loopit(void)
                 cur_odo_y_mm = cur_odo_y_16;
                 cur_odo_theta_deg = cur_odo_theta_32/1000.0;
 
+                g_odo_time_ms = cur_odo_time;
+                g_odo_x_mm = cur_odo_x_mm;
+                g_odo_y_mm = cur_odo_y_mm;
+                g_odo_theta_deg = cur_odo_theta_deg;
+
+#if 0 /* FIXME : DEBUG */
                 printf ("ts = %u ; pos = < %f , %f > ; theta = %f\n",
                         cur_odo_time, 
                         cur_odo_x_mm, cur_odo_y_mm, 
                         cur_odo_theta_deg);
+#endif
                 if (dump_file) {
                     fprintf (dump_file, 
                              "ts = %u ; pos = < %f , %f > ; theta = %f\n",
@@ -710,7 +724,10 @@ int loopit(void)
 
                     my_time_ms = my_tp.tv_sec*1000 + my_tp.tv_nsec/1000000;
 
+                    g_odo_thread_time_ms = my_time_ms;
+#if 0 /* FIXME : DEBUG */
                     printf ("my_time_ms = %u\n\n", my_time_ms);
+#endif
                     if (dump_file) {
                         fprintf (dump_file, "my_time_ms = %u\n\n", my_time_ms);
                     }
@@ -754,7 +771,13 @@ int read_odo_main(void)
 
     read_odo_flag_running = 1;
 
-    dump_file = 0;
+    g_odo_thread_time_ms = 0;
+    g_odo_time_ms = 0;
+    g_odo_x_mm = 0;
+    g_odo_y_mm = 0;
+    g_odo_theta_deg = 0.0;
+
+    dump_file = NULL;
 
     ifd = 0;
     ofd = 1;
@@ -800,10 +823,12 @@ int read_odo_main(void)
         exit_thread(1);
     }
 
+#if 0 /* FIXME : DEBUG */
     if ((dump_file = fopen("dump_odom.txt", "w")) == NULL) {
         fprintf(stderr, "ERROR: failed to open odom capture file, errno=%d\n",
                 errno);
     }
+#endif
 
     savelocaltermios();
     setlocaltermios();

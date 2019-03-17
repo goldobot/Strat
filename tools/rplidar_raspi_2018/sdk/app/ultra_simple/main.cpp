@@ -48,6 +48,16 @@ pthread_t g_slave_thread1;
 void *g_slave_proc1(void*);
 bool g_slave_running(void);
 
+extern "C" {
+    extern unsigned int g_odo_thread_time_ms;
+    extern unsigned int g_odo_time_ms;
+    extern unsigned int g_odo_x_mm;
+    extern unsigned int g_odo_y_mm;
+    extern double       g_odo_theta_deg;
+}
+
+int dbg_cnt = 0;
+
 float my_x[720];
 float my_y[720];
 char send_buf[720*4*2];
@@ -142,6 +152,8 @@ int main(int argc, const char * argv[]) {
     _u32         opt_com_baudrate = 115200;
     u_result     op_result;
     int          ret=0;
+
+    dbg_cnt = 0;
 
     char viewer_addr_str[40];
     double theta_correction = 0.0f;
@@ -306,6 +318,32 @@ int main(int argc, const char * argv[]) {
 #endif
 
         }
+
+        if ((dbg_cnt%10)==0) {
+            struct timespec my_tp;
+            unsigned int main_thread_time_ms;
+
+            /* FIXME : TODO : section critique! */
+            volatile unsigned int my_odo_thread_time_ms = g_odo_thread_time_ms;
+            volatile unsigned int my_odo_time_ms = g_odo_time_ms;
+            volatile unsigned int my_odo_x_mm = g_odo_x_mm;
+            volatile unsigned int my_odo_y_mm = g_odo_y_mm;
+            volatile double       my_odo_theta_deg = g_odo_theta_deg;
+
+            clock_gettime(1, &my_tp);
+
+            main_thread_time_ms = my_tp.tv_sec*1000 + my_tp.tv_nsec/1000000;
+
+            printf ("main_thread_time_ms = %u\n", main_thread_time_ms);
+            printf ("my_odo_thread_time_ms = %u\n", my_odo_thread_time_ms);
+            printf ("ts = %u ; pos = < %u , %u > ; theta = %f\n",
+                    my_odo_time_ms, 
+                    my_odo_x_mm, my_odo_y_mm, 
+                    my_odo_theta_deg);
+
+            printf ("\n");
+        }
+        dbg_cnt++;
 
         if (ctrl_c_pressed || (!g_slave_running())) { 
             printf ("Bye!\n");

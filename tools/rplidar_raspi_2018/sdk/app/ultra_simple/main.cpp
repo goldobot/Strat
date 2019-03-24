@@ -56,16 +56,34 @@ extern "C" {
     extern double       g_odo_theta_deg;
 }
 
+unsigned int g_main_thread_time_ms_old;
+unsigned int g_main_thread_time_ms_delta;
+unsigned int g_main_thread_time_ms_delta_max;
+
+unsigned int g_odo_thread_time_ms_old;
+unsigned int g_odo_time_ms_old;
+unsigned int g_odo_x_mm_old;
+unsigned int g_odo_y_mm_old;
+double       g_odo_theta_deg_old;
+
+unsigned int g_odo_thread_time_ms_delta;
+unsigned int g_odo_time_ms_delta;
+unsigned int g_odo_x_mm_delta;
+unsigned int g_odo_y_mm_delta;
+unsigned int g_odo_d_mm_delta;
+double       g_odo_theta_deg_delta;
+
+unsigned int g_odo_thread_time_ms_delta_max;
+unsigned int g_odo_time_ms_delta_max;
+unsigned int g_odo_d_mm_delta_max;
+double       g_odo_theta_deg_delta_max;
+
 int dbg_cnt = 0;
 
 float my_x[720];
 float my_y[720];
-char send_buf[720*4*2];
-
-typedef struct _my_point_t {
-    float x;
-    float y;
-} my_point_t;
+#define SEND_BUF_SIZE (65500) /* taille max datagramme udp */
+unsigned char send_buf[SEND_BUF_SIZE];
 
 int my_sock;
 struct sockaddr_in viewer_saddr;
@@ -83,7 +101,7 @@ int init_sock(char *viewer_address_str)
     my_sock = socket (AF_INET, SOCK_DGRAM, 0);
 
     viewer_saddr.sin_family= AF_INET;
-    viewer_saddr.sin_port= htons(1412);
+    viewer_saddr.sin_port= htons(1413);
     viewer_saddr.sin_addr.s_addr= htonl((ab3<<24)|(ab2<<16)|(ab1<<8)|(ab0));
 
     return 0;
@@ -91,17 +109,42 @@ int init_sock(char *viewer_address_str)
 
 int send_to_viewer()
 {
-    my_point_t *my_p;
+    unsigned int *cur_ptr_w = (unsigned int *)((void *)(&send_buf[0]));
+    int bytes_to_send = 0;
+    int g_odo_theta_deg_0_01 = 0;
 
-    my_p = (my_point_t *)((void *)(&send_buf[0]));
-
+    /* header tlv */
+    *cur_ptr_w = htonl(0x31337000);
+    cur_ptr_w++; bytes_to_send+=4;
+    *cur_ptr_w = htonl(0); /* longueur totale : recalcule + bas */
+    cur_ptr_w++; bytes_to_send+=4;
+    /* on reserve l'id 0x31337001 pour "header etendu" */
+    /* odometrie */
+    *cur_ptr_w = htonl(0x31337002);
+    cur_ptr_w++; bytes_to_send+=4;
+    *cur_ptr_w = htonl(g_odo_x_mm);
+    cur_ptr_w++; bytes_to_send+=4;
+    *cur_ptr_w = htonl(g_odo_y_mm);
+    cur_ptr_w++; bytes_to_send+=4;
+    g_odo_theta_deg_0_01 = g_odo_theta_deg*100.0;
+    *cur_ptr_w = htonl(g_odo_theta_deg_0_01);
+    cur_ptr_w++; bytes_to_send+=4;
+    /* points du scan lidar */
+    *cur_ptr_w = htonl(0x31337003);
     for (int i=0; i<720; i++) {
-        my_p->x = my_x[i];
-        my_p->y = my_y[i];
-        my_p++;
+        *cur_ptr_w = my_x[i];
+        cur_ptr_w++; bytes_to_send+=4;
+        *cur_ptr_w = my_y[i];
+        cur_ptr_w++; bytes_to_send+=4;
     }
+    /* marqueur de fin */
+    *cur_ptr_w = htonl(0x313370ff);
+    cur_ptr_w++; bytes_to_send+=4;
 
-    int ret = sendto (my_sock, (void *)send_buf, sizeof (send_buf), 0, 
+    cur_ptr_w = (unsigned int *)((void *)(&send_buf[0]));
+    cur_ptr_w[1] = bytes_to_send;
+
+    int ret = sendto (my_sock, (void *)send_buf, bytes_to_send, 0, 
                       (const sockaddr *) &viewer_saddr, 
                       sizeof (struct sockaddr_in));
     if (ret!=sizeof(send_buf)) {
@@ -147,6 +190,8 @@ void ctrlc(int)
     ctrl_c_pressed = true;
 }
 
+#define MAX(a,b) ((a>b)?a:b)
+
 int main(int argc, const char * argv[]) {
     const char * opt_com_path = NULL;
     _u32         opt_com_baudrate = 115200;
@@ -159,6 +204,29 @@ int main(int argc, const char * argv[]) {
     double theta_correction = 0.0f;
 
     ctrl_c_pressed = false;
+
+    g_main_thread_time_ms_old = 0;
+    g_main_thread_time_ms_delta = 0;
+    g_main_thread_time_ms_delta_max = 0;
+
+    g_odo_thread_time_ms_old = 0;
+    g_odo_time_ms_old = 0;
+    g_odo_x_mm_old = 0;
+    g_odo_y_mm_old = 0;
+    g_odo_theta_deg_old = 0.0;
+
+    g_odo_thread_time_ms_delta = 0;
+    g_odo_time_ms_delta = 0;
+    g_odo_x_mm_delta = 0;
+    g_odo_y_mm_delta = 0;
+    g_odo_d_mm_delta = 0;
+    g_odo_theta_deg_delta = 0.0;
+
+    g_odo_thread_time_ms_delta_max = 0;
+    g_odo_time_ms_delta_max = 0;
+    g_odo_d_mm_delta_max = 0;
+    g_odo_theta_deg_delta_max = 0.0;
+
 
     printf("Ultra simple LIDAR data grabber for RPLIDAR.\n"
            "Version: Goldo EXPERIMENTAL\n");
@@ -334,12 +402,43 @@ int main(int argc, const char * argv[]) {
 
             main_thread_time_ms = my_tp.tv_sec*1000 + my_tp.tv_nsec/1000000;
 
+            if (g_main_thread_time_ms_old != 0) {
+                g_main_thread_time_ms_delta = main_thread_time_ms - g_main_thread_time_ms_old;
+                g_main_thread_time_ms_delta_max = MAX(g_main_thread_time_ms_delta_max, g_main_thread_time_ms_delta);
+                g_main_thread_time_ms_old = main_thread_time_ms;
+
+                g_odo_thread_time_ms_delta = abs(my_odo_thread_time_ms - g_odo_thread_time_ms_old);
+                g_odo_time_ms_delta = abs(my_odo_time_ms - g_odo_time_ms_old);
+                g_odo_x_mm_delta = my_odo_x_mm - g_odo_x_mm_old;
+                g_odo_y_mm_delta = my_odo_y_mm - g_odo_y_mm_old;
+                g_odo_d_mm_delta = sqrt(g_odo_x_mm_delta*g_odo_x_mm_delta + g_odo_y_mm_delta*g_odo_y_mm_delta);
+                g_odo_theta_deg_delta = fabs(my_odo_theta_deg - g_odo_theta_deg_old);
+
+                g_odo_thread_time_ms_delta_max = MAX(g_odo_thread_time_ms_delta_max, g_odo_thread_time_ms_delta);
+                g_odo_time_ms_delta_max = MAX(g_odo_time_ms_delta_max, g_odo_time_ms_delta);
+                g_odo_d_mm_delta_max = MAX(g_odo_d_mm_delta_max, g_odo_d_mm_delta);
+                g_odo_theta_deg_delta_max = MAX(g_odo_theta_deg_delta_max, g_odo_theta_deg_delta);
+
+                g_odo_thread_time_ms_old = my_odo_thread_time_ms;
+                g_odo_time_ms_old = my_odo_time_ms;
+                g_odo_x_mm_old = my_odo_x_mm;
+                g_odo_y_mm_old = my_odo_y_mm;
+                g_odo_theta_deg_old = my_odo_theta_deg;
+            } else {
+                g_main_thread_time_ms_old = main_thread_time_ms;
+                g_odo_thread_time_ms_old = my_odo_thread_time_ms;
+                g_odo_time_ms_old = my_odo_time_ms;
+                g_odo_x_mm_old = my_odo_x_mm;
+                g_odo_y_mm_old = my_odo_y_mm;
+                g_odo_theta_deg_old = my_odo_theta_deg;
+            }
+
             printf ("main_thread_time_ms = %u\n", main_thread_time_ms);
-            printf ("my_odo_thread_time_ms = %u\n", my_odo_thread_time_ms);
-            printf ("ts = %u ; pos = < %u , %u > ; theta = %f\n",
-                    my_odo_time_ms, 
-                    my_odo_x_mm, my_odo_y_mm, 
-                    my_odo_theta_deg);
+            printf ("my_odo_thread_time_ms = %u (%u)\n", my_odo_thread_time_ms, g_odo_thread_time_ms_delta_max);
+            printf ("ts = %u (%u); pos = < %u , %u > (%u); theta = %f (%f)\n",
+                    my_odo_time_ms, g_odo_time_ms_delta_max, 
+                    my_odo_x_mm, my_odo_y_mm, g_odo_d_mm_delta_max,
+                    my_odo_theta_deg, g_odo_theta_deg_delta_max);
 
             printf ("\n");
         }

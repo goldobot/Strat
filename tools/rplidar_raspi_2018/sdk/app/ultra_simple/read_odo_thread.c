@@ -34,7 +34,7 @@ char *version = "1.1.0";
  */
 #define    PARITY_NONE    0
 #define    PARITY_EVEN    1
-#define    PARITY_ODD    2
+#define    PARITY_ODD     2
 
 /*
  *    Default port settings.

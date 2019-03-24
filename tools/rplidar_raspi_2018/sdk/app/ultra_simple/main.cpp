@@ -147,7 +147,7 @@ int send_to_viewer()
     int ret = sendto (my_sock, (void *)send_buf, bytes_to_send, 0, 
                       (const sockaddr *) &viewer_saddr, 
                       sizeof (struct sockaddr_in));
-    if (ret!=sizeof(send_buf)) {
+    if (ret!=bytes_to_send) {
         printf ("sendto() failed\n");
         return -1;
     }

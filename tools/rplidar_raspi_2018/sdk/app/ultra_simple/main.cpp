@@ -433,7 +433,7 @@ int main(int argc, const char * argv[]) {
                 g_odo_theta_deg_old = my_odo_theta_deg;
             }
 
-            printf ("main_thread_time_ms = %u\n", main_thread_time_ms);
+            printf ("main_thread_time_ms = %u (%u)\n", main_thread_time_ms, g_main_thread_time_ms_delta_max);
             printf ("my_odo_thread_time_ms = %u (%u)\n", my_odo_thread_time_ms, g_odo_thread_time_ms_delta_max);
             printf ("ts = %u (%u); pos = < %u , %u > (%u); theta = %f (%f)\n",
                     my_odo_time_ms, g_odo_time_ms_delta_max, 

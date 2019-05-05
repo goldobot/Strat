@@ -44,9 +44,16 @@
 #endif
 
 
-pthread_t g_slave_thread1;
-void *g_slave_proc1(void*);
-bool g_slave_running(void);
+pthread_t g_slave0_thread;
+void *g_slave0_proc(void*);
+bool g_slave0_running(void);
+
+pthread_t g_slave1_thread;
+void *g_slave1_proc(void*);
+bool g_slave1_running(void);
+
+bool slave1_flag_running = false;
+bool slave1_stop = false;
 
 extern "C" {
     extern unsigned int g_odo_thread_time_ms;
@@ -320,9 +327,15 @@ int main(int argc, const char * argv[]) {
     drv->startScan();
 
 
-    ret=pthread_create(&g_slave_thread1, NULL, &g_slave_proc1, NULL);
+    ret=pthread_create(&g_slave0_thread, NULL, &g_slave0_proc, NULL);
     if(ret!=0) {
-        printf("Unable to create slave thread 1\n");
+        printf("Unable to create slave0 thread 1\n");
+        exit(-3);
+    }
+
+    ret=pthread_create(&g_slave1_thread, NULL, &g_slave1_proc, NULL);
+    if(ret!=0) {
+        printf("Unable to create slave1 thread 1\n");
         exit(-3);
     }
 
@@ -444,7 +457,8 @@ int main(int argc, const char * argv[]) {
         }
         dbg_cnt++;
 
-        if (ctrl_c_pressed || (!g_slave_running())) { 
+        if (ctrl_c_pressed || (!g_slave0_running())) { 
+            slave1_stop = true;
             printf ("Bye!\n");
             break;
         }
@@ -466,9 +480,9 @@ extern "C" {
 }
 
 
-void *g_slave_proc1(void*)
+void *g_slave0_proc(void*)
 {
-    printf ("g_slave_proc1()..\n");
+    printf ("g_slave0_proc()..\n");
 
     read_odo_main();
 
@@ -476,7 +490,34 @@ void *g_slave_proc1(void*)
 }
 
 
-bool g_slave_running(void)
+bool g_slave0_running(void)
 {
     return (read_odo_flag_running!=0);
 }
+
+
+void *g_slave1_proc(void*)
+{
+    printf ("g_slave1_proc()..\n");
+
+    slave1_flag_running = true;
+
+    while (!slave1_stop) {
+
+        /* FIXME : TODO : Thomas, a toi de jouer!.. */
+
+        pthread_yield();
+    }
+
+    slave1_flag_running = false;
+
+    return NULL;
+}
+
+
+bool g_slave1_running(void)
+{
+    return slave1_flag_running;
+}
+
+

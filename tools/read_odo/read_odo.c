@@ -404,6 +404,7 @@ int loopit()
 {
     fd_set infds;
     int maxfd, n;
+    int char_cnt = 0;
 
     unsigned int cur_odo_time;
 
@@ -432,6 +433,7 @@ int loopit()
 
     read_odo_state = READ_ODO_STATE_INIT;
 
+    printf ("TEST\n");
     for (;;) {
         FD_ZERO(&infds);
         FD_SET(ifd, &infds);
@@ -449,7 +451,11 @@ int loopit()
                 exit(1);
             }
 
-            //printf ("%.2x\n", ibuf[0]);
+            /* FIXME : DEBUG */
+            //printf ("%.2x ", ibuf[0]);
+            //if ((char_cnt%1)==0) printf ("\n");
+            //char_cnt++;
+
             //fprintf(stderr, "%.2x\n", ibuf[0]);
             //fputc(ibuf[0], stderr);
 

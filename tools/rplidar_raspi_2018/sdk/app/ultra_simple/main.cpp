@@ -52,6 +52,8 @@ pthread_t g_slave1_thread;
 void *g_slave1_proc(void*);
 bool g_slave1_running(void);
 
+bool slave0_stop = false;
+
 bool slave1_flag_running = false;
 bool slave1_stop = false;
 
@@ -458,6 +460,7 @@ int main(int argc, const char * argv[]) {
         dbg_cnt++;
 
         if (ctrl_c_pressed || (!g_slave0_running())) { 
+            slave0_stop = true;
             slave1_stop = true;
             printf ("Bye!\n");
             break;
@@ -484,7 +487,13 @@ void *g_slave0_proc(void*)
 {
     printf ("g_slave0_proc()..\n");
 
+#if 1 /* FIXME : DEBUG : 0 pour desactiver le thread odo temps reel */
     read_odo_main();
+#else
+    while (!slave0_stop) {
+        pthread_yield();
+    }
+#endif
 
     return NULL;
 }
@@ -496,18 +505,25 @@ bool g_slave0_running(void)
 }
 
 
+extern int comm_uart_main(const char *uart_dev_name);
+
 void *g_slave1_proc(void*)
 {
+    const char * stlink_dev_path = NULL;
+
     printf ("g_slave1_proc()..\n");
 
     slave1_flag_running = true;
 
-    while (!slave1_stop) {
-
-        /* FIXME : TODO : Thomas, a toi de jouer!.. */
-
-        pthread_yield();
+    if (((stlink_dev_path = getenv("STLINK_DEV"))!=NULL) && 
+        (stlink_dev_path[0]!='\0')) {
+        printf("INFO: using STlink device : %s\n", stlink_dev_path);
+    } else {
+        stlink_dev_path = "/dev/ttyACM0";
     }
+
+    /* FIXME : TODO : Thomas, a toi de jouer!.. */
+    comm_uart_main(stlink_dev_path);
 
     slave1_flag_running = false;
 

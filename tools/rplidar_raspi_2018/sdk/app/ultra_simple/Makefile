@@ -24,11 +24,11 @@ include $(HOME_TREE)/mak_def.inc
 
 CSRC += read_odo_thread.c
 
-CXXSRC += main.cpp
+CXXSRC += main.cpp comm_uart.cpp comm_serializer.cpp
 C_INCLUDES += -I$(CURDIR)/../../sdk/include
 
 EXTRA_OBJ := 
-LD_LIBS += -lstdc++ -lpthread -lm
+LD_LIBS += -lstdc++ -lpthread -lm -lzmq 
 
 all: build_app
 

@@ -140,6 +140,7 @@ int send_to_viewer()
     cur_ptr_w++; bytes_to_send+=4;
     /* points du scan lidar */
     *cur_ptr_w = htonl(0x31337003);
+    cur_ptr_w++; bytes_to_send+=4;
     for (int i=0; i<720; i++) {
         *cur_ptr_w = my_x[i];
         cur_ptr_w++; bytes_to_send+=4;
@@ -349,15 +350,15 @@ int main(int argc, const char * argv[]) {
         rplidar_response_measurement_node_t nodes[360*2];
         size_t   count = _countof(nodes);
 
+        for (int pos = 0; pos < 360*2; ++pos) {
+            my_x[pos] = 0.0;
+            my_y[pos] = 0.0;
+        }
+
         op_result = drv->grabScanData(nodes, count);
 
         if (IS_OK(op_result)) {
             drv->ascendScanData(nodes, count);
-
-            for (int pos = 0; pos < (int)count ; ++pos) {
-                my_x[pos] = 0.0;
-                my_y[pos] = 0.0;
-            }
 
             for (int pos = 0; pos < (int)count ; ++pos) {
                 double my_theta = ((nodes[pos].angle_q6_checkbit >> RPLIDAR_RESP_MEASUREMENT_ANGLE_SHIFT)/64.0f)*(2.0f*M_PI/360.0f) + theta_correction;

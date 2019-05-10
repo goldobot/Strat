@@ -7,6 +7,137 @@
 
 #include "comm_serializer.hpp"
 
+#if 1 /* FIXME : DEBUG : dirty hack */
+	enum class CommMessageType : uint16_t
+	{
+		// General messages
+		Sync=0, // "goldobot" synchronization message, used to synchronize stream parser
+		Heartbeat=1, // Current OS time in ms as uint32, sent every second
+		Reset=2, // Sent once on startup
+		CommStats=3,
+		DbgPrintf=4,
+		// Propulsion telemetry
+		PropulsionTelemetry=8, //
+		PropulsionTelemetryEx=9,
+		PropulsionStateChange=10,
+		// Match events
+		MatchStateChange=15,
+		SensorsChange=20,
+		GPIODebug=21,
+		// Commands
+		CmdEmergencyStop=32, // Order an emergency stop
+		CmdSelectSide=33, // Select side. payload is an unsigned byte, 0=green, 1=orange
+		CmdEnterDebugMode=34,
+		CmdExitDebugMode=35,
+		MainSequenceBeginLoad=40,
+		MainSequenceEndLoad=41,
+		MainSequenceLoadData=42,
+		MainSequenceStartSequence=43,
+		// Debug mode messages
+		// Robot configuration
+		DbgGetOdometryConfig=64,
+		DbgSetOdometryConfig=65,
+		DbgGetPropulsionConfig=66,
+		DbgSetPropulsionConfig=67,
+
+		// Dynamixels debug
+		DbgDynamixelsList=72,
+		DbgDynamixelDescr=73,
+		DbgDynamixelSetTorqueEnable=74,
+		DbgDynamixelSetGoalPosition=75,
+		DbgDynamixelSetTorqueLimit=76,
+		DbgDynamixelGetRegisters=77,
+		DbgDynamixelSetRegisters=78,
+
+		// Propulsion debug
+		DbgSetMotorsEnable=80,
+		DbgSetMotorsPwm=81,
+		DbgSetPropulsionEnable=82,
+		DbgPropulsionSetPose=83,
+		DbgPropulsionTest=84,
+		DbgPropulsionExecuteTrajectory=85,
+		DbgPropulsionExecuteRotation=86,
+		DbgPropulsionExecuteReposition=87,
+		DbgPropulsionExecutePointTo=88,
+		DbgPropulsionExecuteMoveTo=89,
+		PropulsionStateChanged=90,
+
+
+		DbgMiscRepositionStartGreen=100,
+		DbgReset=127,
+
+		DbgArmsSetPose=160,
+		DbgArmsSetCommand=161,
+		DbgArmsSetTorques=162,
+		DbgArmsSetSequences=163,
+		DbgArmsExecuteSequence=164,
+		DbgArmsGoToPosition=165,
+
+		DbgRobotSetCommand=176,
+		DbgRobotSetPoint=177,
+		DbgRobotSetSequence=178,
+		DbgRobotExecuteSequence=179,
+		DbgRobotSetTrajectoryPoint=180,
+
+		// FPGA
+		FpgaGetVersion=256,
+		FpgaDbgReadReg=257,
+		FpgaDbgWriteReg=258,
+		FpgaCmdServo=272,
+		FpgaCmdDCMotor=288,
+		FpgaCmdPumpR=289,
+		FpgaCmdPumpL=290,
+		FpgaCmdConveyorBelt=291,
+		FpgaCmdStepper=304,
+		FpgaGetStepperPos=305,
+		FpgaColumnsCalib=320,
+		FpgaColumnsMove=321,
+		FpgaColumnsSetOffset=322,
+	};
+
+	struct PropulsionTelemetry
+	{
+		int16_t x;//quarters of mm
+		int16_t y;
+		int16_t yaw;
+		int16_t speed;// mm per second
+		int16_t yaw_rate;// mradian per second
+		int16_t acceleration;
+		int16_t angular_acceleration;
+		uint16_t left_encoder;
+		uint16_t right_encoder;
+		int8_t left_pwm;// percents
+		int8_t right_pwm;
+		uint8_t state;
+		uint8_t error;
+	};
+
+	struct PropulsionTelemetryEx
+	{
+		int16_t target_x;//quarters of mm
+		int16_t target_y;
+		int16_t target_yaw;
+		int16_t target_speed;// mm per second
+		int16_t target_yaw_rate;// mradian per second
+		int16_t longitudinal_error;
+		int16_t lateral_error;
+		int16_t yaw_error;
+		int16_t speed_error;
+		int16_t yaw_rate_error;
+		int32_t left_acc;
+		int32_t right_acc;
+	};
+
+	extern "C" {
+		extern unsigned int g_odo_thread_time_ms;
+		extern unsigned int g_odo_time_ms;
+		extern int          g_odo_x_mm;
+		extern int          g_odo_y_mm;
+		extern double       g_odo_theta_deg;
+	}
+
+
+#endif
 
 int set_interface_attribs(int fd, int speed)
 {
@@ -121,6 +252,17 @@ int comm_uart_main(const char *portname)
 
                 zmq_send(pub_socket, (const char*)(&recv_message_type), 2, ZMQ_SNDMORE);
                 zmq_send(pub_socket, (const char*)(tmp_buffer), recv_message_size, 0);
+
+#if 1 /* FIXME : DEBUG : dirty hack */
+                if(recv_message_type == 8)
+                {
+                    // Intercept odometric telemetry
+					struct PropulsionTelemetry *my_telemetry = (struct PropulsionTelemetry *)(void *)(tmp_buffer); 
+					g_odo_x_mm = my_telemetry->x/4;
+					g_odo_y_mm = my_telemetry->y/4;
+					g_odo_theta_deg = my_telemetry->yaw*90.0/32767;
+                }           
+#endif
 
                 if(recv_message_type == 0)
                 {

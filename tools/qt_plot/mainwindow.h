@@ -54,8 +54,8 @@ class MainWindow;
 
 #if 1 /* FIXME : DEBUG : HACK GOLDO */
 typedef struct _my_point_t {
-  float x;
-  float y;
+  int x;
+  int y;
 } my_point_t;
 #endif
 
@@ -114,7 +114,8 @@ private:
   double my_x[400];
   double my_y[400];
   QUdpSocket my_sock;
-  my_point_t recv_buf[400];
+  unsigned char recv_buf[0x10000];
+  my_point_t *recv_point;
 #endif
 };
 

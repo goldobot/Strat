@@ -34,6 +34,7 @@
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <unistd.h>
 
 #include <pthread.h>
 
@@ -60,8 +61,8 @@ bool slave1_stop = false;
 extern "C" {
     extern unsigned int g_odo_thread_time_ms;
     extern unsigned int g_odo_time_ms;
-    extern unsigned int g_odo_x_mm;
-    extern unsigned int g_odo_y_mm;
+    extern int          g_odo_x_mm;
+    extern int          g_odo_y_mm;
     extern double       g_odo_theta_deg;
 }
 
@@ -71,20 +72,21 @@ unsigned int g_main_thread_time_ms_delta_max;
 
 unsigned int g_odo_thread_time_ms_old;
 unsigned int g_odo_time_ms_old;
-unsigned int g_odo_x_mm_old;
-unsigned int g_odo_y_mm_old;
+int          g_odo_x_mm_old;
+int          g_odo_y_mm_old;
 double       g_odo_theta_deg_old;
+double       g_odo_theta_rad;
 
 unsigned int g_odo_thread_time_ms_delta;
 unsigned int g_odo_time_ms_delta;
-unsigned int g_odo_x_mm_delta;
-unsigned int g_odo_y_mm_delta;
-unsigned int g_odo_d_mm_delta;
+int          g_odo_x_mm_delta;
+int          g_odo_y_mm_delta;
+int          g_odo_d_mm_delta;
 double       g_odo_theta_deg_delta;
 
 unsigned int g_odo_thread_time_ms_delta_max;
 unsigned int g_odo_time_ms_delta_max;
-unsigned int g_odo_d_mm_delta_max;
+int          g_odo_d_mm_delta_max;
 double       g_odo_theta_deg_delta_max;
 
 int dbg_cnt = 0;
@@ -142,9 +144,12 @@ int send_to_viewer()
     *cur_ptr_w = htonl(0x31337003);
     cur_ptr_w++; bytes_to_send+=4;
     for (int i=0; i<720; i++) {
-        *cur_ptr_w = my_x[i];
+        int my_x_int = my_x[i];
+        int my_y_int = my_y[i];
+
+        *cur_ptr_w = (unsigned int) my_x_int;
         cur_ptr_w++; bytes_to_send+=4;
-        *cur_ptr_w = my_y[i];
+        *cur_ptr_w = (unsigned int) my_y_int;
         cur_ptr_w++; bytes_to_send+=4;
     }
     /* marqueur de fin */
@@ -224,6 +229,7 @@ int main(int argc, const char * argv[]) {
     g_odo_x_mm_old = 0;
     g_odo_y_mm_old = 0;
     g_odo_theta_deg_old = 0.0;
+    g_odo_theta_rad = 0.0;
 
     g_odo_thread_time_ms_delta = 0;
     g_odo_time_ms_delta = 0;
@@ -345,7 +351,7 @@ int main(int argc, const char * argv[]) {
 
     // fetch result
     while (1) {
-        //bool   obstacle_detect = false;
+        bool   obstacle_detect = false;
 
         rplidar_response_measurement_node_t nodes[360*2];
         size_t   count = _countof(nodes);
@@ -362,31 +368,42 @@ int main(int argc, const char * argv[]) {
 
             for (int pos = 0; pos < (int)count ; ++pos) {
                 double my_theta = ((nodes[pos].angle_q6_checkbit >> RPLIDAR_RESP_MEASUREMENT_ANGLE_SHIFT)/64.0f)*(2.0f*M_PI/360.0f) + theta_correction;
-                my_theta = -my_theta; /* FIXME : TODO : explication? (WTF?!) */
+                //my_theta = -my_theta; /* FIXME : TODO : explication? (WTF?!) */
                 double my_R = nodes[pos].distance_q2/4.0f;
+
                 if ((my_R < 1.0f) || (my_R > 3000.0f)) my_R = 0.0f;
 
                 my_x[pos] = my_R * cos (my_theta);
                 my_y[pos] = my_R * sin (my_theta);
 
+                g_odo_theta_rad = g_odo_theta_deg*M_PI/180.0;
+
                 /* minimalist obstacle detection */ 
                 if ((my_x[pos]>   50.0) && (my_x[pos]<  300.0) && 
                     (my_y[pos]> -140.0) && (my_y[pos]<  140.0)) {
                     //printf("GOLDO my_theta:%f my_R:%f my_x[pos]:%f my_y[pos]:%f\n", my_theta, my_R, my_x[pos], my_y[pos]);
-                    //obstacle_detect = true;
+                    double my_abs_x = my_R * cos (my_theta + g_odo_theta_rad) + g_odo_x_mm;
+                    double my_abs_y = my_R * sin (my_theta + g_odo_theta_rad) + g_odo_y_mm;
+
+                    if ((my_abs_x >   100.0) && (my_abs_x < 1400.0) && 
+                        (my_abs_y > -1400.0) && (my_abs_y < 1400.0)) {
+                        obstacle_detect = true;
+                    } else {
+                        obstacle_detect = false;
+                    }
                 } else {
-                    //obstacle_detect = false;
+                    obstacle_detect = false;
                 }
 
             }
 
             send_to_viewer();
 
-#if 0 /* FIXME : DEBUG : HACK GOLDO : minimalist obstacle detection */ 
+#if 1 /* FIXME : DEBUG : HACK GOLDO : minimalist obstacle detection */ 
             {
                 int goldo_detect_fd;
                 char write_buf[8];
-                goldo_detect_fd = open ("/sys/class/gpio/gpio4/value", O_RDWR);
+                goldo_detect_fd = open ("/sys/class/gpio/gpio21/value", O_RDWR);
                 if (goldo_detect_fd<0) {
                     printf ("error opening gpio\n");
                     goto stop_device;
@@ -410,8 +427,8 @@ int main(int argc, const char * argv[]) {
             /* FIXME : TODO : section critique! */
             volatile unsigned int my_odo_thread_time_ms = g_odo_thread_time_ms;
             volatile unsigned int my_odo_time_ms = g_odo_time_ms;
-            volatile unsigned int my_odo_x_mm = g_odo_x_mm;
-            volatile unsigned int my_odo_y_mm = g_odo_y_mm;
+            volatile int          my_odo_x_mm = g_odo_x_mm;
+            volatile int          my_odo_y_mm = g_odo_y_mm;
             volatile double       my_odo_theta_deg = g_odo_theta_deg;
 
             clock_gettime(1, &my_tp);
@@ -468,7 +485,7 @@ int main(int argc, const char * argv[]) {
         }
     }
 
-//stop_device:
+stop_device:
     drv->stop();
     drv->stopMotor();
     // done!

@@ -7,11 +7,11 @@
 
 float my_x[360];
 float my_y[360];
-char send_buf[360*4*2];
+char send_buf[2*4 + 4*4 + 4 + 720*2*4 + 4];
 
 typedef struct _my_point_t {
-  float x;
-  float y;
+  int x;
+  int y;
 } my_point_t;
 
 int main(int argc, char *argv[])
@@ -34,10 +34,10 @@ int main(int argc, char *argv[])
   int my_sock = socket (AF_INET, SOCK_DGRAM, 0);
 
   viewer_saddr.sin_family= AF_INET;
-  viewer_saddr.sin_port= htons(1412);
+  viewer_saddr.sin_port= htons(1413);
   viewer_saddr.sin_addr.s_addr= htonl((ab3<<24)|(ab2<<16)|(ab1<<8)|(ab0));
 
-  my_p = (my_point_t *)((void *)(&send_buf[0]));
+  my_p = (my_point_t *)((void *)(&send_buf[2*4 + 4*4 + 4]));
 
   double my_R = 0.2 + 90*0.016;;
   for (int i=0; i<360; i++) {

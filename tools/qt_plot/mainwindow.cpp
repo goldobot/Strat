@@ -1450,7 +1450,7 @@ void MainWindow::setupGoldoDemo(QCustomPlot *customPlot)
   connect(&dataTimer, SIGNAL(timeout()), this, SLOT(realtimeGoldoSlot()));
   dataTimer.start(50); // Interval 0 means to refresh as fast as possible
 
-  if (!my_sock.bind(1412)) {
+  if (!my_sock.bind(1413)) {
     printf ("my_sock.bind() error\n");
   }
 }
@@ -1466,13 +1466,15 @@ void MainWindow::realtimeGoldoSlot()
   //if (key-lastPointKey > 0.02) // at most add point every 20 ms
   if (key-lastPointKey > 0.02) // at most add point every 100 ms
   {
-    int result = my_sock.readDatagram((char *)(void *)(&recv_buf[0]), 360*4*2);
+    int result = my_sock.readDatagram((char *)(void *)(&recv_buf[0]), 2*4 + 4*4 + 4 + 720*2*4 + 4);
     if (result > 0) {
-      //printf ("read %d bytes\n", result);
+      printf ("read %d bytes\n", result);
     }
-    if (result != 360*4*2) {
+    if (result != (2*4 + 4*4 + 4 + 720*2*4 + 4)) {
       return;
     }
+
+    recv_point = (my_point_t *) ((char*) &recv_buf[2*4 + 4*4 + 4]);
 
     for (int i=0; i<360; i++) {
 #if 0
@@ -1481,8 +1483,8 @@ void MainWindow::realtimeGoldoSlot()
       my_x[i] = my_x_new;
       my_y[i] = my_y_new;
 #else
-      my_x[i] = recv_buf[i].x;
-      my_y[i] = recv_buf[i].y;
+      my_x[i] = recv_point[i].x;
+      my_y[i] = recv_point[i].y;
 #endif
       x[i] = my_x[i];
       y[i] = my_y[i];

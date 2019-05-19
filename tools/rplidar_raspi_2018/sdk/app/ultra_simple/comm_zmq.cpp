@@ -4,13 +4,25 @@
 #include <termios.h>
 #include <unistd.h>
 #include <zmq.h>
-
+#include <math.h>
 #include <pthread.h>
 
 #include "comm_serializer.hpp"
 
 
 extern bool slave1_stop;
+
+
+#if 1 /* FIXME : DEBUG */
+float adv_x_m[3];
+float adv_y_m[3];
+
+float R_adv_m = 0.2;
+double theta_adv_rad[3];
+
+#endif
+
+
 
 int comm_zmq_main(int port_nb)
 {
@@ -22,6 +34,20 @@ int comm_zmq_main(int port_nb)
     void* pull_socket;
     int rc;
     char char_buff[64];
+
+#if 1 /* FIXME : DEBUG */
+    theta_adv_rad[0] = 0.0;
+    adv_x_m[0] = 1.0 + R_adv_m*cos(theta_adv_rad[0]);
+    adv_y_m[0] =-1.2 + R_adv_m*sin(theta_adv_rad[0]);
+
+    theta_adv_rad[1] = 0.0;
+    adv_x_m[1] = 0.4 + R_adv_m*cos(theta_adv_rad[1]);
+    adv_y_m[1] = 1.0 + R_adv_m*sin(theta_adv_rad[1]);
+
+    theta_adv_rad[2] = 0.0;
+    adv_x_m[2] = 1.0 + R_adv_m*cos(theta_adv_rad[2]);
+    adv_y_m[2] = 1.0 + R_adv_m*sin(theta_adv_rad[2]);
+#endif
 
     zmq_context = zmq_init(1);
 
@@ -56,6 +82,35 @@ int comm_zmq_main(int port_nb)
         curr_time_ms = curr_tp.tv_sec*1000 + curr_tp.tv_nsec/1000000;
 
         if (curr_time_ms > (old_time_ms + 100)) {
+            unsigned short my_message_type;
+            short my_message[9];
+#if 1 /* FIXME : DEBUG */
+            theta_adv_rad[0] += M_PI/100.0;
+            adv_x_m[0] = 1.0 + R_adv_m*cos(theta_adv_rad[0]);
+            adv_y_m[0] =-1.2 + R_adv_m*sin(theta_adv_rad[0]);
+            my_message[0] = 0;
+            my_message[1] = 4*adv_x_m[0];
+            my_message[2] = 4*adv_y_m[0];
+
+            theta_adv_rad[1] += 2.0*M_PI/100.0;
+            adv_x_m[1] = 0.4 + R_adv_m*cos(theta_adv_rad[1]);
+            adv_y_m[1] = 1.0 + R_adv_m*sin(theta_adv_rad[1]);
+            my_message[3] = 0;
+            my_message[4] = 4*adv_x_m[1];
+            my_message[5] = 4*adv_y_m[1];
+
+            theta_adv_rad[2] += 4.0*M_PI/100.0;
+            adv_x_m[2] = 1.0 + R_adv_m*cos(theta_adv_rad[2]);
+            adv_y_m[2] = 1.0 + R_adv_m*sin(theta_adv_rad[2]);
+            my_message[6] = 0;
+            my_message[7] = 4*adv_x_m[1];
+            my_message[8] = 4*adv_y_m[1];
+
+            my_message_type = 400; /* FIXME : TODO : use mesage_types.hpp */
+            zmq_send(pub_socket, (const char*)(&my_message_type), 2, ZMQ_SNDMORE);
+            zmq_send(pub_socket, (const char*)(my_message), 18, 0);
+#endif
+
             /* FIXME : TODO : send adversary coordinates */
             //zmq_send(pub_socket, (const char*)(&my_message_type), 2, ZMQ_SNDMORE);
             //zmq_send(pub_socket, (const char*)(tmp_buffer), my_message_size, 0);

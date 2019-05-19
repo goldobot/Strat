@@ -389,10 +389,10 @@ int main(int argc, const char * argv[]) {
                         (my_abs_y > -1400.0) && (my_abs_y < 1400.0)) {
                         obstacle_detect = true;
                     } else {
-                        obstacle_detect = false;
+                        //obstacle_detect = false; /* FIXME : TODO : remove */
                     }
                 } else {
-                    obstacle_detect = false;
+                    //obstacle_detect = false; /* FIXME : TODO : remove */
                 }
 
             }
@@ -523,25 +523,24 @@ bool g_slave0_running(void)
 }
 
 
-extern int comm_uart_main(const char *uart_dev_name);
+extern int comm_zmq_main(int port_nb);
 
 void *g_slave1_proc(void*)
 {
-    const char * stlink_dev_path = NULL;
+    const char * rplidar_serv_port_str = NULL;
+    int rplidar_serv_port = 3101;
 
     printf ("g_slave1_proc()..\n");
 
     slave1_flag_running = true;
 
-    if (((stlink_dev_path = getenv("STLINK_DEV"))!=NULL) && 
-        (stlink_dev_path[0]!='\0')) {
-        printf("INFO: using STlink device : %s\n", stlink_dev_path);
-    } else {
-        stlink_dev_path = "/dev/ttyACM0";
+    if (((rplidar_serv_port_str = getenv("RPLIDAR_SERV_PORT"))!=NULL) && 
+        (rplidar_serv_port_str[0]!='\0')) {
+        rplidar_serv_port = atoi(rplidar_serv_port_str);
     }
+    printf("INFO: launching ZMQ publisher on port : %d\n", rplidar_serv_port);
 
-    /* FIXME : TODO : Thomas, a toi de jouer!.. */
-    comm_uart_main(stlink_dev_path);
+    comm_zmq_main(rplidar_serv_port);
 
     slave1_flag_running = false;
 

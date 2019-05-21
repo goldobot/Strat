@@ -13,6 +13,19 @@
 extern bool slave1_stop;
 
 
+#if 1 /* FIXME : TODO : create RobotDetection class and define RobotDetectionMsg struct */
+typedef struct _RobotDetectionMsg {
+    unsigned int timestamp_ms;
+    unsigned int id;
+    short int x_mm_X4;
+    short int y_mm_X4;
+    short int vx_mm_sec;
+    short int vy_mm_sec;
+    short int ax_mm_sec_2;
+    short int ay_mm_sec_2;
+} RobotDetectionMsg;
+#endif
+
 #if 1 /* FIXME : DEBUG */
 float adv_x_m[3];
 float adv_y_m[3];
@@ -75,7 +88,7 @@ int comm_zmq_main(int port_nb)
 
     while(!slave1_stop)
     {
-        zmq_poll (poll_items, 1, -1);
+        zmq_poll (poll_items, 1, 100);
 
         clock_gettime(1, &curr_tp);
 
@@ -83,32 +96,67 @@ int comm_zmq_main(int port_nb)
 
         if (curr_time_ms > (old_time_ms + 100)) {
             unsigned short my_message_type;
-            short my_message[9];
+            RobotDetectionMsg my_message;
+
 #if 1 /* FIXME : DEBUG */
+            my_message_type = 1280; /* FIXME : TODO : use mesage_types.hpp */
+
+            double tmp_double;
+
             theta_adv_rad[0] += M_PI/100.0;
             adv_x_m[0] = 1.0 + R_adv_m*cos(theta_adv_rad[0]);
-            adv_y_m[0] =-1.2 + R_adv_m*sin(theta_adv_rad[0]);
-            my_message[0] = 0;
-            my_message[1] = 4*adv_x_m[0];
-            my_message[2] = 4*adv_y_m[0];
+            adv_y_m[0] =-0.8 + R_adv_m*sin(theta_adv_rad[0]);
 
-            theta_adv_rad[1] += 2.0*M_PI/100.0;
-            adv_x_m[1] = 0.4 + R_adv_m*cos(theta_adv_rad[1]);
-            adv_y_m[1] = 1.0 + R_adv_m*sin(theta_adv_rad[1]);
-            my_message[3] = 0;
-            my_message[4] = 4*adv_x_m[1];
-            my_message[5] = 4*adv_y_m[1];
+            my_message.timestamp_ms = curr_time_ms;
+            my_message.id = 0;
+            tmp_double = 4000.0*adv_x_m[0];
+            my_message.x_mm_X4 = tmp_double;
+            tmp_double = 4000.0*adv_y_m[0];
+            my_message.y_mm_X4 = tmp_double;
+            my_message.vx_mm_sec = 0;
+            my_message.vy_mm_sec = 0;
+            my_message.ax_mm_sec_2 = 0;
+            my_message.ay_mm_sec_2 = 0;
 
-            theta_adv_rad[2] += 4.0*M_PI/100.0;
-            adv_x_m[2] = 1.0 + R_adv_m*cos(theta_adv_rad[2]);
-            adv_y_m[2] = 1.0 + R_adv_m*sin(theta_adv_rad[2]);
-            my_message[6] = 0;
-            my_message[7] = 4*adv_x_m[1];
-            my_message[8] = 4*adv_y_m[1];
-
-            my_message_type = 400; /* FIXME : TODO : use mesage_types.hpp */
             zmq_send(pub_socket, (const char*)(&my_message_type), 2, ZMQ_SNDMORE);
-            zmq_send(pub_socket, (const char*)(my_message), 18, 0);
+            zmq_send(pub_socket, (const char*)(&my_message), sizeof(my_message), 0);
+
+            theta_adv_rad[1] += 8.0*M_PI/100.0;
+            adv_x_m[1] = 0.4 + R_adv_m*cos(theta_adv_rad[1]);
+            adv_y_m[1] = 0.8 + R_adv_m*sin(theta_adv_rad[1]);
+
+            my_message.timestamp_ms = curr_time_ms;
+            my_message.id = 1;
+            tmp_double = 4000.0*adv_x_m[1];
+            my_message.x_mm_X4 = tmp_double;
+            tmp_double = 4000.0*adv_y_m[1];
+            my_message.y_mm_X4 = tmp_double;
+            my_message.vx_mm_sec = 0;
+            my_message.vy_mm_sec = 0;
+            my_message.ax_mm_sec_2 = 0;
+            my_message.ay_mm_sec_2 = 0;
+
+            zmq_send(pub_socket, (const char*)(&my_message_type), 2, ZMQ_SNDMORE);
+            zmq_send(pub_socket, (const char*)(&my_message), sizeof(my_message), 0);
+
+            theta_adv_rad[2] += 16.0*M_PI/100.0;
+            adv_x_m[2] = 1.0 + R_adv_m*cos(theta_adv_rad[2]);
+            adv_y_m[2] = 0.8 + R_adv_m*sin(theta_adv_rad[2]);
+
+            my_message.timestamp_ms = curr_time_ms;
+            my_message.id = 2;
+            tmp_double = 4000.0*adv_x_m[2];
+            my_message.x_mm_X4 = tmp_double;
+            tmp_double = 4000.0*adv_y_m[2];
+            my_message.y_mm_X4 = tmp_double;
+            my_message.vx_mm_sec = 0;
+            my_message.vy_mm_sec = 0;
+            my_message.ax_mm_sec_2 = 0;
+            my_message.ay_mm_sec_2 = 0;
+
+            zmq_send(pub_socket, (const char*)(&my_message_type), 2, ZMQ_SNDMORE);
+            zmq_send(pub_socket, (const char*)(&my_message), sizeof(my_message), 0);
+
 #endif
 
             /* FIXME : TODO : send adversary coordinates */
@@ -117,7 +165,7 @@ int comm_zmq_main(int port_nb)
             old_time_ms = curr_time_ms;
         }
 
-        if(poll_items[1].revents && ZMQ_POLLIN)
+        if(poll_items[0].revents && ZMQ_POLLIN)
         {            
             unsigned char buff[1024];
             size_t bytes_read = 0;

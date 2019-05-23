@@ -40,6 +40,12 @@
 
 #include "rplidar.h" //RPLIDAR standard sdk, all-in-one header
 
+#include "comm_zmq.hpp"
+
+#include "robot_detect.hpp"
+
+using namespace goldobot;
+
 #ifndef _countof
 #define _countof(_Array) (int)(sizeof(_Array) / sizeof(_Array[0]))
 #endif
@@ -48,15 +54,14 @@
 pthread_t g_slave0_thread;
 void *g_slave0_proc(void*);
 bool g_slave0_running(void);
+bool slave0_stop = false;
 
 pthread_t g_slave1_thread;
 void *g_slave1_proc(void*);
-bool g_slave1_running(void);
 
-bool slave0_stop = false;
+pthread_t g_slave2_thread;
+void *g_slave2_proc(void*);
 
-bool slave1_flag_running = false;
-bool slave1_stop = false;
 
 extern "C" {
     extern unsigned int g_odo_thread_time_ms;
@@ -338,13 +343,19 @@ int main(int argc, const char * argv[]) {
 
     ret=pthread_create(&g_slave0_thread, NULL, &g_slave0_proc, NULL);
     if(ret!=0) {
-        printf("Unable to create slave0 thread 1\n");
+        printf("Unable to create slave0 thread\n");
         exit(-3);
     }
 
     ret=pthread_create(&g_slave1_thread, NULL, &g_slave1_proc, NULL);
     if(ret!=0) {
-        printf("Unable to create slave1 thread 1\n");
+        printf("Unable to create slave1 thread\n");
+        exit(-3);
+    }
+
+    ret=pthread_create(&g_slave2_thread, NULL, &g_slave2_proc, NULL);
+    if(ret!=0) {
+        printf("Unable to create slave2 thread\n");
         exit(-3);
     }
 
@@ -403,6 +414,7 @@ int main(int argc, const char * argv[]) {
             {
                 int goldo_detect_fd;
                 char write_buf[8];
+                int res;
                 goldo_detect_fd = open ("/sys/class/gpio/gpio21/value", O_RDWR);
                 if (goldo_detect_fd<0) {
                     printf ("error opening gpio\n");
@@ -413,7 +425,10 @@ int main(int argc, const char * argv[]) {
                 else 
                     write_buf[0] = '0';
                 write_buf[1] = '\0';
-                write (goldo_detect_fd,write_buf,1);
+                res = write (goldo_detect_fd,write_buf,1);
+                if (res<0) {
+                    printf ("error writting gpio value\n");
+                }
                 close (goldo_detect_fd);
             }
 #endif
@@ -479,7 +494,9 @@ int main(int argc, const char * argv[]) {
 
         if (ctrl_c_pressed || (!g_slave0_running())) { 
             slave0_stop = true;
-            slave1_stop = true;
+
+            CommZmq::instance().stopTask();
+
             printf ("Bye!\n");
             break;
         }
@@ -500,7 +517,6 @@ extern "C" {
     extern void read_odo_main(void);
 }
 
-
 void *g_slave0_proc(void*)
 {
     printf ("g_slave0_proc()..\n");
@@ -516,23 +532,19 @@ void *g_slave0_proc(void*)
     return NULL;
 }
 
-
 bool g_slave0_running(void)
 {
     return (read_odo_flag_running!=0);
 }
 
 
-extern int comm_zmq_main(int port_nb);
-
 void *g_slave1_proc(void*)
 {
     const char * rplidar_serv_port_str = NULL;
     int rplidar_serv_port = 3101;
+    int rc;
 
     printf ("g_slave1_proc()..\n");
-
-    slave1_flag_running = true;
 
     if (((rplidar_serv_port_str = getenv("RPLIDAR_SERV_PORT"))!=NULL) && 
         (rplidar_serv_port_str[0]!='\0')) {
@@ -540,17 +552,30 @@ void *g_slave1_proc(void*)
     }
     printf("INFO: launching ZMQ publisher on port : %d\n", rplidar_serv_port);
 
-    comm_zmq_main(rplidar_serv_port);
+    rc = CommZmq::instance().init(rplidar_serv_port);
+    if (rc<0) {
+        printf("ERROR: CommZmq::instance().init() failed\n");
+        return NULL;
+    }
 
-    slave1_flag_running = false;
+    CommZmq::instance().taskFunction();
 
     return NULL;
 }
 
 
-bool g_slave1_running(void)
+void *g_slave2_proc(void*)
 {
-    return slave1_flag_running;
+    printf ("g_slave2_proc()..\n");
+
+    while (!CommZmq::instance().taskRunning()) {
+        pthread_yield();
+    }
+
+    RobotDetect::instance().taskFunctionFunny();
+
+    return NULL;
 }
+
 
 

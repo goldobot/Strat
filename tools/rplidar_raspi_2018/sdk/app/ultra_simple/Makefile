@@ -24,7 +24,7 @@ include $(HOME_TREE)/mak_def.inc
 
 CSRC += read_odo_thread.c
 
-CXXSRC += main.cpp comm_zmq.cpp comm_serializer.cpp
+CXXSRC += main.cpp comm_zmq.cpp robot_detect.cpp
 C_INCLUDES += -I$(CURDIR)/../../sdk/include
 
 EXTRA_OBJ := 

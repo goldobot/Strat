@@ -186,6 +186,8 @@ void RobotDetect::clearSlots()
 
 void RobotDetect::processNewRplidarSample(unsigned int ts_ms, double x_mm, double y_mm)
 {
+    //printf ("  new(%f,%f)\n", x_mm, y_mm);
+
     for (int i=0; i<MAX_NB_OF_DETECTION_SLOTS; i++)
     {
         if (m_detect_slot[i].nb_rplidar_samples == 0)

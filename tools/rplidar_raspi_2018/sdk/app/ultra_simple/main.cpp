@@ -372,6 +372,8 @@ int main(int argc, const char * argv[]) {
             my_y[pos] = 0.0;
         }
 
+        RobotDetect::instance().clearSlots();
+
         op_result = drv->grabScanData(nodes, count);
 
         if (IS_OK(op_result)) {
@@ -389,12 +391,13 @@ int main(int argc, const char * argv[]) {
 
                 g_odo_theta_rad = g_odo_theta_deg*M_PI/180.0;
 
+                double my_abs_x = my_R * cos (my_theta + g_odo_theta_rad) + g_odo_x_mm;
+                double my_abs_y = my_R * sin (my_theta + g_odo_theta_rad) + g_odo_y_mm;
+
                 /* minimalist obstacle detection */ 
                 if ((my_x[pos]>   50.0) && (my_x[pos]<  300.0) && 
                     (my_y[pos]> -140.0) && (my_y[pos]<  140.0)) {
                     //printf("GOLDO my_theta:%f my_R:%f my_x[pos]:%f my_y[pos]:%f\n", my_theta, my_R, my_x[pos], my_y[pos]);
-                    double my_abs_x = my_R * cos (my_theta + g_odo_theta_rad) + g_odo_x_mm;
-                    double my_abs_y = my_R * sin (my_theta + g_odo_theta_rad) + g_odo_y_mm;
 
                     if ((my_abs_x >   100.0) && (my_abs_x < 1400.0) && 
                         (my_abs_y > -1400.0) && (my_abs_y < 1400.0)) {
@@ -406,7 +409,15 @@ int main(int argc, const char * argv[]) {
                     //obstacle_detect = false; /* FIXME : TODO : remove */
                 }
 
+                if ((my_abs_x >   100.0) && (my_abs_x < 1600.0) && 
+                    (my_abs_y > -1400.0) && (my_abs_y < 1400.0)) {
+                    RobotDetect::instance().processNewRplidarSample(g_main_thread_time_ms_old, my_abs_x, my_abs_y);
+                }
             }
+
+            RobotDetect::instance().updateDetection();
+
+            RobotDetect::instance().sendDetected();
 
             send_to_viewer();
 
@@ -568,11 +579,19 @@ void *g_slave2_proc(void*)
 {
     printf ("g_slave2_proc()..\n");
 
+    RobotDetect::instance().init();
+
     while (!CommZmq::instance().taskRunning()) {
         pthread_yield();
     }
 
+#if 0 /* FIXME : DEBUG */
     RobotDetect::instance().taskFunctionFunny();
+#else
+    while (CommZmq::instance().taskRunning()) {
+        pthread_yield();
+    }
+#endif
 
     return NULL;
 }

@@ -29,11 +29,13 @@ RobotDetect::RobotDetect()
     m_stop_task = false;
     m_task_running = false;
 
-    /* FIXME : TODO */
+    m_cur_ts_ms = 0;
 }
 
 int RobotDetect::init()
 {
+    m_cur_ts_ms = 0;
+
     for (int i=0; i<MAX_NB_OF_DETECTED_ROBOTS; i++)
     {
         m_detect_t_0[i].nb_rplidar_samples = 0;
@@ -190,6 +192,7 @@ void RobotDetect::clearSlots()
 void RobotDetect::processNewRplidarSample(unsigned int ts_ms, double x_mm, double y_mm)
 {
     //printf ("  new(%f,%f)\n", x_mm, y_mm);
+    m_cur_ts_ms = ts_ms;
 
     for (int i=0; i<MAX_NB_OF_DETECTION_SLOTS; i++)
     {
@@ -217,22 +220,153 @@ void RobotDetect::processNewRplidarSample(unsigned int ts_ms, double x_mm, doubl
 
 void RobotDetect::updateDetection()
 {
-    int max_samples=0;
-    int max_pos=0;
+    int best_samples=0;
+    int best_pos=0;
+    int second_samples=0;
+    int second_pos=0;
+    int third_samples=0;
+    int third_pos=0;
 
     for (int i=0; i<MAX_NB_OF_DETECTION_SLOTS; i++)
     {
-        if (m_detect_slot[i].nb_rplidar_samples > max_samples)
+        if (m_detect_slot[i].nb_rplidar_samples > best_samples)
         {
-            max_samples = m_detect_slot[i].nb_rplidar_samples;
-            max_pos=i;
+            third_samples = second_samples;
+            third_pos = second_pos;
+
+            second_samples = best_samples;
+            second_pos = best_pos;
+
+            best_samples = m_detect_slot[i].nb_rplidar_samples;
+            best_pos = i;
+        }
+        else if (m_detect_slot[i].nb_rplidar_samples > second_samples)
+        {
+            third_samples = second_samples;
+            third_pos = second_pos;
+
+            second_samples = m_detect_slot[i].nb_rplidar_samples;
+            second_pos = i;
+        }
+        else if (m_detect_slot[i].nb_rplidar_samples > third_samples)
+        {
+            third_samples = m_detect_slot[i].nb_rplidar_samples;
+            third_pos = i;
         }
     }
 
-    m_detect_t_0[1].nb_rplidar_samples = m_detect_slot[max_pos].nb_rplidar_samples;
-    m_detect_t_0[1].timestamp_ms       = m_detect_slot[max_pos].timestamp_ms;
-    m_detect_t_0[1].x_mm               = m_detect_slot[max_pos].x_mm;
-    m_detect_t_0[1].y_mm               = m_detect_slot[max_pos].y_mm;
+    m_detect_candidate[0].nb_rplidar_samples = m_detect_slot[best_pos].nb_rplidar_samples;
+    m_detect_candidate[0].timestamp_ms       = m_detect_slot[best_pos].timestamp_ms;
+    m_detect_candidate[0].id                 = 0xffffffff;
+    m_detect_candidate[0].x_mm               = m_detect_slot[best_pos].x_mm;
+    m_detect_candidate[0].y_mm               = m_detect_slot[best_pos].y_mm;
+
+    m_detect_candidate[1].nb_rplidar_samples = m_detect_slot[second_pos].nb_rplidar_samples;
+    m_detect_candidate[1].timestamp_ms       = m_detect_slot[second_pos].timestamp_ms;
+    m_detect_candidate[1].id                 = 0xffffffff;
+    m_detect_candidate[1].x_mm               = m_detect_slot[second_pos].x_mm;
+    m_detect_candidate[1].y_mm               = m_detect_slot[second_pos].y_mm;
+
+    m_detect_candidate[2].nb_rplidar_samples = m_detect_slot[third_pos].nb_rplidar_samples;
+    m_detect_candidate[2].timestamp_ms       = m_detect_slot[third_pos].timestamp_ms;
+    m_detect_candidate[2].id                 = 0xffffffff;
+    m_detect_candidate[2].x_mm               = m_detect_slot[third_pos].x_mm;
+    m_detect_candidate[2].y_mm               = m_detect_slot[third_pos].y_mm;
+
+#ifdef MULTITRACKING
+    for (int i=0; i<MAX_NB_OF_DETECTED_ROBOTS; i++)
+    {
+        m_detect_t_2[i].nb_rplidar_samples = m_detect_t_1[i].nb_rplidar_samples;
+        m_detect_t_2[i].timestamp_ms       = m_detect_t_1[i].timestamp_ms;
+        m_detect_t_2[i].id                 = m_detect_t_1[i].id;
+        m_detect_t_2[i].x_mm               = m_detect_t_1[i].x_mm;
+        m_detect_t_2[i].y_mm               = m_detect_t_2[i].y_mm;
+        m_detect_t_2[i].vx_mm_sec          = m_detect_t_2[i].vx_mm_sec;
+        m_detect_t_2[i].vy_mm_sec          = m_detect_t_2[i].vy_mm_sec;
+        m_detect_t_2[i].ax_mm_sec_2        = m_detect_t_2[i].ax_mm_sec_2;
+        m_detect_t_2[i].ay_mm_sec_2        = m_detect_t_2[i].ay_mm_sec_2;
+
+        m_detect_t_1[i].nb_rplidar_samples = m_detect_t_0[i].nb_rplidar_samples;
+        m_detect_t_1[i].timestamp_ms       = m_detect_t_0[i].timestamp_ms;
+        m_detect_t_1[i].id                 = m_detect_t_0[i].id;
+        m_detect_t_1[i].x_mm               = m_detect_t_0[i].x_mm;
+        m_detect_t_1[i].y_mm               = m_detect_t_0[i].y_mm;
+        m_detect_t_1[i].vx_mm_sec          = m_detect_t_0[i].vx_mm_sec;
+        m_detect_t_1[i].vy_mm_sec          = m_detect_t_0[i].vy_mm_sec;
+        m_detect_t_1[i].ax_mm_sec_2        = m_detect_t_0[i].ax_mm_sec_2;
+        m_detect_t_1[i].ay_mm_sec_2        = m_detect_t_0[i].ay_mm_sec_2;
+    }
+
+    for (int i=0; i<MAX_NB_OF_DETECTED_ROBOTS; i++)
+    {
+        m_detect_t_0[i].id                 = 0xffffffff;
+        if ((m_detect_t_0[i].nb_rplidar_samples>0))
+        {
+            for (int j=0; j<MAX_NB_OF_DETECTED_ROBOTS; j++)
+            {
+                if ((m_detect_candidate[j].nb_rplidar_samples>0) && dist(m_detect_t_0[i],m_detect_candidate[j])<100.0)
+                {
+                    m_detect_t_0[i].nb_rplidar_samples = m_detect_candidate[j].nb_rplidar_samples;
+                    m_detect_t_0[i].timestamp_ms       = m_detect_candidate[j].timestamp_ms;
+                    m_detect_t_0[i].id                 = i;
+                    m_detect_t_0[i].x_mm               = m_detect_candidate[j].x_mm;
+                    m_detect_t_0[i].y_mm               = m_detect_candidate[j].y_mm;
+
+                    m_detect_candidate[j].id           = i;
+                }
+            }
+        }
+        else
+        {
+            for (int j=0; j<MAX_NB_OF_DETECTED_ROBOTS; j++)
+            {
+                if ((m_detect_candidate[j].nb_rplidar_samples>0) && (m_detect_candidate[j].id==0xffffffff))
+                {
+                    m_detect_t_0[i].nb_rplidar_samples = m_detect_candidate[j].nb_rplidar_samples;
+                    m_detect_t_0[i].timestamp_ms       = m_detect_candidate[j].timestamp_ms;
+                    m_detect_t_0[i].id                 = i;
+                    m_detect_t_0[i].x_mm               = m_detect_candidate[j].x_mm;
+                    m_detect_t_0[i].y_mm               = m_detect_candidate[j].y_mm;
+
+                    m_detect_candidate[j].id           = i;
+                }
+            }
+        }
+    }
+
+    for (int i=0; i<MAX_NB_OF_DETECTED_ROBOTS; i++)
+    {
+        double dt_sec = (m_detect_t_0[i].timestamp_ms - m_detect_t_1[i].timestamp_ms)/1000.0;
+
+        m_detect_t_0[i].id                 = i;
+        m_detect_t_0[i].vx_mm_sec          = (m_detect_t_0[i].x_mm - m_detect_t_1[i].x_mm)/dt_sec;
+        m_detect_t_0[i].vy_mm_sec          = (m_detect_t_0[i].y_mm - m_detect_t_1[i].y_mm)/dt_sec;
+        m_detect_t_0[i].ax_mm_sec_2        = (m_detect_t_0[i].vx_mm_sec - m_detect_t_1[i].vx_mm_sec)/dt_sec;
+        m_detect_t_0[i].ay_mm_sec_2        = (m_detect_t_0[i].vy_mm_sec - m_detect_t_1[i].vy_mm_sec)/dt_sec;
+    }
+
+#else
+
+    m_detect_t_0[0].nb_rplidar_samples = m_detect_slot[best_pos].nb_rplidar_samples;
+    m_detect_t_0[0].timestamp_ms       = m_detect_slot[best_pos].timestamp_ms;
+    m_detect_t_0[0].id                 = 0;
+    m_detect_t_0[0].x_mm               = m_detect_slot[best_pos].x_mm;
+    m_detect_t_0[0].y_mm               = m_detect_slot[best_pos].y_mm;
+
+    m_detect_t_0[1].nb_rplidar_samples = m_detect_slot[second_pos].nb_rplidar_samples;
+    m_detect_t_0[1].timestamp_ms       = m_detect_slot[second_pos].timestamp_ms;
+    m_detect_t_0[1].id                 = 1;
+    m_detect_t_0[1].x_mm               = m_detect_slot[second_pos].x_mm;
+    m_detect_t_0[1].y_mm               = m_detect_slot[second_pos].y_mm;
+
+    m_detect_t_0[2].nb_rplidar_samples = m_detect_slot[third_pos].nb_rplidar_samples;
+    m_detect_t_0[2].timestamp_ms       = m_detect_slot[third_pos].timestamp_ms;
+    m_detect_t_0[2].id                 = 2;
+    m_detect_t_0[2].x_mm               = m_detect_slot[third_pos].x_mm;
+    m_detect_t_0[2].y_mm               = m_detect_slot[third_pos].y_mm;
+
+#endif
+
 }
 
 
@@ -243,24 +377,48 @@ void RobotDetect::sendDetected()
 
     my_message_type = 1280; /* FIXME : TODO : use mesage_types.hpp */
 
-    my_message.timestamp_ms   = m_detect_t_0[1].timestamp_ms;
-    my_message.id             = m_detect_t_0[1].id;
-    my_message.x_mm_X4        = m_detect_t_0[1].x_mm * 4.0;
-    my_message.y_mm_X4        = m_detect_t_0[1].y_mm * 4.0;
-    my_message.vx_mm_sec      = m_detect_t_0[1].vx_mm_sec;
-    my_message.vy_mm_sec      = m_detect_t_0[1].vy_mm_sec;
-    my_message.ax_mm_sec_2    = m_detect_t_0[1].ax_mm_sec_2;
-    my_message.ay_mm_sec_2    = m_detect_t_0[1].ay_mm_sec_2;
-    my_message.detect_quality = m_detect_t_0[1].nb_rplidar_samples;
+    for (int i=0; i<MAX_NB_OF_DETECTED_ROBOTS; i++)
+    {
+        if (m_detect_t_0[1].nb_rplidar_samples>0)
+        {
+            my_message.timestamp_ms   = m_detect_t_0[i].timestamp_ms;
+            my_message.id             = m_detect_t_0[i].id;
+            my_message.x_mm_X4        = m_detect_t_0[i].x_mm * 4.0;
+            my_message.y_mm_X4        = m_detect_t_0[i].y_mm * 4.0;
+            my_message.vx_mm_sec      = m_detect_t_0[i].vx_mm_sec;
+            my_message.vy_mm_sec      = m_detect_t_0[i].vy_mm_sec;
+            my_message.ax_mm_sec_2    = m_detect_t_0[i].ax_mm_sec_2;
+            my_message.ay_mm_sec_2    = m_detect_t_0[i].ay_mm_sec_2;
+            my_message.detect_quality = m_detect_t_0[i].nb_rplidar_samples;
+        }
+        else
+        {
+            my_message.timestamp_ms   = 0;
+            my_message.id             = i;
+            my_message.x_mm_X4        = -4000;
+            my_message.y_mm_X4        = 0;
+            my_message.vx_mm_sec      = 0;
+            my_message.vy_mm_sec      = 0;
+            my_message.ax_mm_sec_2    = 0;
+            my_message.ay_mm_sec_2    = 0;
+            my_message.detect_quality = 0;
+        }
 
-    CommZmq::instance().send((const char*)(&my_message_type), 2, ZMQ_SNDMORE);
-    CommZmq::instance().send((const char*)(&my_message), sizeof(my_message), 0);
+        CommZmq::instance().send((const char*)(&my_message_type), 2, ZMQ_SNDMORE);
+        CommZmq::instance().send((const char*)(&my_message), sizeof(my_message), 0);
+    }
 }
 
 
 double RobotDetect::dist(double x0, double y0, double x1, double y1)
 {
     return sqrt((x0-x1)*(x0-x1) + (y0-y1)*(y0-y1));
+}
+
+
+double RobotDetect::dist(DetectedRobot &R0, DetectedRobot &R1)
+{
+    return sqrt((R0.x_mm-R1.x_mm)*(R0.x_mm-R1.x_mm) + (R0.y_mm-R1.y_mm)*(R0.y_mm-R1.y_mm));
 }
 
 

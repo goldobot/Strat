@@ -69,14 +69,19 @@ namespace goldobot
     private:
         bool m_stop_task = false;
         bool m_task_running = false;
+        unsigned int m_cur_ts_ms = 0;
 
         CurrentDetectionSlot m_detect_slot[MAX_NB_OF_DETECTION_SLOTS];
+
+        DetectedRobot m_detect_candidate[MAX_NB_OF_DETECTED_ROBOTS];
 
         DetectedRobot m_detect_t_0[MAX_NB_OF_DETECTED_ROBOTS]; /* detectes pendant le scan courant(t0) */
         DetectedRobot m_detect_t_1[MAX_NB_OF_DETECTED_ROBOTS]; /* detectes a t0-1*dt */
         DetectedRobot m_detect_t_2[MAX_NB_OF_DETECTED_ROBOTS]; /* detectes a t0-2*dt */
 
         static double dist(double x0, double y0, double x1, double y1);
+
+        static double dist(DetectedRobot &R0, DetectedRobot &R1);
 
         static RobotDetect s_instance;
     };

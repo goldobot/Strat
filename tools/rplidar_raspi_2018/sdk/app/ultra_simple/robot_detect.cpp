@@ -122,6 +122,7 @@ void RobotDetect::taskFunctionFunny()
             my_message.vy_mm_sec = 0;
             my_message.ax_mm_sec_2 = 0;
             my_message.ay_mm_sec_2 = 0;
+            my_message.detect_quality = 100;
 
             CommZmq::instance().send((const char*)(&my_message_type), 2, ZMQ_SNDMORE);
             CommZmq::instance().send((const char*)(&my_message), sizeof(my_message), 0);
@@ -140,6 +141,7 @@ void RobotDetect::taskFunctionFunny()
             my_message.vy_mm_sec = 0;
             my_message.ax_mm_sec_2 = 0;
             my_message.ay_mm_sec_2 = 0;
+            my_message.detect_quality = 100;
 
             CommZmq::instance().send((const char*)(&my_message_type), 2, ZMQ_SNDMORE);
             CommZmq::instance().send((const char*)(&my_message), sizeof(my_message), 0);
@@ -158,6 +160,7 @@ void RobotDetect::taskFunctionFunny()
             my_message.vy_mm_sec = 0;
             my_message.ax_mm_sec_2 = 0;
             my_message.ay_mm_sec_2 = 0;
+            my_message.detect_quality = 100;
 
             CommZmq::instance().send((const char*)(&my_message_type), 2, ZMQ_SNDMORE);
             CommZmq::instance().send((const char*)(&my_message), sizeof(my_message), 0);
@@ -240,14 +243,15 @@ void RobotDetect::sendDetected()
 
     my_message_type = 1280; /* FIXME : TODO : use mesage_types.hpp */
 
-    my_message.timestamp_ms = m_detect_t_0[1].timestamp_ms;
-    my_message.id           = m_detect_t_0[1].id;
-    my_message.x_mm_X4      = m_detect_t_0[1].x_mm * 4.0;
-    my_message.y_mm_X4      = m_detect_t_0[1].y_mm * 4.0;
-    my_message.vx_mm_sec    = m_detect_t_0[1].vx_mm_sec;
-    my_message.vy_mm_sec    = m_detect_t_0[1].vy_mm_sec;
-    my_message.ax_mm_sec_2  = m_detect_t_0[1].ax_mm_sec_2;
-    my_message.ay_mm_sec_2  = m_detect_t_0[1].ay_mm_sec_2;
+    my_message.timestamp_ms   = m_detect_t_0[1].timestamp_ms;
+    my_message.id             = m_detect_t_0[1].id;
+    my_message.x_mm_X4        = m_detect_t_0[1].x_mm * 4.0;
+    my_message.y_mm_X4        = m_detect_t_0[1].y_mm * 4.0;
+    my_message.vx_mm_sec      = m_detect_t_0[1].vx_mm_sec;
+    my_message.vy_mm_sec      = m_detect_t_0[1].vy_mm_sec;
+    my_message.ax_mm_sec_2    = m_detect_t_0[1].ax_mm_sec_2;
+    my_message.ay_mm_sec_2    = m_detect_t_0[1].ay_mm_sec_2;
+    my_message.detect_quality = m_detect_t_0[1].nb_rplidar_samples;
 
     CommZmq::instance().send((const char*)(&my_message_type), 2, ZMQ_SNDMORE);
     CommZmq::instance().send((const char*)(&my_message), sizeof(my_message), 0);

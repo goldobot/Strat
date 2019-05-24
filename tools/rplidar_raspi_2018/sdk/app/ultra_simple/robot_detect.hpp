@@ -13,6 +13,7 @@ namespace goldobot
         short int vy_mm_sec;
         short int ax_mm_sec_2;
         short int ay_mm_sec_2;
+        unsigned int detect_quality;
     } RobotDetectionMsg;
 
 

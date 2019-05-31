@@ -39,6 +39,11 @@ int CommZmq::init(int port_nb)
     m_pub_socket = zmq_socket(m_zmq_context, ZMQ_PUB);
     if (m_pub_socket==NULL) return -1;
 
+    rc = zmq_connect(m_pub_socket, "tcp://localhost:3002");
+    if (rc!=0) {
+        printf ("RPLIDAR : warning cannot connect to comm_uart service\n");
+    }
+
     sprintf(char_buff, "tcp://*:%d", port_nb);
     printf("DEBUG: char_buff = %s\n", char_buff);
     rc = zmq_bind(m_pub_socket, char_buff);

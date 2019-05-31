@@ -395,8 +395,9 @@ int main(int argc, const char * argv[]) {
                 double my_abs_y = my_R * sin (my_theta + g_odo_theta_rad) + g_odo_y_mm;
 
                 /* minimalist obstacle detection */ 
-                if ((my_x[pos]>   50.0) && (my_x[pos]<  300.0) && 
-                    (my_y[pos]> -140.0) && (my_y[pos]<  140.0)) {
+                if ( (((my_x[pos]>   50.0) && (my_x[pos]<  300.0)) ||
+                      ((my_x[pos]<  -50.0) && (my_x[pos]> -300.0))) && 
+                     ((my_y[pos]> -140.0) && (my_y[pos]<  140.0))) {
                     //printf("GOLDO my_theta:%f my_R:%f my_x[pos]:%f my_y[pos]:%f\n", my_theta, my_R, my_x[pos], my_y[pos]);
 
                     if ((my_abs_x >   100.0) && (my_abs_x < 1400.0) && 

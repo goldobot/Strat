@@ -262,7 +262,7 @@ int main(int argc, const char * argv[]) {
         theta_correction = strtod(argv[2], NULL);
         theta_correction = theta_correction*M_PI/180.0f;
     } else {
-        theta_correction = 210.0f; /* PR 06/05/2018 */
+        theta_correction = 30.0f; /* PR 28/05/2019 */
         theta_correction = theta_correction*M_PI/180.0f;
     }
     printf ("theta_correction = %f\n", theta_correction*180.0f/M_PI);
@@ -282,7 +282,7 @@ int main(int argc, const char * argv[]) {
             (opt_com_path[0]!='\0')) {
             printf("INFO: using rplidar device : %s\n", opt_com_path);
         } else {
-            opt_com_path = "/dev/ttyUSB0";
+            opt_com_path = "/dev/ttyUSB1";
         }
     }
 

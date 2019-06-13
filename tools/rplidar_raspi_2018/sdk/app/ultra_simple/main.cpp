@@ -401,19 +401,30 @@ int main(int argc, const char * argv[]) {
                 double my_abs_y = my_R * sin (my_theta + g_odo_theta_rad) + g_odo_y_mm;
 
                 /* minimalist obstacle detection */ 
-                if ( (((my_x[pos]>   50.0) && (my_x[pos]<  300.0)) ||
-                      ((my_x[pos]<  -50.0) && (my_x[pos]> -300.0))) && 
-                     ((my_y[pos]> -140.0) && (my_y[pos]<  140.0))) {
+                if(
+                   (
+                    (
+                     (my_x[pos]>90.0)&& (my_x[pos]<300.0)&& (g_forward_move)
+                    ) 
+                    ||
+                    (
+                     (my_x[pos]<-90.0)&& (my_x[pos]>-300.0)&& (!g_forward_move)
+                    )
+                   ) 
+                   && 
+                   (
+                    (
+                     (my_y[pos]>-140.0) && (my_y[pos]<140.0)
+                    )
+                   )
+                  ) 
+                {
                     //printf("GOLDO my_theta:%f my_R:%f my_x[pos]:%f my_y[pos]:%f\n", my_theta, my_R, my_x[pos], my_y[pos]);
 
                     if ((my_abs_x >   100.0) && (my_abs_x < 1400.0) && 
                         (my_abs_y > -1400.0) && (my_abs_y < 1400.0)) {
                         obstacle_detect = true;
-                    } else {
-                        //obstacle_detect = false; /* FIXME : TODO : remove */
                     }
-                } else {
-                    //obstacle_detect = false; /* FIXME : TODO : remove */
                 }
 
                 if ((my_abs_x >   100.0) && (my_abs_x < 1600.0) && 
@@ -491,6 +502,10 @@ int main(int argc, const char * argv[]) {
                 g_odo_x_mm_old = my_odo_x_mm;
                 g_odo_y_mm_old = my_odo_y_mm;
                 g_odo_theta_deg_old = my_odo_theta_deg;
+
+                if (g_odo_time_ms_delta==0) g_speed_abs = 0.0;
+                else g_speed_abs = ((double)g_odo_d_mm_delta/*/1000.0*/)/(g_odo_time_ms_delta/*/1000.0*/); // result in m/sec
+                g_forward_move = ((g_odo_x_mm_delta*cos(g_odo_theta_rad) + g_odo_y_mm_delta*sin(g_odo_theta_rad)) > 0.0);
             } else {
                 g_main_thread_time_ms_old = main_thread_time_ms;
                 g_odo_thread_time_ms_old = my_odo_thread_time_ms;
@@ -506,9 +521,6 @@ int main(int argc, const char * argv[]) {
                     my_odo_time_ms, g_odo_time_ms_delta_max, 
                     my_odo_x_mm, my_odo_y_mm, g_odo_d_mm_delta_max,
                     my_odo_theta_deg, g_odo_theta_deg_delta_max);
-
-            g_speed_abs = (g_odo_d_mm_delta/*/1000.0*/)/(g_odo_time_ms_delta/*/1000.0*/); // result in m/sec
-            g_forward_move = ((g_odo_x_mm_delta*cos(g_odo_theta_rad) + g_odo_y_mm_delta*sin(g_odo_theta_rad)) > 0.0);
 
             printf ("MOVE : %s %f m/s\n", g_forward_move?"FORWARDS":"BACKWARDS", g_speed_abs);
 

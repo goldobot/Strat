@@ -71,6 +71,9 @@ extern "C" {
     extern double       g_odo_theta_deg;
 }
 
+double       g_speed_abs = 0.0;
+bool         g_forward_move = true;
+
 unsigned int g_main_thread_time_ms_old;
 unsigned int g_main_thread_time_ms_delta;
 unsigned int g_main_thread_time_ms_delta_max;
@@ -224,6 +227,9 @@ int main(int argc, const char * argv[]) {
     double theta_correction = 0.0f;
 
     ctrl_c_pressed = false;
+
+    g_speed_abs = 0.0;
+    g_forward_move = true;
 
     g_main_thread_time_ms_old = 0;
     g_main_thread_time_ms_delta = 0;
@@ -500,6 +506,11 @@ int main(int argc, const char * argv[]) {
                     my_odo_time_ms, g_odo_time_ms_delta_max, 
                     my_odo_x_mm, my_odo_y_mm, g_odo_d_mm_delta_max,
                     my_odo_theta_deg, g_odo_theta_deg_delta_max);
+
+            g_speed_abs = (g_odo_d_mm_delta/*/1000.0*/)/(g_odo_time_ms_delta/*/1000.0*/); // result in m/sec
+            g_forward_move = ((g_odo_x_mm_delta*cos(g_odo_theta_rad) + g_odo_y_mm_delta*sin(g_odo_theta_rad)) > 0.0);
+
+            printf ("MOVE : %s %f m/s\n", g_forward_move?"FORWARDS":"BACKWARDS", g_speed_abs);
 
             printf ("\n");
         }

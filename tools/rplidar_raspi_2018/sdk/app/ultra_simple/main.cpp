@@ -505,7 +505,9 @@ int main(int argc, const char * argv[]) {
 
                 if (g_odo_time_ms_delta==0) g_speed_abs = 0.0;
                 else g_speed_abs = ((double)g_odo_d_mm_delta/*/1000.0*/)/(g_odo_time_ms_delta/*/1000.0*/); // result in m/sec
-                g_forward_move = ((g_odo_x_mm_delta*cos(g_odo_theta_rad) + g_odo_y_mm_delta*sin(g_odo_theta_rad)) > 0.0);
+                if (g_speed_abs>5.0) {
+                    g_forward_move = ((g_odo_x_mm_delta*cos(g_odo_theta_rad) + g_odo_y_mm_delta*sin(g_odo_theta_rad)) > 0.0);
+                }
             } else {
                 g_main_thread_time_ms_old = main_thread_time_ms;
                 g_odo_thread_time_ms_old = my_odo_thread_time_ms;

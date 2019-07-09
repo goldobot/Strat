@@ -51,7 +51,7 @@ unsigned int    baud = 9600;
 int        translate;
 int        ocasemode, icasemode;
 
-char        *devname;
+char        devname[] = "/dev/odometry";
 char        *filename;
 int        verbose = 1;
 int        net_connection = 0;
@@ -781,19 +781,8 @@ int read_odo_main(void)
 
     ifd = 0;
     ofd = 1;
-    gotdevice = 0;
 
     baud = 115200;
-
-    if (((devname = getenv("ODOMETRY_DEV"))!=NULL) && (devname[0]!='\0')) {
-        gotdevice++;
-        printf("INFO: using odometry device : %s\n", devname);
-    }
-
-    if (gotdevice == 0) {
-        fprintf(stderr, "ERROR: no device specified\n");
-        exit_thread (-1);
-    }
 
     /*
      *    Check device is real, and open it.

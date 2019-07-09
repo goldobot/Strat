@@ -284,12 +284,7 @@ int main(int argc, const char * argv[]) {
 
 
     if (!opt_com_path) {
-        if (((opt_com_path = getenv("RPLIDAR_DEV"))!=NULL) && 
-            (opt_com_path[0]!='\0')) {
-            printf("INFO: using rplidar device : %s\n", opt_com_path);
-        } else {
-            opt_com_path = "/dev/ttyUSB1";
-        }
+        opt_com_path = "/dev/rplidar";
     }
 
     // create the driver instance

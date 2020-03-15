@@ -103,6 +103,12 @@ void CommZmq::taskFunction()
             uint16_t message_type = *(uint16_t*)((void*)buff);
             printf("DEBUG: received message_type = %d\n", message_type);
 
+            {
+                int i;
+                for (i=0; i<bytes_read; i++) printf ("%.2x ",buff[i]);
+                printf ("\n");
+            }
+
             /* FIXME : TODO : process commands */
         }
 

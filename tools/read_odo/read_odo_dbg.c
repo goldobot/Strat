@@ -13,15 +13,10 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <time.h>
-
-#define __USE_GNU
-#include <pthread.h>
 
 #ifndef EMBED
 #include <sys/select.h>
 #endif
-
 
 /*****************************************************************************/
 
@@ -56,8 +51,8 @@ char        *filename;
 int        verbose = 1;
 int        net_connection = 0;
 int        gotdevice;
+int        ifd;
 int        rfd;
-FILE       *dump_file;
 
 /*
  *    Working termios settings.
@@ -142,28 +137,15 @@ typedef enum _read_odo_state {
 
 read_odo_state_t read_odo_state;
 
-/*****************************************************************************/
-
-volatile unsigned int g_odo_thread_time_ms;
-volatile unsigned int g_odo_time_ms;
-volatile unsigned int g_odo_x_mm;
-volatile unsigned int g_odo_y_mm;
-volatile double       g_odo_theta_deg;
-
+volatile int debug_num_points;
 volatile short debug_traj_x_mm[16];
 volatile short debug_traj_y_mm[16];
 
 
 volatile int read_odo_flag_running = 0;
 
-void exit_thread(int err_code)
-{
-    while (1) {
-        read_odo_flag_running = 0;
-        pthread_yield();
-    }
-}
 
+/*****************************************************************************/
 
 /*
  *    Verify that the supplied baud rate is valid.
@@ -282,12 +264,16 @@ int loopit(void)
     unsigned short *swp;
     unsigned char *cp;
 
-    maxfd = rfd;
+    maxfd = ifd;
+    if (maxfd < rfd)
+        maxfd = rfd;
     maxfd++;
 
     read_odo_state = READ_ODO_STATE_INIT;
 
     payload_byte_cnt = 0;
+
+    debug_num_points = 0;
 
     for (;;) {
         FD_ZERO(&infds);
@@ -295,14 +281,14 @@ int loopit(void)
 
         if (select(maxfd, &infds, NULL, NULL, NULL) < 0) {
             fprintf(stderr, "ERROR: select() failed, errno=%d\n", errno);
-            exit_thread(1);
+            exit(1);
         }
 
         if (FD_ISSET(rfd, &infds)) {
             if ((n = read(rfd, ibuf, 1)) < 0) {
                 fprintf(stderr, "ERROR: read(fd=%d) failed, "
                         "errno=%d\n", rfd, errno);
-                exit_thread(1);
+                exit(1);
             }
 
             //printf ("%.2x\n", ibuf[0]);
@@ -417,25 +403,11 @@ int loopit(void)
                 cur_odo_y_mm = cur_odo_y_16;
                 cur_odo_theta_deg = cur_odo_theta_32/1000.0;
 
-                g_odo_time_ms = cur_odo_time;
-                g_odo_x_mm = cur_odo_x_mm;
-                g_odo_y_mm = cur_odo_y_mm;
-                g_odo_theta_deg = cur_odo_theta_deg;
-
 #if 0 /* FIXME : DEBUG */
                 printf ("ts = %u ; pos = < %f , %f > ; theta = %f\n",
                         cur_odo_time, 
                         cur_odo_x_mm, cur_odo_y_mm, 
                         cur_odo_theta_deg);
-#endif
-                if (dump_file) {
-                    fprintf (dump_file, 
-                             "ts = %u ; pos = < %f , %f > ; theta = %f\n",
-                             cur_odo_time, 
-                             cur_odo_x_mm, cur_odo_y_mm, 
-                             cur_odo_theta_deg);
-                }
-
                 {
                     struct timespec my_tp;
                     unsigned int my_time_ms;
@@ -444,39 +416,43 @@ int loopit(void)
 
                     my_time_ms = my_tp.tv_sec*1000 + my_tp.tv_nsec/1000000;
 
-                    g_odo_thread_time_ms = my_time_ms;
-#if 0 /* FIXME : DEBUG */
                     printf ("my_time_ms = %u\n\n", my_time_ms);
-#endif
-                    if (dump_file) {
-                        fprintf (dump_file, "my_time_ms = %u\n\n", my_time_ms);
-                    }
                 }
+#endif
+
 
                 break;
 
+
             case READ_ODO_STATE_HEAD2_DBG:
-                if (ibuf[0]==0x00)
+                if ((ibuf[0]>0x00) && (ibuf[0]<=0x10))
+                {
                     read_odo_state = READ_ODO_STATE_HEAD3_DBG;
+                    debug_num_points = ibuf[0];
+                }
                 else
+                {
                     read_odo_state = READ_ODO_STATE_INIT;
+                }
                 break;
             case READ_ODO_STATE_HEAD3_DBG:
                 payload_buf[payload_byte_cnt] = ibuf[0];
                 payload_byte_cnt++;
-                if (payload_byte_cnt<8) {
+                if (payload_byte_cnt<(debug_num_points*4)) {
                     read_odo_state = READ_ODO_STATE_HEAD3_DBG;
-                } else if (payload_byte_cnt==8) {
-                    READ_SHORT_DBG(debug_traj_x_mm[0], 0);
-                    READ_SHORT_DBG(debug_traj_y_mm[0], 2);
-                    READ_SHORT_DBG(debug_traj_x_mm[1], 4);
-                    READ_SHORT_DBG(debug_traj_y_mm[1], 6);
+                } else {
+                    int i;
 
-                    printf (" debug_traj : \n");
-                    printf ("  (%d,%d)\n", 
-                            debug_traj_x_mm[0], debug_traj_y_mm[0]);
-                    printf ("  (%d,%d)\n", 
-                            debug_traj_x_mm[1], debug_traj_y_mm[1]);
+                    for (i=0; i<debug_num_points; i++) {
+                        READ_SHORT_DBG(debug_traj_x_mm[i], (4*i));
+                        READ_SHORT_DBG(debug_traj_y_mm[i], (4*i+2));
+                    }
+
+                    printf (" debug_traj (%d) : \n", debug_num_points);
+                    for (i=0; i<debug_num_points; i++) {
+                        printf ("  (%d,%d)\n", 
+                                debug_traj_x_mm[i], debug_traj_y_mm[i]);
+                    }
 
                     read_odo_state = READ_ODO_STATE_INIT;
                     payload_byte_cnt = 0;
@@ -487,6 +463,22 @@ int loopit(void)
 
         }
 
+        if (FD_ISSET(ifd, &infds)) {
+            char *bp = ibuf;
+            if ((n = read(ifd, ibuf, sizeof(ibuf))) < 0) {
+                fprintf(stderr, "ERROR: read(fd=%d) failed, "
+                        "errno=%d\n", 1, errno);
+                exit(1);
+            }
+
+            if (n == 0)
+                break;
+            if ((n == 1) && (*bp == 0x1d))
+                break;
+            if ((n == 1) && (*bp == 0x1))
+                break;
+        }
+
     }
 
     return (0);
@@ -494,7 +486,7 @@ int loopit(void)
 
 /*****************************************************************************/
 
-int read_odo_main(void)
+int main(int argc, char *argv[])
 {
     struct stat statbuf;
     size_t len;
@@ -502,13 +494,7 @@ int read_odo_main(void)
 
     read_odo_flag_running = 1;
 
-    g_odo_thread_time_ms = 0;
-    g_odo_time_ms = 0;
-    g_odo_x_mm = 0;
-    g_odo_y_mm = 0;
-    g_odo_theta_deg = 0.0;
-
-    dump_file = NULL;
+    ifd = 0;
 
     baud = 115200;
 
@@ -527,7 +513,7 @@ int read_odo_main(void)
     if (path == NULL) {
         fprintf(stderr, "ERROR: failed to alloc() path, "
                 "errno=%d\n", errno);
-        exit_thread(1);
+        exit(1);
     }
     if ((rfd = open(path, (O_RDWR | O_NDELAY))) < 0) {
         fprintf(stderr, "ERROR: failed to open() %s, "
@@ -537,15 +523,9 @@ int read_odo_main(void)
         free(path);
     }
     if (rfd < 0) {
-        exit_thread(1);
+        exit(1);
     }
 
-#if 0 /* FIXME : DEBUG */
-    if ((dump_file = fopen("dump_odom.txt", "w")) == NULL) {
-        fprintf(stderr, "ERROR: failed to open odom capture file, errno=%d\n",
-                errno);
-    }
-#endif
 
     saveremotetermios();
     setremotetermios();
@@ -557,7 +537,7 @@ int read_odo_main(void)
     restoreremotetermios();
 
     close(rfd);
-    return 0;
+    exit(0);
 }
 
 /*****************************************************************************/

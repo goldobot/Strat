@@ -37,25 +37,40 @@ int CommZmq::init(int port_nb)
     m_zmq_context = zmq_init(1);
 
     m_pub_socket = zmq_socket(m_zmq_context, ZMQ_PUB);
-    if (m_pub_socket==NULL) return -1;
+    if (m_pub_socket<0) {
+        printf ("RPLIDAR : cannot create ZMQ_PUB socket\n");
+        return -1;
+    }
 
+#if 0 /* FIXME : TODO : clean */
     rc = zmq_connect(m_pub_socket, "tcp://localhost:3002");
     if (rc!=0) {
         printf ("RPLIDAR : warning cannot connect to comm_uart service\n");
     }
+#endif
 
     sprintf(char_buff, "tcp://*:%d", port_nb);
     printf("DEBUG: char_buff = %s\n", char_buff);
     rc = zmq_bind(m_pub_socket, char_buff);
-    if (rc<0) return -1;
+    if (rc<0) {
+        printf ("RPLIDAR : cannot bind ZMQ_PUB socket\n");
+        return -1;
+    }
 
-    m_pull_socket = zmq_socket(m_zmq_context, ZMQ_PULL);
-    if (m_pull_socket==NULL) return -1;
+    m_pull_socket = zmq_socket(m_zmq_context, ZMQ_SUB);
+    if (m_pull_socket<0) {
+        printf ("RPLIDAR : cannot create ZMQ_SUB socket\n");
+        return -1;
+    }
 
     sprintf(char_buff, "tcp://*:%d", port_nb+1);
     printf("DEBUG: char_buff = %s\n", char_buff);
     rc = zmq_bind(m_pull_socket, char_buff);
-    if (rc<0) return -1;
+    if (rc<0) {
+        printf ("RPLIDAR : cannot bind ZMQ_SUB socket\n");
+        return -1;
+    }
+    zmq_setsockopt(m_pull_socket,ZMQ_SUBSCRIBE, "", 0);
 
     return 0;
 }

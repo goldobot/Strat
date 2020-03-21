@@ -512,6 +512,7 @@ int main(int argc, const char * argv[]) {
                 g_odo_theta_deg_old = my_odo_theta_deg;
             }
 
+#if 0 /* FIXME : DEBUG : USEFULL (don't remove!) */
             printf ("main_thread_time_ms = %u (%u)\n", main_thread_time_ms, g_main_thread_time_ms_delta_max);
             printf ("my_odo_thread_time_ms = %u (%u)\n", my_odo_thread_time_ms, g_odo_thread_time_ms_delta_max);
             printf ("ts = %u (%u); pos = < %d , %d > (%u); theta = %f (%f)\n",
@@ -522,6 +523,7 @@ int main(int argc, const char * argv[]) {
             printf ("MOVE : %s %f m/s\n", g_forward_move?"FORWARDS":"BACKWARDS", g_speed_abs);
 
             printf ("\n");
+#endif
         }
         dbg_cnt++;
 

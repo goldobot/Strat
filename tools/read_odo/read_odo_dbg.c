@@ -244,6 +244,9 @@ unsigned char payload_buf[PAYLOAD_BUF_SZ];
     _lvalue = *swp;                           \
 } while (0)
 
+#define SEND_BUFF_SZ 256
+unsigned char send_buff[SEND_BUFF_SZ];
+
 int loopit(void)
 {
     fd_set infds;
@@ -278,6 +281,7 @@ int loopit(void)
     for (;;) {
         FD_ZERO(&infds);
         FD_SET(rfd, &infds);
+        FD_SET(ifd, &infds);
 
         if (select(maxfd, &infds, NULL, NULL, NULL) < 0) {
             fprintf(stderr, "ERROR: select() failed, errno=%d\n", errno);
@@ -465,11 +469,18 @@ int loopit(void)
 
         if (FD_ISSET(ifd, &infds)) {
             char *bp = ibuf;
+            char *tok = NULL;
+            char *sb = &send_buff[0];
+            int val;
+
+            memset(ibuf, 0, SEND_BUFF_SZ);
             if ((n = read(ifd, ibuf, sizeof(ibuf))) < 0) {
                 fprintf(stderr, "ERROR: read(fd=%d) failed, "
                         "errno=%d\n", 1, errno);
                 exit(1);
             }
+
+            printf ("USER : %s\n", bp);
 
             if (n == 0)
                 break;
@@ -477,6 +488,24 @@ int loopit(void)
                 break;
             if ((n == 1) && (*bp == 0x1))
                 break;
+
+            memset(send_buff, 0, SEND_BUFF_SZ);
+
+            tok = strtok (bp, " ");
+            while (tok!=NULL) {
+                val = strtol(tok, NULL, 16);
+                //printf (" %.2x", val);
+                *sb = (unsigned char) val;
+                sb++;
+                tok = strtok (NULL, " ");
+            }
+
+            if ((n = write(rfd, send_buff, SEND_BUFF_SZ)) < 0) {
+                fprintf(stderr, "ERROR: write(fd=%d) failed, "
+                        "errno=%d\n", rfd, errno);
+                exit(1);
+            }
+
         }
 
     }

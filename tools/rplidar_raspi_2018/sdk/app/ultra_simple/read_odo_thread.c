@@ -150,6 +150,7 @@ volatile unsigned int g_odo_x_mm;
 volatile unsigned int g_odo_y_mm;
 volatile double       g_odo_theta_deg;
 
+volatile int debug_num_points;
 volatile short debug_traj_x_mm[16];
 volatile short debug_traj_y_mm[16];
 
@@ -456,27 +457,34 @@ int loopit(void)
                 break;
 
             case READ_ODO_STATE_HEAD2_DBG:
-                if (ibuf[0]==0x00)
+                if ((ibuf[0]>0x00) && (ibuf[0]<=0x10))
+                {
                     read_odo_state = READ_ODO_STATE_HEAD3_DBG;
+                    debug_num_points = ibuf[0];
+                }
                 else
+                {
                     read_odo_state = READ_ODO_STATE_INIT;
+                }
                 break;
             case READ_ODO_STATE_HEAD3_DBG:
                 payload_buf[payload_byte_cnt] = ibuf[0];
                 payload_byte_cnt++;
-                if (payload_byte_cnt<8) {
+                if (payload_byte_cnt<(debug_num_points*4)) {
                     read_odo_state = READ_ODO_STATE_HEAD3_DBG;
-                } else if (payload_byte_cnt==8) {
-                    READ_SHORT_DBG(debug_traj_x_mm[0], 0);
-                    READ_SHORT_DBG(debug_traj_y_mm[0], 2);
-                    READ_SHORT_DBG(debug_traj_x_mm[1], 4);
-                    READ_SHORT_DBG(debug_traj_y_mm[1], 6);
+                } else {
+                    int i;
 
-                    printf (" debug_traj : \n");
-                    printf ("  (%d,%d)\n", 
-                            debug_traj_x_mm[0], debug_traj_y_mm[0]);
-                    printf ("  (%d,%d)\n", 
-                            debug_traj_x_mm[1], debug_traj_y_mm[1]);
+                    for (i=0; i<debug_num_points; i++) {
+                        READ_SHORT_DBG(debug_traj_x_mm[i], (4*i));
+                        READ_SHORT_DBG(debug_traj_y_mm[i], (4*i+2));
+                    }
+
+                    printf (" debug_traj (%d) : \n", debug_num_points);
+                    for (i=0; i<debug_num_points; i++) {
+                        printf ("  (%d,%d)\n", 
+                                debug_traj_x_mm[i], debug_traj_y_mm[i]);
+                    }
 
                     read_odo_state = READ_ODO_STATE_INIT;
                     payload_byte_cnt = 0;
@@ -523,6 +531,14 @@ unsigned int uart_send_msg(int msg_len, unsigned char *msg_buf)
 
   pc = (unsigned char *) &send_buff[8];
   memcpy (pc, msg_buf, msg_len);
+
+  {
+    int i;
+    int dbg_len = msg_len + 8;
+    printf("DEBUG: uart_send_msg(): sending %d bytes:\n", dbg_len);
+    for (i=0; i<dbg_len; i++) printf ("%.2x ",send_buff[i]);
+    printf ("\n");
+  }
 
   if ((res = write(rfd, send_buff, SEND_BUFF_SZ)) < 0) {
     fprintf(stderr, "ERROR: write(fd=%d) failed, "

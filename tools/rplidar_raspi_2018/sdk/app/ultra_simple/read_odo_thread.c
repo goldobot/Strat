@@ -492,6 +492,47 @@ int loopit(void)
     return (0);
 }
 
+#define SEND_BUFF_SZ 256
+unsigned char send_buff[SEND_BUFF_SZ];
+
+#define SEND_BUFF_SZ 256
+unsigned char send_buff[SEND_BUFF_SZ];
+
+static int uart_send_seq = 0;
+
+unsigned int uart_send_msg(int msg_len, unsigned char *msg_buf)
+{
+  unsigned char *pc = NULL;
+  unsigned int  *pw = NULL;
+  int res;
+
+  if ((msg_len<0) || (msg_len>(SEND_BUFF_SZ-10)) || (msg_buf==NULL)) {
+    return -1;
+  }
+
+  memset(send_buff, 0, SEND_BUFF_SZ);
+
+  send_buff[0] = 0x55;
+  send_buff[1] = 0x24;
+  send_buff[2] = 0x00;
+  send_buff[3] = (unsigned char) msg_len + 8;
+
+  pw = (unsigned int *) &send_buff[4];
+  *pw = uart_send_seq;
+  uart_send_seq++;
+
+  pc = (unsigned char *) &send_buff[8];
+  memcpy (pc, msg_buf, msg_len);
+
+  if ((res = write(rfd, send_buff, SEND_BUFF_SZ)) < 0) {
+    fprintf(stderr, "ERROR: write(fd=%d) failed, "
+            "errno=%d\n", rfd, errno);
+    return -1;
+  }
+
+  return 0;
+}
+
 /*****************************************************************************/
 
 int read_odo_main(void)

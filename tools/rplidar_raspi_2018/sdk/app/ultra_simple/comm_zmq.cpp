@@ -12,6 +12,11 @@
 using namespace goldobot;
 
 
+extern "C" {
+  unsigned int uart_send_msg(int msg_len, unsigned char *msg_buf);
+}
+
+
 CommZmq CommZmq::s_instance;
 
 CommZmq& CommZmq::instance()
@@ -41,13 +46,6 @@ int CommZmq::init(int port_nb)
         printf ("RPLIDAR : cannot create ZMQ_PUB socket\n");
         return -1;
     }
-
-#if 0 /* FIXME : TODO : clean */
-    rc = zmq_connect(m_pub_socket, "tcp://localhost:3002");
-    if (rc!=0) {
-        printf ("RPLIDAR : warning cannot connect to comm_uart service\n");
-    }
-#endif
 
     sprintf(char_buff, "tcp://*:%d", port_nb);
     printf("DEBUG: char_buff = %s\n", char_buff);
@@ -115,16 +113,16 @@ void CommZmq::taskFunction()
                 zmq_getsockopt(m_pull_socket, ZMQ_RCVMORE, &more, &more_size);
             }
             buff[bytes_read] = 0;
-            uint16_t message_type = *(uint16_t*)((void*)buff);
+            uint16_t message_type = *((uint16_t*)((void*)buff));
             printf("DEBUG: received message_type = %d\n", message_type);
 
             {
                 int i;
-                for (i=0; i<bytes_read; i++) printf ("%.2x ",buff[i]);
+                for (i=0; i<(int)bytes_read; i++) printf ("%.2x ",buff[i]);
                 printf ("\n");
             }
 
-            /* FIXME : TODO : process commands */
+            uart_send_msg(bytes_read, buff);
         }
 
         pthread_yield();

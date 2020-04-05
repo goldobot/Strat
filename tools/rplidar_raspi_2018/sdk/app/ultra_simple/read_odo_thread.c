@@ -187,10 +187,10 @@ int baud2flag(unsigned int speed)
 
 void restoreremotetermios(void)
 {
-	/*
-	 *	This can fail if remote hung up, don't check return status.
-	 */
-	tcsetattr(rfd, TCSAFLUSH, &savetio_remote);
+  /*
+   *  This can fail if remote hung up, don't check return status.
+   */
+  tcsetattr(rfd, TCSAFLUSH, &savetio_remote);
 }
 
 int saveremotetermios(void)
@@ -499,9 +499,6 @@ int loopit(void)
 
     return (0);
 }
-
-#define SEND_BUFF_SZ 256
-unsigned char send_buff[SEND_BUFF_SZ];
 
 #define SEND_BUFF_SZ 256
 unsigned char send_buff[SEND_BUFF_SZ];

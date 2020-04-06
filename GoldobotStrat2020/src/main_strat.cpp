@@ -47,13 +47,21 @@
 using namespace goldobot;
 
 
-char       * conf_viewer_addr_str      = "192.168.0.241";
-double       conf_theta_correction_deg = 30.0f; /* PR 28/05/2019 */
-char       * conf_rplidar_dev_str      = "/dev/rplidar";
-_u32         conf_rplidar_baudrate     = 115200;
-char       * conf_nucleo_uart_dev_str  = "/dev/odometry";
-_u32         conf_nucleo_uart_baudrate = 115200;
-_u32         conf_zmq_port             = 3101;
+char         conf_viewer_addr_str_def[]      = "192.168.0.241";
+double       conf_theta_correction_deg_def   = 30.0f; /* PR 28/05/2019 */
+char         conf_rplidar_dev_str_def[]      = "/dev/rplidar";
+_u32         conf_rplidar_baudrate_def       = 115200;
+char         conf_nucleo_uart_dev_str_def[]  = "/dev/odometry";
+_u32         conf_nucleo_uart_baudrate_def   = 115200;
+_u32         conf_zmq_port_def               = 3101;
+
+char       * conf_viewer_addr_str            = NULL;
+double       conf_theta_correction_deg       = 0.0f;
+char       * conf_rplidar_dev_str            = NULL;
+_u32         conf_rplidar_baudrate           = 0;
+char       * conf_nucleo_uart_dev_str        = NULL;
+_u32         conf_nucleo_uart_baudrate       = 0;
+_u32         conf_zmq_port                   = 0;
 
 
 bool ctrl_c_pressed = false;
@@ -208,6 +216,10 @@ int process_command_line(int argc, const char * argv[])
   {
     conf_viewer_addr_str = dummy_str;
   }
+  else
+  {
+    conf_viewer_addr_str = conf_viewer_addr_str_def;
+  }
   memset (dummy_str, 0, sizeof (dummy_str));
   dummy_str[0] = '!'; dummy_str[1] = 0x00; 
   printf ("  conf_viewer_addr_str      = %s\n", 
@@ -219,6 +231,10 @@ int process_command_line(int argc, const char * argv[])
   {
     conf_theta_correction_deg = strtod(dummy_str, NULL);
   } 
+  else
+  {
+    conf_theta_correction_deg = conf_theta_correction_deg_def;
+  }
   memset (dummy_str, 0, sizeof (dummy_str));
   dummy_str[0] = '!'; dummy_str[1] = 0x00; 
   printf ("  conf_theta_correction_deg = %f\n", 
@@ -229,6 +245,10 @@ int process_command_line(int argc, const char * argv[])
   if ((dummy_str[0]!='!') && (dummy_str[0]!='*')) 
   {
     conf_rplidar_dev_str = dummy_str;
+  }
+  else
+  {
+    conf_rplidar_dev_str = conf_rplidar_dev_str_def;
   }
   memset (dummy_str, 0, sizeof (dummy_str));
   dummy_str[0] = '!'; dummy_str[1] = 0x00; 
@@ -241,6 +261,10 @@ int process_command_line(int argc, const char * argv[])
   {
     conf_rplidar_baudrate = strtoul(dummy_str, NULL, 10);
   }
+  else
+  {
+    conf_rplidar_baudrate = conf_rplidar_baudrate_def;
+  }
   memset (dummy_str, 0, sizeof (dummy_str));
   dummy_str[0] = '!'; dummy_str[1] = 0x00; 
   printf ("  conf_rplidar_baudrate     = %d\n", 
@@ -251,6 +275,10 @@ int process_command_line(int argc, const char * argv[])
   if ((dummy_str[0]!='!') && (dummy_str[0]!='*')) 
   {
     conf_nucleo_uart_dev_str = dummy_str;
+  }
+  else
+  {
+    conf_nucleo_uart_dev_str = conf_nucleo_uart_dev_str_def;
   }
   memset (dummy_str, 0, sizeof (dummy_str));
   dummy_str[0] = '!'; dummy_str[1] = 0x00; 
@@ -263,6 +291,10 @@ int process_command_line(int argc, const char * argv[])
   {
     conf_nucleo_uart_baudrate = strtoul(dummy_str, NULL, 10);
   }
+  else
+  {
+    conf_nucleo_uart_baudrate = conf_nucleo_uart_baudrate_def;
+  }
   memset (dummy_str, 0, sizeof (dummy_str));
   dummy_str[0] = '!'; dummy_str[1] = 0x00; 
   printf ("  conf_nucleo_uart_baudrate = %d\n", 
@@ -273,6 +305,10 @@ int process_command_line(int argc, const char * argv[])
   if ((dummy_str[0]!='!') && (dummy_str[0]!='*')) 
   {
     conf_zmq_port = strtoul(dummy_str, NULL, 10);
+  }
+  else
+  {
+    conf_zmq_port = conf_zmq_port_def;
   }
   memset (dummy_str, 0, sizeof (dummy_str));
   dummy_str[0] = '!'; dummy_str[1] = 0x00; 

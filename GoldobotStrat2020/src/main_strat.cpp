@@ -86,7 +86,6 @@ int main(int argc, const char * argv[])
 {
 
 //// Print version /////////////////////////////////////////////////////////////
-  /* FIXME : TODO */
   printf("GoldobotStrat2020 (%s)\n",my_firmware_ver);
 
 
@@ -94,8 +93,10 @@ int main(int argc, const char * argv[])
   process_command_line(argc, argv);
 
 
-#if 0 /* FIXME : DEBUG */
+#if 1 /* FIXME : DEBUG */
 //// Initialise software components ////////////////////////////////////////////
+  printf(" Initialising software components .. \n");
+
   if (OdometryState::instance().init()!=0)
   {
     fprintf(stderr, "Error, cannot init odometry state.\n");
@@ -142,6 +143,8 @@ int main(int argc, const char * argv[])
 
 #if 0 /* FIXME : DEBUG */
 //// Create and launch worker threads //////////////////////////////////////////
+  printf(" Creating and launching worker threads .. \n");
+
   if (OdometryState::instance().startProcessing()!=0)
   {
     fprintf(stderr, "Error, cannot start the odometry thread.\n");
@@ -196,6 +199,7 @@ int main(int argc, const char * argv[])
   }
 
   /* wait for all threads to terminate .. */
+  printf(" Waiting for all threads to terminate .. \n");
   for (int i=0; i<1000; i++) {
     if (!(
           CommZmq::instance().taskRunning() ||

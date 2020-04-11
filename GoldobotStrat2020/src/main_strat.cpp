@@ -180,8 +180,13 @@ int main(int argc, const char * argv[])
   while (1) {
     if (ctrl_c_pressed) 
     { 
-      /* FIXME : TODO : stop threads */
       CommZmq::instance().stopTask();
+
+      OdometryState::instance().stopTask();
+
+      DirectUartNucleo::instance().stopTask();
+
+      CommRplidar::instance().stopTask();
 
       printf ("Bye!\n");
       break;

@@ -42,9 +42,9 @@ namespace goldobot
           return NULL;
         }
 
-#if 0 /* FIXME : DEBUG */
         printf (" %s worker thread started\n", my_obj->m_thread_name);
 
+#if 0 /* FIXME : DEBUG */
         my_obj->m_task_running = true;
 
         while(!my_obj->m_stop_task)
@@ -55,13 +55,12 @@ namespace goldobot
         } /* while(!my_obj->m_stop_task) */
 
         my_obj->m_task_running = false;
+#else
+        my_obj->taskFunction();
+#endif
 
         printf (" %s worker thread stopped\n", my_obj->m_thread_name);
 
-        return NULL;
-#endif
-
-        my_obj->taskFunction();
         return NULL;
       };
 

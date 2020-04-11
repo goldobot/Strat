@@ -22,6 +22,8 @@ DirectUartNucleo& DirectUartNucleo::instance()
 
 DirectUartNucleo::DirectUartNucleo()
 {
+  strncpy(m_thread_name,"DirectUartNucleo",sizeof(m_thread_name));
+
   m_stop_task = false;
   m_task_running = false;
 
@@ -158,6 +160,7 @@ void DirectUartNucleo::taskFunction()
   unsigned int *wp;
   unsigned short *swp;
   unsigned char *cp;
+
 
   if (m_uart_fd<0) {
     fprintf(stderr, "ERROR: DirectUartNucleo::taskFunction(): m_uart_fd=%d\n", m_uart_fd);

@@ -23,6 +23,8 @@ CommZmq& CommZmq::instance()
 
 CommZmq::CommZmq()
 {
+  strncpy(m_thread_name,"CommZmq",sizeof(m_thread_name));
+
   m_stop_task = false;
   m_task_running = false;
 
@@ -75,6 +77,7 @@ void CommZmq::taskFunction()
   struct timespec curr_tp;
   int curr_time_ms = 0;
   int old_time_ms = 0;
+
 
   zmq_pollitem_t poll_items[1];
 

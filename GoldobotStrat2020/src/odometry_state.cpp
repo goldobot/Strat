@@ -17,6 +17,8 @@ OdometryState& OdometryState::instance()
 
 OdometryState::OdometryState()
 {
+  strncpy(m_thread_name,"OdometryState",sizeof(m_thread_name));
+
   m_stop_task = false;
   m_task_running = false;
 

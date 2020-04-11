@@ -180,14 +180,30 @@ int main(int argc, const char * argv[])
   while (1) {
     if (ctrl_c_pressed) 
     { 
+      printf ("\nStopping worker threads..\n");
+
       CommZmq::instance().stopTask();
-
       OdometryState::instance().stopTask();
-
       DirectUartNucleo::instance().stopTask();
-
       CommRplidar::instance().stopTask();
 
+      break;
+    }
+
+    usleep (1000);
+
+    pthread_yield();
+  }
+
+  /* wait for all threads to terminate .. */
+  for (int i=0; i<1000; i++) {
+    if (!(
+          CommZmq::instance().taskRunning() ||
+          OdometryState::instance().taskRunning() ||
+          DirectUartNucleo::instance().taskRunning() ||
+          CommRplidar::instance().taskRunning()
+          )) 
+    { 
       printf ("Bye!\n");
       break;
     }
@@ -197,7 +213,6 @@ int main(int argc, const char * argv[])
     pthread_yield();
   }
 
-  /* FIXME : TODO : wait for all threads to terminate .. */
 
   return 0;
 }

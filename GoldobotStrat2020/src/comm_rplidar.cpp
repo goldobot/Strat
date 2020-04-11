@@ -37,6 +37,8 @@ CommRplidar::CommRplidar()
 {
   int i;
 
+  strncpy(m_thread_name,"CommRplidar",sizeof(m_thread_name));
+
   m_stop_task = false;
   m_task_running = false;
   m_scanning = false;
@@ -195,6 +197,7 @@ int CommRplidar::send_to_viewer()
 void CommRplidar::taskFunction()
 {
   u_result     op_result;
+
 
   // make connection...
   if (IS_FAIL(m_drv->connect(m_rplidar_dev_str, m_baudrate))) {

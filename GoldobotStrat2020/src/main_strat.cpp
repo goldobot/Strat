@@ -93,7 +93,6 @@ int main(int argc, const char * argv[])
   process_command_line(argc, argv);
 
 
-#if 1 /* FIXME : DEBUG */
 //// Initialise software components ////////////////////////////////////////////
   printf(" Initialising software components .. \n");
 
@@ -132,7 +131,6 @@ int main(int argc, const char * argv[])
     fprintf(stderr, "Error, cannot init adversary tracker.\n");
     return -1;
   }
-#endif
 
 
 //// Install signal handler to detect CTRL_C ///////////////////////////////////
@@ -141,7 +139,6 @@ int main(int argc, const char * argv[])
   signal(SIGINT, ctrlc);
 
 
-#if 0 /* FIXME : DEBUG */
 //// Create and launch worker threads //////////////////////////////////////////
   printf(" Creating and launching worker threads .. \n");
 
@@ -157,6 +154,7 @@ int main(int argc, const char * argv[])
     return -1;
   }
 
+#if 0 /* FIXME : DEBUG */
   if (CommZmq::instance().startProcessing()!=0)
   {
     fprintf(stderr, "Error, cannot start the ZMQ thread.\n");

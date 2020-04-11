@@ -183,12 +183,14 @@ void OdometryState::taskFunction()
       printf ("\n");
 #endif
       dbg_cnt++;
+    } /* (OdometryState::instance().m_local_ts_ms!=l_uart_thread_time_ms_old) */
+    else
+    {
+      usleep (10000);
     }
-    //dbg_cnt++;
-
 
     pthread_yield();
-  }
+  } /* while(!m_stop_task) */
 
   m_task_running = false;
 }

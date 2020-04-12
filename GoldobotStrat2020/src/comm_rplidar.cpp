@@ -275,7 +275,7 @@ void CommRplidar::taskFunction()
       for (int pos = 0; pos < (int)count ; ++pos) 
       {
         double my_theta = ((nodes[pos].angle_q6_checkbit >> RPLIDAR_RESP_MEASUREMENT_ANGLE_SHIFT)/64.0f)*(2.0f*M_PI/360.0f) + m_theta_correction;
-        //my_theta = -my_theta; /* FIXME : TODO : explication? (WTF?!) */
+        my_theta = -my_theta; /* FIXME : TODO : explication? (WTF?!) */
         double my_R = nodes[pos].distance_q2/4.0f;
 
         OdometryState::instance().lock();

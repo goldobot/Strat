@@ -9,6 +9,7 @@
 
 #include "comm_zmq.hpp"
 #include "direct_uart_nucleo.hpp"
+#include "comm_rplidar.hpp"
 
 
 using namespace goldobot;
@@ -123,7 +124,18 @@ void CommZmq::taskFunction()
         printf ("\n");
       }
 
-      DirectUartNucleo::instance().send(buff, bytes_read);
+      /* FIXME : TODO : import message_types.h into the project */
+      switch (message_type) {
+      case 55:   /* DbgPropulsionExecuteTrajectory */
+        DirectUartNucleo::instance().send(buff, bytes_read);
+        break;
+      case 1024: /* RplidarStart                   */
+        CommRplidar::instance().start_scan();
+        break;
+      case 1025: /* RplidarStop                    */
+        CommRplidar::instance().stop_scan();
+        break;
+      }
     }
 
     pthread_yield();

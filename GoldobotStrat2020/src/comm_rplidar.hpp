@@ -2,6 +2,13 @@
 #include <cstdint>
 #include <cstddef>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
+
 #include "rplidar.h" //RPLIDAR standard sdk, all-in-one header
 
 #include "goldo_thread.hpp"

@@ -154,7 +154,6 @@ int main(int argc, const char * argv[])
     return -1;
   }
 
-#if 0 /* FIXME : DEBUG */
   if (CommZmq::instance().startProcessing()!=0)
   {
     fprintf(stderr, "Error, cannot start the ZMQ thread.\n");
@@ -173,7 +172,6 @@ int main(int argc, const char * argv[])
     fprintf(stderr, "Error, cannot start the adversary tracker thread.\n");
     return -1;
   }
-#endif
 #endif
 
 

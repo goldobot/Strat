@@ -244,6 +244,8 @@ void CommRplidar::taskFunction()
   {
     if (!m_scanning)
     {
+      usleep(10000);
+
       pthread_yield();
       continue;
     }

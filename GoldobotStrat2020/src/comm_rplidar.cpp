@@ -77,12 +77,14 @@ int CommRplidar::init(char* rplidar_dev, double theta_correction, int baudrate)
 
   m_theta_correction = theta_correction;
 
+  m_baudrate = baudrate;
+
   m_viewer_sock = -1;
   memset (&m_viewer_saddr, 0, sizeof(m_viewer_saddr));
   memset (m_viewer_send_buf, 0, sizeof(m_viewer_send_buf));
 
   // create the driver instance
-  RPlidarDriver * m_drv = RPlidarDriver::CreateDriver(RPlidarDriver::DRIVER_TYPE_SERIALPORT);
+  m_drv = RPlidarDriver::CreateDriver(RPlidarDriver::DRIVER_TYPE_SERIALPORT);
 
   if (!m_drv) {
     fprintf(stderr, "RPlidarDriver::CreateDriver() error\n");
@@ -216,7 +218,7 @@ void CommRplidar::taskFunction()
     goto on_finished;
   }
 
-#if 0 /* FIXME : DEBUG */
+#if 1 /* FIXME : DEBUG */
   // print out the device serial number, firmware and hardware version number
   printf("RPLIDAR S/N: ");
   for (int pos = 0; pos < 16 ;++pos) {
@@ -233,12 +235,13 @@ void CommRplidar::taskFunction()
 
   // check health...
   if (!checkRPLIDARHealth(m_drv)) {
+    fprintf(stderr, "Error, rplidar health bad!\n");
     goto on_finished;
   }
 
   m_task_running = true;
 
-  start_scan();
+  //start_scan();
 
   while(!m_stop_task)
   {
@@ -272,7 +275,7 @@ void CommRplidar::taskFunction()
       for (int pos = 0; pos < (int)count ; ++pos) 
       {
         double my_theta = ((nodes[pos].angle_q6_checkbit >> RPLIDAR_RESP_MEASUREMENT_ANGLE_SHIFT)/64.0f)*(2.0f*M_PI/360.0f) + m_theta_correction;
-        my_theta = -my_theta; /* FIXME : TODO : explication? (WTF?!) */
+        //my_theta = -my_theta; /* FIXME : TODO : explication? (WTF?!) */
         double my_R = nodes[pos].distance_q2/4.0f;
 
         OdometryState::instance().lock();

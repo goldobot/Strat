@@ -48,7 +48,7 @@ int CommZmq::init(int port_nb)
   }
 
   sprintf(char_buff, "tcp://*:%d", port_nb);
-  //printf("DEBUG: char_buff = %s\n", char_buff);
+  //printf("  ZMQ DEBUG: char_buff = %s\n", char_buff);
   rc = zmq_bind(m_pub_socket, char_buff);
   if (rc<0) {
     printf ("RPLIDAR : cannot bind ZMQ_PUB socket\n");
@@ -62,7 +62,7 @@ int CommZmq::init(int port_nb)
   }
 
   sprintf(char_buff, "tcp://*:%d", port_nb+1);
-  //printf("DEBUG: char_buff = %s\n", char_buff);
+  //printf("  ZMQ DEBUG: char_buff = %s\n", char_buff);
   rc = zmq_bind(m_pull_socket, char_buff);
   if (rc<0) {
     printf ("RPLIDAR : cannot bind ZMQ_SUB socket\n");
@@ -116,23 +116,29 @@ void CommZmq::taskFunction()
       buff[bytes_read] = 0;
       uint16_t message_type = 0;
       memcpy (&message_type, buff, sizeof(message_type));
-      printf("DEBUG: received message_type = %d\n", message_type);
 
+#if 0 /* FIXME : DEBUG */
+      printf("  ZMQ DEBUG: received message_type = %d\n", message_type);
+      printf("  ");
       {
         int i;
         for (i=0; i<(int)bytes_read; i++) printf ("%.2x ",buff[i]);
         printf ("\n");
       }
+#endif
 
       /* FIXME : TODO : import message_types.h into the project */
       switch (message_type) {
       case 55:   /* DbgPropulsionExecuteTrajectory */
+        printf ("  ZMQ DEBUG: DbgPropulsionExecuteTrajectory\n");
         DirectUartNucleo::instance().send(buff, bytes_read);
         break;
       case 1024: /* RplidarStart                   */
+        printf ("  ZMQ DEBUG: RplidarStart\n");
         CommRplidar::instance().start_scan();
         break;
       case 1025: /* RplidarStop                    */
+        printf ("  ZMQ DEBUG: RplidarStop\n");
         CommRplidar::instance().stop_scan();
         break;
       }

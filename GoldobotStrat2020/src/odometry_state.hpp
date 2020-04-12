@@ -29,6 +29,7 @@ namespace goldobot
     double       m_theta_deg;
     double       m_speed_abs;
     bool         m_forward_move;
+    unsigned int m_robot_sensors;
 
   private:
     static OdometryState s_instance;

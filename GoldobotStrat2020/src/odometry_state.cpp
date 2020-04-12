@@ -30,6 +30,8 @@ OdometryState::OdometryState()
 
   m_speed_abs = 0.0;
   m_forward_move = true;
+
+  m_robot_sensors = 0;
 }
 
 int OdometryState::init()
@@ -42,6 +44,8 @@ int OdometryState::init()
 
   m_speed_abs = 0.0;
   m_forward_move = true;
+
+  m_robot_sensors = 0;
 
   return 0;
 }
@@ -123,6 +127,8 @@ void OdometryState::taskFunction()
       volatile int    my_odo_y_mm = OdometryState::instance().m_y_mm;
       volatile double my_odo_theta_deg = 
         OdometryState::instance().m_theta_deg;
+      volatile unsigned int my_robot_sensors = 
+        OdometryState::instance().m_robot_sensors;
       OdometryState::instance().release();
 
       clock_gettime(1, &my_tp);
@@ -179,9 +185,11 @@ void OdometryState::taskFunction()
               my_odo_theta_deg, l_odo_theta_deg_delta_max);
 
       printf ("MOVE : %s %f m/s\n", m_forward_move?"FORWARDS":"BACKWARDS", m_speed_abs);
+      printf ("robot_sensors = %.8x\n", my_robot_sensors);
 
       printf ("\n");
 #endif
+      my_robot_sensors = my_robot_sensors; /* avoid stupid compiler message */
       dbg_cnt++;
     } /* (OdometryState::instance().m_local_ts_ms!=l_uart_thread_time_ms_old) */
     else

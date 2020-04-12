@@ -156,6 +156,7 @@ void DirectUartNucleo::taskFunction()
   short cur_odo_x_16;
   short cur_odo_y_16;
   int cur_odo_theta_32;
+  unsigned int cur_robot_sensors_32;
 
   unsigned int *wp;
   unsigned short *swp;
@@ -199,105 +200,129 @@ void DirectUartNucleo::taskFunction()
 
       switch (m_read_odo_state) {
       case READ_ODO_STATE_INIT:
+      case READ_ODO_STATE_HEAD0:
         m_payload_byte_cnt = 0;
         memset(m_payload_buf, 0, PAYLOAD_BUF_SZ);
         if (m_ibuf[0]==0x0a)
-          m_read_odo_state = READ_ODO_STATE_HEAD0;
-        else
-          m_read_odo_state = READ_ODO_STATE_INIT;
-        break;
-      case READ_ODO_STATE_HEAD0:
-        if (m_ibuf[0]==0x35)
           m_read_odo_state = READ_ODO_STATE_HEAD1;
         else
           m_read_odo_state = READ_ODO_STATE_INIT;
         break;
       case READ_ODO_STATE_HEAD1:
-        if (m_ibuf[0]==0x0a)
-          m_read_odo_state = READ_ODO_STATE_HEAD2_ODO;
-        else if (m_ibuf[0]==0x00)
-          m_read_odo_state = READ_ODO_STATE_HEAD2_DBG;
-        else
-          m_read_odo_state = READ_ODO_STATE_INIT;
-        break;
-
-      case READ_ODO_STATE_HEAD2_ODO:
         if (m_ibuf[0]==0x35)
-          m_read_odo_state = READ_ODO_STATE_HEAD3_ODO;
+          m_read_odo_state = READ_ODO_STATE_HEAD2;
         else
           m_read_odo_state = READ_ODO_STATE_INIT;
         break;
-      case READ_ODO_STATE_HEAD3_ODO:
-        wp = &cur_odo_time;
-        cp = (unsigned char *) wp;
-        m_read_odo_state = READ_ODO_STATE_TS0;
-        cp[0] = m_ibuf[0];
+      case READ_ODO_STATE_HEAD2:
+        if (m_ibuf[0]==0x0a)
+          m_read_odo_state = READ_ODO_STATE_HEAD3_ODO;
+        else if (m_ibuf[0]==0x00)
+          m_read_odo_state = READ_ODO_STATE_HEAD3_DBG;
+        else
+          m_read_odo_state = READ_ODO_STATE_INIT;
         break;
 
+      case READ_ODO_STATE_HEAD3_ODO:
+        if (m_ibuf[0]==0x35)
+          m_read_odo_state = READ_ODO_STATE_TS0;
+        else
+          m_read_odo_state = READ_ODO_STATE_INIT;
+        break;
       case READ_ODO_STATE_TS0:
         wp = &cur_odo_time;
         cp = (unsigned char *) wp;
         m_read_odo_state = READ_ODO_STATE_TS1;
-        cp[1] = m_ibuf[0];
+        cp[0] = m_ibuf[0];
         break;
+
       case READ_ODO_STATE_TS1:
         wp = &cur_odo_time;
         cp = (unsigned char *) wp;
         m_read_odo_state = READ_ODO_STATE_TS2;
-        cp[2] = m_ibuf[0];
+        cp[1] = m_ibuf[0];
         break;
       case READ_ODO_STATE_TS2:
         wp = &cur_odo_time;
         cp = (unsigned char *) wp;
         m_read_odo_state = READ_ODO_STATE_TS3;
-        cp[3] = m_ibuf[0];
+        cp[2] = m_ibuf[0];
         break;
       case READ_ODO_STATE_TS3:
-        swp = (unsigned short *) &cur_odo_x_16;
-        cp = (unsigned char *) swp;
+        wp = &cur_odo_time;
+        cp = (unsigned char *) wp;
         m_read_odo_state = READ_ODO_STATE_X0;
-        cp[0] = m_ibuf[0];
+        cp[3] = m_ibuf[0];
         break;
       case READ_ODO_STATE_X0:
         swp = (unsigned short *) &cur_odo_x_16;
         cp = (unsigned char *) swp;
         m_read_odo_state = READ_ODO_STATE_X1;
-        cp[1] = m_ibuf[0];
+        cp[0] = m_ibuf[0];
         break;
       case READ_ODO_STATE_X1:
-        swp = (unsigned short *) &cur_odo_y_16;
+        swp = (unsigned short *) &cur_odo_x_16;
         cp = (unsigned char *) swp;
         m_read_odo_state = READ_ODO_STATE_Y0;
-        cp[0] = m_ibuf[0];
+        cp[1] = m_ibuf[0];
         break;
       case READ_ODO_STATE_Y0:
         swp = (unsigned short *) &cur_odo_y_16;
         cp = (unsigned char *) swp;
         m_read_odo_state = READ_ODO_STATE_Y1;
-        cp[1] = m_ibuf[0];
+        cp[0] = m_ibuf[0];
         break;
       case READ_ODO_STATE_Y1:
-        wp = (unsigned int *) &cur_odo_theta_32;
-        cp = (unsigned char *) wp;
+        swp = (unsigned short *) &cur_odo_y_16;
+        cp = (unsigned char *) swp;
         m_read_odo_state = READ_ODO_STATE_THETA0;
-        cp[0] = m_ibuf[0];
+        cp[1] = m_ibuf[0];
         break;
       case READ_ODO_STATE_THETA0:
         wp = (unsigned int *) &cur_odo_theta_32;
         cp = (unsigned char *) wp;
         m_read_odo_state = READ_ODO_STATE_THETA1;
-        cp[1] = m_ibuf[0];
+        cp[0] = m_ibuf[0];
         break;
       case READ_ODO_STATE_THETA1:
         wp = (unsigned int *) &cur_odo_theta_32;
         cp = (unsigned char *) wp;
         m_read_odo_state = READ_ODO_STATE_THETA2;
-        cp[2] = m_ibuf[0];
+        cp[1] = m_ibuf[0];
         break;
       case READ_ODO_STATE_THETA2:
         wp = (unsigned int *) &cur_odo_theta_32;
         cp = (unsigned char *) wp;
-        //m_read_odo_state = READ_ODO_STATE_THETA3;
+        m_read_odo_state = READ_ODO_STATE_THETA3;
+        cp[2] = m_ibuf[0];
+        break;
+      case READ_ODO_STATE_THETA3:
+        wp = (unsigned int *) &cur_odo_theta_32;
+        cp = (unsigned char *) wp;
+        m_read_odo_state = READ_ODO_STATE_SENSORS0;
+        cp[3] = m_ibuf[0];
+        break;
+      case READ_ODO_STATE_SENSORS0:
+        wp = (unsigned int *) &cur_robot_sensors_32;
+        cp = (unsigned char *) wp;
+        m_read_odo_state = READ_ODO_STATE_SENSORS1;
+        cp[0] = m_ibuf[0];
+        break;
+      case READ_ODO_STATE_SENSORS1:
+        wp = (unsigned int *) &cur_robot_sensors_32;
+        cp = (unsigned char *) wp;
+        m_read_odo_state = READ_ODO_STATE_SENSORS2;
+        cp[1] = m_ibuf[0];
+        break;
+      case READ_ODO_STATE_SENSORS2:
+        wp = (unsigned int *) &cur_robot_sensors_32;
+        cp = (unsigned char *) wp;
+        m_read_odo_state = READ_ODO_STATE_SENSORS3;
+        cp[2] = m_ibuf[0];
+        break;
+      case READ_ODO_STATE_SENSORS3:
+        wp = (unsigned int *) &cur_robot_sensors_32;
+        cp = (unsigned char *) wp;
         m_read_odo_state = READ_ODO_STATE_INIT;
         cp[3] = m_ibuf[0];
 
@@ -339,19 +364,20 @@ void DirectUartNucleo::taskFunction()
 #endif
 
         OdometryState::instance().lock();
-        OdometryState::instance().m_local_ts_ms  = my_time_ms;
-        OdometryState::instance().m_remote_ts_ms = cur_odo_time;
-        OdometryState::instance().m_x_mm         = cur_odo_x_mm;
-        OdometryState::instance().m_y_mm         = cur_odo_y_mm;
-        OdometryState::instance().m_theta_deg    = cur_odo_theta_deg;
+        OdometryState::instance().m_local_ts_ms   = my_time_ms;
+        OdometryState::instance().m_remote_ts_ms  = cur_odo_time;
+        OdometryState::instance().m_x_mm          = cur_odo_x_mm;
+        OdometryState::instance().m_y_mm          = cur_odo_y_mm;
+        OdometryState::instance().m_theta_deg     = cur_odo_theta_deg;
+        OdometryState::instance().m_robot_sensors = cur_robot_sensors_32;
         OdometryState::instance().release();
 
         break;
 
-      case READ_ODO_STATE_HEAD2_DBG:
+      case READ_ODO_STATE_HEAD3_DBG:
         if ((m_ibuf[0]>0x00) && (m_ibuf[0]<=0x10))
         {
-          m_read_odo_state = READ_ODO_STATE_HEAD3_DBG;
+          m_read_odo_state = READ_ODO_STATE_PAYLOAD_DBG;
           m_debug_num_points = m_ibuf[0];
         }
         else
@@ -359,12 +385,12 @@ void DirectUartNucleo::taskFunction()
           m_read_odo_state = READ_ODO_STATE_INIT;
         }
         break;
-      case READ_ODO_STATE_HEAD3_DBG:
+      case READ_ODO_STATE_PAYLOAD_DBG:
         m_payload_buf[m_payload_byte_cnt] = m_ibuf[0];
         m_payload_byte_cnt++;
         if (m_payload_byte_cnt<(m_debug_num_points*4))
         {
-          m_read_odo_state = READ_ODO_STATE_HEAD3_DBG;
+          m_read_odo_state = READ_ODO_STATE_PAYLOAD_DBG;
         }
         else
         {

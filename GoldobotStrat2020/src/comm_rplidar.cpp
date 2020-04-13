@@ -13,7 +13,7 @@
 #include "rplidar.h" //RPLIDAR standard sdk, all-in-one header
 
 #include "comm_rplidar.hpp"
-#include "robot_detect.hpp"
+#include "lidar_detect.hpp"
 
 
 using namespace goldobot;
@@ -263,7 +263,7 @@ void CommRplidar::taskFunction()
       m_y[pos] = 0.0;
     }
 
-    RobotDetect::instance().clearSlots();
+    LidarDetect::instance().clearSlots();
 
 
     op_result = m_drv->grabScanData(nodes, count);
@@ -327,13 +327,13 @@ void CommRplidar::taskFunction()
         if ((my_abs_x >   100.0) && (my_abs_x < 1600.0) && 
             (my_abs_y > -1400.0) && (my_abs_y < 1400.0) && 
             (my_R > 100.0) ) {
-          RobotDetect::instance().processNewRplidarSample(my_thread_time_ms, my_abs_x, my_abs_y);
+          LidarDetect::instance().processNewLidarSample(my_thread_time_ms, my_abs_x, my_abs_y);
         }
       } /* for (int pos = 0; pos < (int)count ; ++pos) */
 
-      RobotDetect::instance().updateDetection();
+      LidarDetect::instance().updateDetection();
 
-      RobotDetect::instance().sendDetected();
+      LidarDetect::instance().sendDetected();
 
       send_to_viewer();
 

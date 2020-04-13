@@ -8,26 +8,25 @@
 #include <pthread.h>
 #include <iostream>
 
-#include "robot_detect.hpp"
-
+#include "lidar_detect.hpp"
 #include "comm_zmq.hpp"
 
 using namespace goldobot;
 
 
-RobotDetect RobotDetect::s_instance;
+LidarDetect LidarDetect::s_instance;
 
-RobotDetect& RobotDetect::instance()
+LidarDetect& LidarDetect::instance()
 {
 	return s_instance;
 }
 
-RobotDetect::RobotDetect()
+LidarDetect::LidarDetect()
 {
   m_cur_ts_ms = 0;
 }
 
-int RobotDetect::init()
+int LidarDetect::init()
 {
   m_cur_ts_ms = 0;
 
@@ -68,7 +67,7 @@ int RobotDetect::init()
 }
 
 /* FIXME : DEBUG */
-void RobotDetect::taskFunctionFunny()
+void LidarDetect::taskFunctionFunny()
 {
   struct timespec curr_tp;
   int curr_time_ms = 0;
@@ -175,7 +174,7 @@ void RobotDetect::taskFunctionFunny()
 }
 
 
-void RobotDetect::clearSlots()
+void LidarDetect::clearSlots()
 {
   for (int i=0; i<MAX_NB_OF_DETECTION_SLOTS; i++)
   {
@@ -187,7 +186,7 @@ void RobotDetect::clearSlots()
 }
 
 
-void RobotDetect::processNewRplidarSample(unsigned int ts_ms, double x_mm, double y_mm)
+void LidarDetect::processNewLidarSample(unsigned int ts_ms, double x_mm, double y_mm)
 {
   //printf ("  new(%f,%f)\n", x_mm, y_mm);
   m_cur_ts_ms = ts_ms;
@@ -216,7 +215,7 @@ void RobotDetect::processNewRplidarSample(unsigned int ts_ms, double x_mm, doubl
 }
 
 
-void RobotDetect::updateDetection()
+void LidarDetect::updateDetection()
 {
   int best_samples=0;
   int best_pos=0;
@@ -368,7 +367,7 @@ void RobotDetect::updateDetection()
 }
 
 
-void RobotDetect::sendDetected()
+void LidarDetect::sendDetected()
 {
   unsigned short my_message_type;
   RobotDetectionMsg my_message;
@@ -408,13 +407,13 @@ void RobotDetect::sendDetected()
 }
 
 
-double RobotDetect::dist(double x0, double y0, double x1, double y1)
+double LidarDetect::dist(double x0, double y0, double x1, double y1)
 {
   return sqrt((x0-x1)*(x0-x1) + (y0-y1)*(y0-y1));
 }
 
 
-double RobotDetect::dist(DetectedRobot &R0, DetectedRobot &R1)
+double LidarDetect::dist(DetectedRobot &R0, DetectedRobot &R1)
 {
   return sqrt((R0.x_mm-R1.x_mm)*(R0.x_mm-R1.x_mm) + (R0.y_mm-R1.y_mm)*(R0.y_mm-R1.y_mm));
 }

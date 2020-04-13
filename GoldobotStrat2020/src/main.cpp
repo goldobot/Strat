@@ -42,7 +42,8 @@
 #include "comm_zmq.hpp"
 #include "comm_nucleo.hpp"
 #include "robot_state.hpp"
-#include "robot_detect.hpp"
+#include "lidar_detect.hpp"
+#include "robot_strat.hpp"
 
 using namespace goldobot;
 
@@ -54,6 +55,7 @@ _u32         conf_rplidar_baudrate_def       = 115200;
 char         conf_nucleo_uart_dev_str_def[]  = "/dev/odometry";
 _u32         conf_nucleo_uart_baudrate_def   = 115200;
 _u32         conf_zmq_port_def               = 3101;
+char         conf_strat_file_str_def[]       = "strat.txt";
 
 char       * conf_viewer_addr_str            = NULL;
 double       conf_theta_correction_deg       = 0.0f;
@@ -62,6 +64,7 @@ _u32         conf_rplidar_baudrate           = 0;
 char       * conf_nucleo_uart_dev_str        = NULL;
 _u32         conf_nucleo_uart_baudrate       = 0;
 _u32         conf_zmq_port                   = 0;
+char       * conf_strat_file_str             = NULL;
 
 
 bool ctrl_c_pressed = false;
@@ -126,9 +129,15 @@ int main(int argc, const char * argv[])
     //return -1;
   }
 
-  if (RobotDetect::instance().init()!=0)
+  if (LidarDetect::instance().init()!=0)
   {
     fprintf(stderr, "Error, cannot init adversary tracker.\n");
+    return -1;
+  }
+
+  if (RobotStrat::instance().init(conf_strat_file_str)!=0)
+  {
+    fprintf(stderr, "Error, cannot init strategy module.\n");
     return -1;
   }
 
@@ -167,12 +176,18 @@ int main(int argc, const char * argv[])
   }
 
 #if 0 /* FIXME : DEBUG */
-  if (RobotDetect::instance().startProcessing()!=0)
+  if (LidarDetect::instance().startProcessing()!=0)
   {
     fprintf(stderr, "Error, cannot start the adversary tracker thread.\n");
     return -1;
   }
 #endif
+
+  if (RobotStrat::instance().startProcessing()!=0)
+  {
+    fprintf(stderr, "Error, cannot start the strategy thread.\n");
+    return -1;
+  }
 
 
 //// Main loop /////////////////////////////////////////////////////////////////
@@ -185,6 +200,7 @@ int main(int argc, const char * argv[])
       RobotState::instance().stopTask();
       DirectUartNucleo::instance().stopTask();
       CommRplidar::instance().stopTask();
+      RobotStrat::instance().stopTask();
 
       break;
     }
@@ -201,7 +217,8 @@ int main(int argc, const char * argv[])
           CommZmq::instance().taskRunning() ||
           RobotState::instance().taskRunning() ||
           DirectUartNucleo::instance().taskRunning() ||
-          CommRplidar::instance().taskRunning()
+          CommRplidar::instance().taskRunning() ||
+          RobotStrat::instance().taskRunning()
           )) 
     { 
       printf ("Bye!\n");
@@ -334,6 +351,21 @@ int process_command_line(int argc, const char * argv[])
   dummy_str[0] = '!'; dummy_str[1] = 0x00; 
   printf ("  conf_zmq_port             = %d\n", 
              conf_zmq_port);
+
+  // read strategy file name from the command line...
+  if (argc>8) strncpy(dummy_str, argv[8], sizeof (dummy_str));
+  if ((dummy_str[0]!='!') && (dummy_str[0]!='*')) 
+  {
+    conf_strat_file_str = dummy_str;
+  }
+  else
+  {
+    conf_strat_file_str = conf_strat_file_str_def;
+  }
+  memset (dummy_str, 0, sizeof (dummy_str));
+  dummy_str[0] = '!'; dummy_str[1] = 0x00; 
+  printf ("  conf_strat_file_str       = %s\n", 
+             conf_strat_file_str);
 
   return 0;
 }

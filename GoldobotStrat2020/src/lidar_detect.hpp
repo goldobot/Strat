@@ -44,12 +44,12 @@ namespace goldobot
   } DetectedRobot;
 
 
-  class RobotDetect /*: public GoldoThread*/
+  class LidarDetect /*: public GoldoThread*/
   {
   public:
-    static RobotDetect& instance();
+    static LidarDetect& instance();
 
-    RobotDetect();
+    LidarDetect();
 
     int init();
 
@@ -58,7 +58,7 @@ namespace goldobot
 
     void clearSlots();
 
-    void processNewRplidarSample(unsigned int ts_ms, double x_mm, double y_mm);
+    void processNewLidarSample(unsigned int ts_ms, double x_mm, double y_mm);
 
     void updateDetection();
 
@@ -79,7 +79,7 @@ namespace goldobot
 
     static double dist(DetectedRobot &R0, DetectedRobot &R1);
 
-    static RobotDetect s_instance;
+    static LidarDetect s_instance;
   };
 
 }

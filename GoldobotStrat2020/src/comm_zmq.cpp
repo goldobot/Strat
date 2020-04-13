@@ -10,6 +10,7 @@
 #include "comm_zmq.hpp"
 #include "comm_nucleo.hpp"
 #include "comm_rplidar.hpp"
+#include "robot_strat.hpp"
 
 
 using namespace goldobot;
@@ -140,6 +141,10 @@ void CommZmq::taskFunction()
       case 1025: /* RplidarStop                    */
         printf ("  ZMQ DEBUG: RplidarStop\n");
         CommRplidar::instance().stop_scan();
+        break;
+      case 2048: /* RobotStratDbgStartMatch        */
+        printf ("  ZMQ DEBUG: RobotStratDbgStartMatch\n");
+        RobotStrat::instance().start_match();
         break;
       }
     }

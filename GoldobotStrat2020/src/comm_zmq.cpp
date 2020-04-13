@@ -8,7 +8,7 @@
 #include <pthread.h>
 
 #include "comm_zmq.hpp"
-#include "direct_uart_nucleo.hpp"
+#include "comm_nucleo.hpp"
 #include "comm_rplidar.hpp"
 
 

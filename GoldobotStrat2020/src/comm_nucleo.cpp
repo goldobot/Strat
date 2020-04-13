@@ -7,7 +7,7 @@
 #include <math.h>
 #include <pthread.h>
 
-#include "direct_uart_nucleo.hpp"
+#include "comm_nucleo.hpp"
 
 
 using namespace goldobot;
@@ -363,14 +363,14 @@ void DirectUartNucleo::taskFunction()
         }
 #endif
 
-        OdometryState::instance().lock();
-        OdometryState::instance().m_local_ts_ms   = my_time_ms;
-        OdometryState::instance().m_remote_ts_ms  = cur_odo_time;
-        OdometryState::instance().m_x_mm          = cur_odo_x_mm;
-        OdometryState::instance().m_y_mm          = cur_odo_y_mm;
-        OdometryState::instance().m_theta_deg     = cur_odo_theta_deg;
-        OdometryState::instance().m_robot_sensors = cur_robot_sensors_32;
-        OdometryState::instance().release();
+        RobotState::instance().lock();
+        RobotState::instance().m_local_ts_ms   = my_time_ms;
+        RobotState::instance().m_remote_ts_ms  = cur_odo_time;
+        RobotState::instance().m_x_mm          = cur_odo_x_mm;
+        RobotState::instance().m_y_mm          = cur_odo_y_mm;
+        RobotState::instance().m_theta_deg     = cur_odo_theta_deg;
+        RobotState::instance().m_robot_sensors = cur_robot_sensors_32;
+        RobotState::instance().release();
 
         break;
 

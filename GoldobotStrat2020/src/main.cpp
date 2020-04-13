@@ -40,8 +40,8 @@
 
 #include "comm_rplidar.hpp"
 #include "comm_zmq.hpp"
-#include "direct_uart_nucleo.hpp"
-#include "odometry_state.hpp"
+#include "comm_nucleo.hpp"
+#include "robot_state.hpp"
 #include "robot_detect.hpp"
 
 using namespace goldobot;
@@ -96,7 +96,7 @@ int main(int argc, const char * argv[])
 //// Initialise software components ////////////////////////////////////////////
   printf(" Initialising software components .. \n");
 
-  if (OdometryState::instance().init()!=0)
+  if (RobotState::instance().init()!=0)
   {
     fprintf(stderr, "Error, cannot init odometry state.\n");
     return -1;
@@ -142,7 +142,7 @@ int main(int argc, const char * argv[])
 //// Create and launch worker threads //////////////////////////////////////////
   printf(" Creating and launching worker threads .. \n");
 
-  if (OdometryState::instance().startProcessing()!=0)
+  if (RobotState::instance().startProcessing()!=0)
   {
     fprintf(stderr, "Error, cannot start the odometry thread.\n");
     return -1;
@@ -182,7 +182,7 @@ int main(int argc, const char * argv[])
       printf ("\nStopping worker threads..\n");
 
       CommZmq::instance().stopTask();
-      OdometryState::instance().stopTask();
+      RobotState::instance().stopTask();
       DirectUartNucleo::instance().stopTask();
       CommRplidar::instance().stopTask();
 
@@ -199,7 +199,7 @@ int main(int argc, const char * argv[])
   for (int i=0; i<1000; i++) {
     if (!(
           CommZmq::instance().taskRunning() ||
-          OdometryState::instance().taskRunning() ||
+          RobotState::instance().taskRunning() ||
           DirectUartNucleo::instance().taskRunning() ||
           CommRplidar::instance().taskRunning()
           )) 

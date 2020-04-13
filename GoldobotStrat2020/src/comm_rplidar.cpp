@@ -140,11 +140,11 @@ int CommRplidar::send_to_viewer()
   int bytes_to_send = 0;
   int l_odo_theta_deg_0_01 = 0;
 
-  OdometryState::instance().lock();
-  int l_odo_x_mm      = OdometryState::instance().m_x_mm;
-  int l_odo_y_mm      = OdometryState::instance().m_y_mm;
-  int l_odo_theta_deg = OdometryState::instance().m_theta_deg;
-  OdometryState::instance().release();
+  RobotState::instance().lock();
+  int l_odo_x_mm      = RobotState::instance().m_x_mm;
+  int l_odo_y_mm      = RobotState::instance().m_y_mm;
+  int l_odo_theta_deg = RobotState::instance().m_theta_deg;
+  RobotState::instance().release();
 
   /* header tlv */
   *cur_ptr_w = htonl(0x31337000);
@@ -278,12 +278,12 @@ void CommRplidar::taskFunction()
         my_theta = -my_theta; /* FIXME : TODO : explication? (WTF?!) */
         double my_R = nodes[pos].distance_q2/4.0f;
 
-        OdometryState::instance().lock();
-        int l_odo_x_mm         = OdometryState::instance().m_x_mm;
-        int l_odo_y_mm         = OdometryState::instance().m_y_mm;
-        double l_odo_theta_deg = OdometryState::instance().m_theta_deg;
-        bool l_forward_move    = OdometryState::instance().m_forward_move;
-        OdometryState::instance().release();
+        RobotState::instance().lock();
+        int l_odo_x_mm         = RobotState::instance().m_x_mm;
+        int l_odo_y_mm         = RobotState::instance().m_y_mm;
+        double l_odo_theta_deg = RobotState::instance().m_theta_deg;
+        bool l_forward_move    = RobotState::instance().m_forward_move;
+        RobotState::instance().release();
 
         if ((my_R < 1.0f) || (my_R > 3000.0f)) my_R = 0.0f;
 

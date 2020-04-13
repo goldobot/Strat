@@ -2,22 +2,22 @@
 #include <unistd.h>
 #include <math.h>
 
-#include "odometry_state.hpp"
+#include "robot_state.hpp"
 
 
 using namespace goldobot;
 
 
-OdometryState OdometryState::s_instance;
+RobotState RobotState::s_instance;
 
-OdometryState& OdometryState::instance()
+RobotState& RobotState::instance()
 {
   return s_instance;
 }
 
-OdometryState::OdometryState()
+RobotState::RobotState()
 {
-  strncpy(m_thread_name,"OdometryState",sizeof(m_thread_name));
+  strncpy(m_thread_name,"RobotState",sizeof(m_thread_name));
 
   m_stop_task = false;
   m_task_running = false;
@@ -34,7 +34,7 @@ OdometryState::OdometryState()
   m_robot_sensors = 0;
 }
 
-int OdometryState::init()
+int RobotState::init()
 {
   m_local_ts_ms  = 0;
   m_remote_ts_ms = 0;
@@ -52,7 +52,7 @@ int OdometryState::init()
 
 #define MAX(a,b) ((a>b)?a:b)
 
-void OdometryState::taskFunction()
+void RobotState::taskFunction()
 {
   unsigned int l_dbg_thread_time_ms_old;
   unsigned int l_dbg_thread_time_ms_delta;
@@ -113,23 +113,23 @@ void OdometryState::taskFunction()
   {
 
     //if ((dbg_cnt%10)==0) 
-    if (OdometryState::instance().m_local_ts_ms!=l_uart_thread_time_ms_old) 
+    if (RobotState::instance().m_local_ts_ms!=l_uart_thread_time_ms_old) 
     {
       struct timespec my_tp;
       unsigned int dbg_thread_time_ms;
 
-      OdometryState::instance().lock();
+      RobotState::instance().lock();
       volatile unsigned int my_uart_thread_time_ms = 
-        OdometryState::instance().m_local_ts_ms;
+        RobotState::instance().m_local_ts_ms;
       volatile unsigned int my_odo_time_ms = 
-        OdometryState::instance().m_remote_ts_ms;
-      volatile int    my_odo_x_mm = OdometryState::instance().m_x_mm;
-      volatile int    my_odo_y_mm = OdometryState::instance().m_y_mm;
+        RobotState::instance().m_remote_ts_ms;
+      volatile int    my_odo_x_mm = RobotState::instance().m_x_mm;
+      volatile int    my_odo_y_mm = RobotState::instance().m_y_mm;
       volatile double my_odo_theta_deg = 
-        OdometryState::instance().m_theta_deg;
+        RobotState::instance().m_theta_deg;
       volatile unsigned int my_robot_sensors = 
-        OdometryState::instance().m_robot_sensors;
-      OdometryState::instance().release();
+        RobotState::instance().m_robot_sensors;
+      RobotState::instance().release();
 
       clock_gettime(1, &my_tp);
 
@@ -191,7 +191,7 @@ void OdometryState::taskFunction()
 #endif
       my_robot_sensors = my_robot_sensors; /* avoid stupid compiler message */
       dbg_cnt++;
-    } /* (OdometryState::instance().m_local_ts_ms!=l_uart_thread_time_ms_old) */
+    } /* (RobotState::instance().m_local_ts_ms!=l_uart_thread_time_ms_old) */
     else
     {
       usleep (10000);
@@ -203,14 +203,14 @@ void OdometryState::taskFunction()
   m_task_running = false;
 }
 
-int OdometryState::lock()
+int RobotState::lock()
 {
   /* FIXME : TODO */
 
   return 0;
 }
 
-void OdometryState::release()
+void RobotState::release()
 {
   /* FIXME : TODO */
 }

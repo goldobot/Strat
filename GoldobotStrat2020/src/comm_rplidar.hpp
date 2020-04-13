@@ -12,7 +12,7 @@
 #include "rplidar.h" //RPLIDAR standard sdk, all-in-one header
 
 #include "goldo_thread.hpp"
-#include "odometry_state.hpp"
+#include "robot_state.hpp"
 
 
 using namespace rp::standalone::rplidar;

@@ -6,12 +6,12 @@
 
 namespace goldobot
 {
-  class OdometryState : public GoldoThread
+  class RobotState : public GoldoThread
   {
   public:
-    static OdometryState& instance();
+    static RobotState& instance();
 
-    OdometryState();
+    RobotState();
 
     int init();
 
@@ -32,7 +32,7 @@ namespace goldobot
     unsigned int m_robot_sensors;
 
   private:
-    static OdometryState s_instance;
+    static RobotState s_instance;
   };
 }
 

@@ -24,6 +24,10 @@ namespace goldobot
   private:
     char m_strat_file_name[40];
 
+    unsigned char m_nucleo_cmd_buf[1024];
+
+    bool m_dbg_start_match;
+
     static RobotStrat s_instance;
   };
 }

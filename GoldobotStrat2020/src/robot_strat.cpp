@@ -75,10 +75,15 @@ void RobotStrat::taskFunction()
 
   m_task_running = true;
 
+  /* FIXME : TODO : synchronise with comm threads to avoid fake event 
+     detection */
+  usleep (100000);
+
   while(!m_stop_task)
   {
 
     /* FIXME : TODO */
+
     volatile unsigned int my_robot_sensors = 
       RobotState::instance().m_robot_sensors;
 
@@ -96,46 +101,46 @@ void RobotStrat::taskFunction()
       dbg_match_started = true;
 
       int num_points = _countof(dbg_point);
+      unsigned short int cmd_traj = 0x0055;
       float speed = 0.4;
       float accel = 0.3;
       float deccel = 0.3;
 
-      int cmd_buf_len = 0;
       unsigned char *_pc = m_nucleo_cmd_buf;
-      unsigned short int *_ps = NULL;
-      float *_pf = NULL;
+      int cmd_buf_len = 0;
+      int field_len = 0;
 
-      _ps = (unsigned short int *)_pc;
-      *_ps = 0x0055;
-      _pc += sizeof(unsigned short int);
-      cmd_buf_len += sizeof(unsigned short int);
+      field_len = sizeof(unsigned short int);
+      memcpy (_pc, (unsigned char *)&cmd_traj, field_len);
+      _pc += field_len;
+      cmd_buf_len += field_len;
 
-      _pf = (float *)_pc;
-      *_pf = speed;
-      _pc += sizeof(float);
-      cmd_buf_len += sizeof(float);
+      field_len = sizeof(float);
+      memcpy (_pc, (unsigned char *)&speed, field_len);
+      _pc += field_len;
+      cmd_buf_len += field_len;
 
-      _pf = (float *)_pc;
-      *_pf = accel;
-      _pc += sizeof(float);
-      cmd_buf_len += sizeof(float);
+      field_len = sizeof(float);
+      memcpy (_pc, (unsigned char *)&accel, field_len);
+      _pc += field_len;
+      cmd_buf_len += field_len;
 
-      _pf = (float *)_pc;
-      *_pf = deccel;
-      _pc += sizeof(float);
-      cmd_buf_len += sizeof(float);
+      field_len = sizeof(float);
+      memcpy (_pc, (unsigned char *)&deccel, field_len);
+      _pc += field_len;
+      cmd_buf_len += field_len;
 
       for (int i=0; i<num_points; i++) 
       {
-        _pf = (float *)_pc;
-        *_pf = dbg_point[i].x;
-        _pc += sizeof(float);
-        cmd_buf_len += sizeof(float);
+        field_len = sizeof(float);
+        memcpy (_pc, (unsigned char *)&(dbg_point[i].x), field_len);
+        _pc += field_len;
+        cmd_buf_len += field_len;
 
-        _pf = (float *)_pc;
-        *_pf = dbg_point[i].y;
-        _pc += sizeof(float);
-        cmd_buf_len += sizeof(float);
+        field_len = sizeof(float);
+        memcpy (_pc, (unsigned char *)&(dbg_point[i].y), field_len);
+        _pc += field_len;
+        cmd_buf_len += field_len;
       }
 
       DirectUartNucleo::instance().send(m_nucleo_cmd_buf, cmd_buf_len);

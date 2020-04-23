@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>C_PathFinder</class>
+ <widget class="QMainWindow" name="C_PathFinder">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>658</width>
+    <height>442</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>551</width>
+    <height>442</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>Path Finder API</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QGraphicsView" name="gv_Map">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>20</y>
+      <width>400</width>
+      <height>400</height>
+     </rect>
+    </property>
+    <property name="verticalScrollBarPolicy">
+     <enum>Qt::ScrollBarAlwaysOn</enum>
+    </property>
+    <property name="horizontalScrollBarPolicy">
+     <enum>Qt::ScrollBarAlwaysOn</enum>
+    </property>
+    <property name="sizeAdjustPolicy">
+     <enum>QAbstractScrollArea::AdjustToContents</enum>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="btn_CenterMap">
+    <property name="geometry">
+     <rect>
+      <x>450</x>
+      <y>80</y>
+      <width>23</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>X</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="btn_MoveRightMap">
+    <property name="geometry">
+     <rect>
+      <x>420</x>
+      <y>80</y>
+      <width>23</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>&lt;</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="btn_MoveLeftMap">
+    <property name="geometry">
+     <rect>
+      <x>480</x>
+      <y>80</y>
+      <width>23</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>&gt;</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="btn_MoveUpMap">
+    <property name="geometry">
+     <rect>
+      <x>450</x>
+      <y>110</y>
+      <width>23</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>v</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="btn_ZoomInMap">
+    <property name="geometry">
+     <rect>
+      <x>420</x>
+      <y>20</y>
+      <width>23</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>+</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="btn_MoveDownMap">
+    <property name="geometry">
+     <rect>
+      <x>450</x>
+      <y>50</y>
+      <width>23</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>^</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="btn_ZoomDefaultMap">
+    <property name="geometry">
+     <rect>
+      <x>450</x>
+      <y>20</y>
+      <width>23</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>O</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="btn_ZoomOutMap">
+    <property name="geometry">
+     <rect>
+      <x>480</x>
+      <y>20</y>
+      <width>23</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>-</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_2">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>0</y>
+      <width>101</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <weight>75</weight>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>World map</string>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="chkB_FollowRobot">
+    <property name="geometry">
+     <rect>
+      <x>420</x>
+      <y>150</y>
+      <width>70</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Follow</string>
+    </property>
+    <property name="checked">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QLabel" name="lbl_coreSlamPosX">
+    <property name="geometry">
+     <rect>
+      <x>420</x>
+      <y>200</y>
+      <width>191</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>lbl_coreSlamPosX</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="lbl_coreSlamPosAngle">
+    <property name="geometry">
+     <rect>
+      <x>420</x>
+      <y>240</y>
+      <width>191</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>lbl_coreSlamPosAngle</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="lbl_coreSlamPosY">
+    <property name="geometry">
+     <rect>
+      <x>420</x>
+      <y>220</y>
+      <width>191</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>lbl_coreSlamPosY</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="lbl_nextPosX">
+    <property name="geometry">
+     <rect>
+      <x>420</x>
+      <y>300</y>
+      <width>191</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>lbl_nextPosX</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="lbl_nextPosY">
+    <property name="geometry">
+     <rect>
+      <x>420</x>
+      <y>320</y>
+      <width>191</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>lbl_nextPosY</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="lbl_nextPosAngle">
+    <property name="geometry">
+     <rect>
+      <x>420</x>
+      <y>340</y>
+      <width>191</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>lbl_nextPosAngle</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="lbl_nextPosIndex">
+    <property name="geometry">
+     <rect>
+      <x>420</x>
+      <y>280</y>
+      <width>191</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>lbl_nextPosIndex</string>
+    </property>
+   </widget>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

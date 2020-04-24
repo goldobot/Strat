@@ -25,7 +25,7 @@ MODULE_NAME := GoldobotStrat2020
 
 include $(MAKE_TREE)/mak_def.inc
 
-CXXSRC += main.cpp comm_zmq.cpp comm_rplidar.cpp comm_nucleo.cpp robot_state.cpp lidar_detect.cpp robot_strat.cpp
+CXXSRC += main.cpp comm_zmq.cpp comm_rplidar.cpp comm_nucleo.cpp robot_state.cpp lidar_detect.cpp robot_strat.cpp astar/astar.cpp
 
 EXTRA_OBJ := 
 LD_LIBS += -lstdc++ -lpthread -lm -lzmq 

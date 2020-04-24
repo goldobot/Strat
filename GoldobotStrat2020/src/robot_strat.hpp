@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <cstddef>
 
+#include "astar/astar.h"
 #include "goldo_thread.hpp"
 
 namespace goldobot
@@ -50,7 +51,7 @@ namespace goldobot
 
     STRAT_ACTION_TYPE_NUCLEO_SEQ = 16,
 
-    STRAT_ACTION_TYPE_GOTO_DBG = 32,
+    STRAT_ACTION_TYPE_GOTO_ASTAR = 32,
   } strat_action_type_t;
 
   typedef struct _strat_action_header {
@@ -89,7 +90,7 @@ namespace goldobot
     unsigned int nucleo_seq_id;
   } strat_action_nucleo_seq_t;
 
-  typedef struct _strat_action_goto_dbg {
+  typedef struct _strat_action_goto_astar {
     strat_action_header_t h;
     float speed;
     float accel;
@@ -97,7 +98,7 @@ namespace goldobot
     strat_way_point_t target;
     int nwp;
     strat_way_point_t wp[32];
-  } strat_action_goto_dbg_t;
+  } strat_action_goto_astar_t;
 
 
 /**  Strat resources  *********************************************************/
@@ -117,6 +118,7 @@ namespace goldobot
     StratTask();
 
     /* FIXME : TODO */
+    int init_dbg();
 
     char m_task_name[64];
     int m_curr_act_idx;
@@ -182,6 +184,8 @@ namespace goldobot
     int m_current_task_idx;
 
     bool m_start_match_sig;
+
+    AStar m_core_astar;
 
     /* FIXME : DEBUG */
     bool m_dbg_step_by_step;

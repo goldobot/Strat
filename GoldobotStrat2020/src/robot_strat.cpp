@@ -19,42 +19,6 @@ using namespace goldobot;
 #define MAX(a,b) ((a>b)?a:b)
 
 
-strat_way_point_t dbg_traj0[] = {
-  {  556.0, -1133.0},
-  {  336.0, - 990.0},
-  {  233.0, - 950.0},
-  {  223.0, - 726.0},
-  {  626.0, - 396.0},
-  { 1013.0, - 470.0},
-  { 1280.0, - 096.0},
-  { 1153.0,   336.0},
-  { 1300.0,   440.0},
-  { 1490.0,   300.0},
-  { 1740.0,   290.0},
-};
-
-strat_way_point_t dbg_point_to_point0 = {1490.0, 300.0};
-
-strat_way_point_t dbg_target_point1 = {1850.0, -1350.0};
-
-strat_way_point_t dbg_point_to_point1 = {1850.0, -790.0};
-
-strat_way_point_t dbg_traj2[] = {
-  //{ 1850.0, -1000.0},
-  { 1850.0,  -790.0},
-};
-
-strat_way_point_t dbg_point_to_point2 = {1850.0, -790.0};
-
-strat_way_point_t dbg_target_point3 = {300.0, -790.0};
-
-strat_way_point_t dbg_point_to_point3 = {300.0, -1350.0};
-
-strat_way_point_t dbg_target_point4 = {300.0, -1350.0};
-
-strat_way_point_t dbg_point_to_point4 = {300.0, -790.0};
-
-
 /******************************************************************************/
 /**  StratTask  ***************************************************************/
 /******************************************************************************/
@@ -152,6 +116,8 @@ int RobotStrat::init(char *strat_file_name)
   m_dbg_resume_match_sig = false;
 
   /* FIXME : TODO */
+
+  m_task_dbg.init_dbg();
 
   return 0;
 }
@@ -274,25 +240,39 @@ void RobotStrat::taskFunction()
         action_ok = true;
         break;
       case STRAT_ACTION_TYPE_TRAJ:
-        printf (" STRAT_ACTION_TYPE_TRAJ\n");
-        action_ok = true;
-        /* FIXME : TODO */
-        //cmd_traj (dbg_traj0, _countof(dbg_traj0), 0.4, 0.3, 0.3);
+        {
+          strat_action_traj_t *act_traj= (strat_action_traj_t *) my_action;
+          printf (" STRAT_ACTION_TYPE_TRAJ\n");
+          action_ok = true;
+          //cmd_traj (dbg_traj0, _countof(dbg_traj0), 0.4, 0.3, 0.3);
+          cmd_traj (act_traj->wp, act_traj->nwp, 
+                    act_traj->speed, act_traj->accel, act_traj->deccel);
+        }
         break;
       case STRAT_ACTION_TYPE_POINT_TO:
-        printf (" STRAT_ACTION_TYPE_POINT_TO\n");
-        action_ok = true;
-        /* FIXME : TODO */
+        {
+          strat_action_point_to_t *act_pt= 
+            (strat_action_point_to_t *) my_action;
+          printf (" STRAT_ACTION_TYPE_POINT_TO\n");
+          action_ok = true;
+          cmd_point_to (&(act_pt->target), 
+                        act_pt->speed, act_pt->accel, act_pt->deccel);
+        }
         break;
       case STRAT_ACTION_TYPE_NUCLEO_SEQ:
         printf (" STRAT_ACTION_TYPE_NUCLEO_SEQ\n");
         action_ok = true;
         /* FIXME : TODO */
         break;
-      case STRAT_ACTION_TYPE_GOTO_DBG:
-        printf (" STRAT_ACTION_TYPE_GOTO_DBG\n");
-        action_ok = true;
-        /* FIXME : TODO */
+      case STRAT_ACTION_TYPE_GOTO_ASTAR:
+        {
+          strat_action_goto_astar_t *act_ast= 
+            (strat_action_goto_astar_t *) my_action;
+          printf (" STRAT_ACTION_TYPE_GOTO_ASTAR\n");
+          action_ok = true;
+          /* FIXME : TODO */
+          act_ast=act_ast;
+        }
         break;
       default:
         printf (" Warning : Unknown action type!\n");
@@ -558,4 +538,196 @@ int RobotStrat::cmd_point_to(strat_way_point_t *_wp, float speed, float accel, f
   return 0;
 }
 
+
+
+/******************************************************************************/
+/**  DEBUG  *******************************************************************/
+/******************************************************************************/
+
+strat_way_point_t dbg_point_to_point0 = {556.0, -1133.0};
+
+strat_way_point_t dbg_traj1[] = {
+  {  556.0, -1133.0},
+  {  336.0, - 990.0},
+  {  233.0, - 950.0},
+  {  223.0, - 726.0},
+  {  626.0, - 396.0},
+  { 1013.0, - 470.0},
+  { 1280.0, - 096.0},
+  { 1153.0,   336.0},
+  { 1300.0,   440.0},
+  { 1490.0,   300.0},
+  { 1740.0,   290.0},
+};
+
+strat_way_point_t dbg_point_to_point2 = {1490.0, 300.0};
+
+strat_way_point_t dbg_target_point3 = {1850.0, -1350.0};
+
+strat_way_point_t dbg_point_to_point4 = {1850.0, -790.0};
+
+strat_way_point_t dbg_traj5[] = {
+  //{ 1850.0, -1000.0},
+  { 1850.0,  -790.0},
+};
+
+strat_way_point_t dbg_point_to_point6 = {1850.0, -790.0};
+
+strat_way_point_t dbg_target_point7 = {300.0, -790.0};
+
+strat_way_point_t dbg_point_to_point8 = {300.0, -1350.0};
+
+strat_way_point_t dbg_target_point9 = {300.0, -1350.0};
+
+strat_way_point_t dbg_point_to_point10 = {300.0, -790.0};
+
+int StratTask::init_dbg()
+{
+  strncpy(m_task_name,"DebugTask",sizeof(m_task_name));
+  m_n_actions = 0;
+  m_curr_act_idx = 0;
+  memset (m_action_list, 0, sizeof(m_action_list));
+  memset (m_action_buf, 0, sizeof(m_action_buf));
+  m_priority = 0;
+  m_started = false;
+  m_completed = false;
+
+  unsigned char *curr_act_p = m_action_buf;
+
+  strat_action_point_to_t *action0 = (strat_action_point_to_t *) curr_act_p;
+  action0->h.type = STRAT_ACTION_TYPE_POINT_TO;
+  action0->h.min_duration_ms = 200;
+  action0->h.max_duration_ms = 6000;
+  action0->speed = 0.4;
+  action0->accel = 0.3;
+  action0->deccel = 0.3;
+  action0->target = dbg_point_to_point0;
+  m_action_list[m_n_actions] = (strat_action_t *) action0;
+  m_n_actions++;
+  curr_act_p += sizeof(strat_action_point_to_t);
+
+  strat_action_traj_t *action1 = (strat_action_traj_t *) curr_act_p;
+  action1->h.type = STRAT_ACTION_TYPE_TRAJ;
+  action1->h.min_duration_ms = 200;
+  action1->h.max_duration_ms = 20000;
+  action1->speed = 0.4;
+  action1->accel = 0.3;
+  action1->deccel = 0.3;
+  action1->nwp = _countof(dbg_traj1);
+  memcpy (action1->wp, dbg_traj1, sizeof(dbg_traj1));
+  m_action_list[m_n_actions] = (strat_action_t *) action1;
+  m_n_actions++;
+  curr_act_p += sizeof(strat_action_traj_t);
+
+  strat_action_point_to_t *action2 = (strat_action_point_to_t *) curr_act_p;
+  action2->h.type = STRAT_ACTION_TYPE_POINT_TO;
+  action2->h.min_duration_ms = 200;
+  action2->h.max_duration_ms = 6000;
+  action2->speed = 0.4;
+  action2->accel = 0.3;
+  action2->deccel = 0.3;
+  action2->target = dbg_point_to_point2;
+  m_action_list[m_n_actions] = (strat_action_t *) action2;
+  m_n_actions++;
+  curr_act_p += sizeof(strat_action_point_to_t);
+
+  strat_action_goto_astar_t *action3 = (strat_action_goto_astar_t *) curr_act_p;
+  action3->h.type = STRAT_ACTION_TYPE_GOTO_ASTAR;
+  action3->h.min_duration_ms = 200;
+  action3->h.max_duration_ms = 20000;
+  action3->speed = 0.4;
+  action3->accel = 0.3;
+  action3->deccel = 0.3;
+  action3->target = dbg_target_point3;
+  m_action_list[m_n_actions] = (strat_action_t *) action3;
+  m_n_actions++;
+  curr_act_p += sizeof(strat_action_goto_astar_t);
+
+  strat_action_point_to_t *action4 = (strat_action_point_to_t *) curr_act_p;
+  action4->h.type = STRAT_ACTION_TYPE_POINT_TO;
+  action4->h.min_duration_ms = 200;
+  action4->h.max_duration_ms = 6000;
+  action4->speed = 0.4;
+  action4->accel = 0.3;
+  action4->deccel = 0.3;
+  action4->target = dbg_point_to_point4;
+  m_action_list[m_n_actions] = (strat_action_t *) action4;
+  m_n_actions++;
+  curr_act_p += sizeof(strat_action_point_to_t);
+
+  strat_action_traj_t *action5 = (strat_action_traj_t *) curr_act_p;
+  action5->h.type = STRAT_ACTION_TYPE_TRAJ;
+  action5->h.min_duration_ms = 200;
+  action5->h.max_duration_ms = 20000;
+  action5->speed = 0.4;
+  action5->accel = 0.3;
+  action5->deccel = 0.3;
+  action5->nwp = _countof(dbg_traj5);
+  memcpy (action5->wp, dbg_traj5, sizeof(dbg_traj5));
+  m_action_list[m_n_actions] = (strat_action_t *) action5;
+  m_n_actions++;
+  curr_act_p += sizeof(strat_action_traj_t);
+
+  strat_action_point_to_t *action6 = (strat_action_point_to_t *) curr_act_p;
+  action6->h.type = STRAT_ACTION_TYPE_POINT_TO;
+  action6->h.min_duration_ms = 200;
+  action6->h.max_duration_ms = 6000;
+  action6->speed = 0.4;
+  action6->accel = 0.3;
+  action6->deccel = 0.3;
+  action6->target = dbg_point_to_point6;
+  m_action_list[m_n_actions] = (strat_action_t *) action6;
+  m_n_actions++;
+  curr_act_p += sizeof(strat_action_point_to_t);
+
+  strat_action_goto_astar_t *action7 = (strat_action_goto_astar_t *) curr_act_p;
+  action7->h.type = STRAT_ACTION_TYPE_GOTO_ASTAR;
+  action7->h.min_duration_ms = 200;
+  action7->h.max_duration_ms = 20000;
+  action7->speed = 0.4;
+  action7->accel = 0.3;
+  action7->deccel = 0.3;
+  action7->target = dbg_target_point7;
+  m_action_list[m_n_actions] = (strat_action_t *) action7;
+  m_n_actions++;
+  curr_act_p += sizeof(strat_action_goto_astar_t);
+
+  strat_action_point_to_t *action8 = (strat_action_point_to_t *) curr_act_p;
+  action8->h.type = STRAT_ACTION_TYPE_POINT_TO;
+  action8->h.min_duration_ms = 200;
+  action8->h.max_duration_ms = 6000;
+  action8->speed = 0.4;
+  action8->accel = 0.3;
+  action8->deccel = 0.3;
+  action8->target = dbg_point_to_point8;
+  m_action_list[m_n_actions] = (strat_action_t *) action8;
+  m_n_actions++;
+  curr_act_p += sizeof(strat_action_point_to_t);
+
+  strat_action_goto_astar_t *action9 = (strat_action_goto_astar_t *) curr_act_p;
+  action9->h.type = STRAT_ACTION_TYPE_GOTO_ASTAR;
+  action9->h.min_duration_ms = 200;
+  action9->h.max_duration_ms = 20000;
+  action9->speed = 0.4;
+  action9->accel = 0.3;
+  action9->deccel = 0.3;
+  action9->target = dbg_target_point9;
+  m_action_list[m_n_actions] = (strat_action_t *) action9;
+  m_n_actions++;
+  curr_act_p += sizeof(strat_action_goto_astar_t);
+
+  strat_action_point_to_t *action10 = (strat_action_point_to_t *) curr_act_p;
+  action10->h.type = STRAT_ACTION_TYPE_POINT_TO;
+  action10->h.min_duration_ms = 200;
+  action10->h.max_duration_ms = 6000;
+  action10->speed = 0.4;
+  action10->accel = 0.3;
+  action10->deccel = 0.3;
+  action10->target = dbg_point_to_point10;
+  m_action_list[m_n_actions] = (strat_action_t *) action10;
+  m_n_actions++;
+  curr_act_p += sizeof(strat_action_point_to_t);
+
+  return 0;
+}
 

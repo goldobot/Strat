@@ -45,6 +45,8 @@
 #include "lidar_detect.hpp"
 #include "robot_strat.hpp"
 
+#include "astar/astar.h"
+
 using namespace goldobot;
 
 
@@ -70,8 +72,8 @@ char       * conf_strat_file_str             = NULL;
 bool ctrl_c_pressed = false;
 void ctrlc(int);
 
+bool autotest_flag = false;
 int process_command_line(int argc, const char * argv[]);
-
 
 #ifdef GOLDO_GIT_VERSION
 #define _STRINGIFY(A) #A
@@ -105,25 +107,25 @@ int main(int argc, const char * argv[])
     return -1;
   }
 
-  if (DirectUartNucleo::instance().init(conf_nucleo_uart_dev_str, conf_nucleo_uart_baudrate)!=0)
+  if ((!autotest_flag) && (DirectUartNucleo::instance().init(conf_nucleo_uart_dev_str, conf_nucleo_uart_baudrate)!=0))
   {
     fprintf(stderr, "Error, cannot init nucleo uart direct interface.\n");
     return -1;
   }
 
-  if (CommZmq::instance().init(conf_zmq_port)!=0)
+  if ((!autotest_flag) && (CommZmq::instance().init(conf_zmq_port)!=0))
   {
     fprintf(stderr, "Error, cannot init ZMQ interface.\n");
     return -1;
   }
 
-  if (CommRplidar::instance().init(conf_rplidar_dev_str, conf_theta_correction_deg*M_PI/180.0f, conf_rplidar_baudrate)!=0)
+  if ((!autotest_flag) && (CommRplidar::instance().init(conf_rplidar_dev_str, conf_theta_correction_deg*M_PI/180.0f, conf_rplidar_baudrate)!=0))
   {
     fprintf(stderr, "Error, cannot init the rplidar interface.\n");
     return -1;
   }
 
-  if (CommRplidar::instance().init_viewer_sock(conf_viewer_addr_str)!=0)
+  if ((!autotest_flag) && (CommRplidar::instance().init_viewer_sock(conf_viewer_addr_str)!=0))
   {
     fprintf(stderr, "Error, cannot init the rplidar debug socket.\n");
     //return -1;
@@ -140,12 +142,31 @@ int main(int argc, const char * argv[])
     fprintf(stderr, "Error, cannot init strategy module.\n");
     return -1;
   }
+  printf(" Initialising software components DONE\n");
 
 
 //// Install signal handler to detect CTRL_C ///////////////////////////////////
   ctrl_c_pressed = false;
 
   signal(SIGINT, ctrlc);
+
+
+  if (autotest_flag)
+  {
+    char dbg_fname[128];
+
+    printf(" ASTAR TEST\n");
+
+    strncpy(dbg_fname,"astar_test1.ppm",sizeof(dbg_fname));
+
+    RobotStrat::instance().dbg_astar_test(1740,   290,
+                                          1850, -1350,
+                                           400, -1000,
+                                          1600,  -300,
+                                           200,   650,
+                                          dbg_fname);
+    return 0;
+  }
 
 
 //// Create and launch worker threads //////////////////////////////////////////
@@ -188,6 +209,7 @@ int main(int argc, const char * argv[])
     fprintf(stderr, "Error, cannot start the strategy thread.\n");
     return -1;
   }
+  printf(" Creating and launching worker threads DONE\n");
 
 
 //// Main loop /////////////////////////////////////////////////////////////////
@@ -246,6 +268,25 @@ int process_command_line(int argc, const char * argv[])
 
   memset (dummy_str, 0, sizeof (dummy_str));
   dummy_str[0] = '!'; dummy_str[1] = 0x00; 
+
+  // detect autotest request
+  if (argc>1)
+  {
+    if (strncmp(argv[1],"test",4)==0)
+    {
+      autotest_flag = true;
+      conf_viewer_addr_str = conf_viewer_addr_str_def;
+      conf_theta_correction_deg = conf_theta_correction_deg_def;
+      conf_rplidar_dev_str = conf_rplidar_dev_str_def;
+      conf_rplidar_baudrate = conf_rplidar_baudrate_def;
+      conf_nucleo_uart_dev_str = conf_nucleo_uart_dev_str_def;
+      conf_nucleo_uart_baudrate = conf_nucleo_uart_baudrate_def;
+      conf_zmq_port = conf_zmq_port_def;
+      conf_strat_file_str = conf_strat_file_str_def;
+      return 0;
+    }
+  }
+
 
   // read viewer address
   if (argc>1) strncpy(dummy_str, argv[1], sizeof (dummy_str));

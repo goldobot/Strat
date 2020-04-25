@@ -111,6 +111,59 @@ namespace goldobot
   } strat_resource_type_t;
 
 
+/**  Playground  *************************************************************/
+
+  class StratPlayground {
+  public:
+    StratPlayground();
+
+    void init();
+
+    void init_pattern(unsigned char *_patt, 
+                      int _patt_sz_cm, int _obst_r_cm, 
+                      unsigned char _code);
+
+    void put_pattern(int x_cm, int y_cm, unsigned char*_patt, int _patt_sz_cm);
+
+    void put_stat_rect_obst(int x_min_mm, int x_max_mm,
+                            int y_min_mm, int y_max_mm);
+
+    void put_mob_point_obst(int x_mm, int y_mm);
+
+    void erase_mob_obst();
+
+    void feed_astar(AStar & _astar);
+
+    void dump_playground_ppm(char *ppm_fname);
+
+
+    static const int Y_OFFSET_CM     = 150;
+    static const int X_MIN_CM        =   0;
+    static const int X_MAX_CM        = 200;
+    static const int X_SZ_CM         = X_MAX_CM-X_MIN_CM;
+    static const int Y_MIN_CM        =-150;
+    static const int Y_MAX_CM        = 150;
+    static const int Y_SZ_CM         = Y_MAX_CM-Y_MIN_CM;
+    static const int S_OBST_R_CM     =  14;
+    static const int M_OBST_R_CM     =  34;
+    static const int S_PATT_SZ_CM    = 2*S_OBST_R_CM;
+    static const int M_PATT_SZ_CM    = 2*M_OBST_R_CM;
+
+    static const unsigned char NO_OBST  = 255;
+    static const unsigned char S_OBST   =   0;
+    static const unsigned char M_OBST   =   1;
+    static const unsigned char S_EXCL   =  64;
+    static const unsigned char M_EXCL   =  65;
+    static const unsigned char PATH     = 128;
+    static const unsigned char OLD_PATH = 129;
+
+    unsigned char m_playground[X_SZ_CM * Y_SZ_CM];
+    unsigned char m_stat_playground[X_SZ_CM * Y_SZ_CM];
+    unsigned char m_stat_pattern[S_PATT_SZ_CM * S_PATT_SZ_CM];
+    unsigned char m_mob_pattern[M_PATT_SZ_CM * M_PATT_SZ_CM];
+  };
+
+
 /**  Strat tasks  *************************************************************/
 
   class StratTask {
@@ -156,6 +209,13 @@ namespace goldobot
 
     void dbg_resume_match();
 
+    void dbg_astar_test(int x_start_mm, int y_start_mm,
+                        int x_end_mm, int y_end_mm,
+                        int xo1_mm, int yo1_mm,
+                        int xo2_mm, int yo2_mm,
+                        int xo3_mm, int yo3_mm,
+                        char *dump_fname);
+
     /* FIXME : TODO */
 
   private:
@@ -185,7 +245,10 @@ namespace goldobot
 
     bool m_start_match_sig;
 
+    StratPlayground m_path_find_pg;
+
     AStar m_core_astar;
+
 
     /* FIXME : DEBUG */
     bool m_dbg_step_by_step;

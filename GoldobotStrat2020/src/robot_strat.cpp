@@ -531,9 +531,9 @@ void RobotStrat::taskFunction()
           int x_start_cm = RobotState::instance().m_x_mm/10;
           int y_start_cm = RobotState::instance().m_y_mm/10;
           int x_end_cm   = act_ast->target.x_mm/10;
-          int y_end_cm   = act_ast->target.x_mm/10;
+          int y_end_cm   = act_ast->target.y_mm/10;
           int Y_OFF_CM   = m_path_find_pg.Y_OFFSET_CM;
-          int X_SZ_CM = m_path_find_pg.X_SZ_CM;
+          int X_SZ_CM    = m_path_find_pg.X_SZ_CM;
           bool isNewPath = false;
           m_core_astar.setWay(x_start_cm, y_start_cm+Y_OFF_CM, 1);
           m_core_astar.setWay(x_end_cm,   y_end_cm+Y_OFF_CM,   1);

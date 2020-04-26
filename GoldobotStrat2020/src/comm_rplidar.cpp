@@ -324,7 +324,7 @@ void CommRplidar::taskFunction()
         int my_thread_time_ms = my_tp.tv_sec*1000 + my_tp.tv_nsec/1000000;
 
         /* envoi des echantillons au tracker d'adversaire */ 
-        if ((my_abs_x >   100.0) && (my_abs_x < 1600.0) && 
+        if ((my_abs_x >   100.0) && (my_abs_x < 1900.0) && 
             (my_abs_y > -1400.0) && (my_abs_y < 1400.0) && 
             (my_R > 100.0) ) {
           LidarDetect::instance().processNewLidarSample(my_thread_time_ms, my_abs_x, my_abs_y);

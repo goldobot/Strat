@@ -494,37 +494,22 @@ void RobotStrat::taskFunction()
         state_change_dbg = false;
       }
 
-      soft_deadline_ms = my_time_ms + my_action->h.min_duration_ms;
-      hard_deadline_ms = my_time_ms + my_action->h.max_duration_ms;
-
       switch (my_action->h.type) {
       case STRAT_ACTION_TYPE_WAIT:
         printf (" STRAT_ACTION_TYPE_WAIT\n");
         action_ok = true;
         break;
       case STRAT_ACTION_TYPE_TRAJ:
-        {
-          strat_action_traj_t *act_traj= (strat_action_traj_t *) my_action;
-          printf (" STRAT_ACTION_TYPE_TRAJ\n");
-          action_ok = true;
-          //cmd_traj (dbg_traj0, _countof(dbg_traj0), 0.4, 0.3, 0.3);
-          cmd_traj (act_traj->wp, act_traj->nwp, 
-                    act_traj->speed, act_traj->accel, act_traj->deccel);
-        }
+        printf (" STRAT_ACTION_TYPE_TRAJ\n");
+        action_ok = true;
         break;
       case STRAT_ACTION_TYPE_POINT_TO:
-        {
-          strat_action_point_to_t *act_pt= 
-            (strat_action_point_to_t *) my_action;
-          printf (" STRAT_ACTION_TYPE_POINT_TO\n");
-          action_ok = true;
-          cmd_point_to (&(act_pt->target), 
-                        act_pt->speed, act_pt->accel, act_pt->deccel);
-        }
+        printf (" STRAT_ACTION_TYPE_POINT_TO\n");
+        action_ok = true;
         break;
       case STRAT_ACTION_TYPE_NUCLEO_SEQ:
         printf (" STRAT_ACTION_TYPE_NUCLEO_SEQ\n");
-        action_ok = true;
+        action_ok = false;
         /* FIXME : TODO */
         break;
       case STRAT_ACTION_TYPE_GOTO_ASTAR:
@@ -533,10 +518,8 @@ void RobotStrat::taskFunction()
             (strat_action_goto_astar_t *) my_action;
           printf (" STRAT_ACTION_TYPE_GOTO_ASTAR\n");
           action_ok = true;
-
           /* clear playground */
           m_path_find_pg.erase_mob_obst();
-
           /* put mobile obstacles */
           DetectedRobot& o0 = LidarDetect::instance().get_detected_mob_obst(0);
           m_path_find_pg.put_mob_point_obst(o0.x_mm, o0.y_mm);
@@ -544,11 +527,9 @@ void RobotStrat::taskFunction()
           m_path_find_pg.put_mob_point_obst(o1.x_mm, o1.y_mm);
           DetectedRobot& o2 = LidarDetect::instance().get_detected_mob_obst(2);
           m_path_find_pg.put_mob_point_obst(o2.x_mm, o2.y_mm);
-
           /* apply A* */
           m_core_astar.setMatrix(m_path_find_pg.X_SZ_CM,m_path_find_pg.Y_SZ_CM);
           m_path_find_pg.feed_astar(m_core_astar);
-
           int x_start_cm = RobotState::instance().m_x_mm/10;
           int y_start_cm = RobotState::instance().m_y_mm/10;
           int x_end_cm   = act_ast->target.x_mm/10;
@@ -556,15 +537,11 @@ void RobotStrat::taskFunction()
           int Y_OFF_CM   = m_path_find_pg.Y_OFFSET_CM;
           int X_SZ_CM = m_path_find_pg.X_SZ_CM;
           bool isNewPath = false;
-
           m_core_astar.setWay(x_start_cm, y_start_cm+Y_OFF_CM, 1);
           m_core_astar.setWay(x_end_cm,   y_end_cm+Y_OFF_CM,   1);
-
           m_core_astar.setStart(x_start_cm, y_start_cm+Y_OFF_CM);
           m_core_astar.setEnd(x_end_cm, y_end_cm+Y_OFF_CM);
-
           list<pair<UINT, UINT>> path= m_core_astar.getPathOnlyIfNeed(true, &isNewPath);
-
           int x_wp = 0;
           int y_wp = 0;
           path = m_core_astar.getPath(AStarPathType::raw);
@@ -580,7 +557,6 @@ void RobotStrat::taskFunction()
                 m_path_find_pg.PATH;
             }
           }
-
           int wp_idx = 0;
           path = m_core_astar.getPath(AStarPathType::smooth);
           if(path.size() > 0)
@@ -611,25 +587,26 @@ void RobotStrat::taskFunction()
               printf ("<%d,%d>\n",x_wp_mm,y_wp_mm);
             }
           }
-
           /* dump result for debug */
           sprintf(m_dbg_fname,"dump_astar_act%d.ppm",m_task_dbg.m_curr_act_idx);
           m_path_find_pg.dump_playground_ppm(m_dbg_fname);
-
-          /* execute action! */
-          cmd_traj (act_ast->wp, act_ast->nwp, 
-                    act_ast->speed, act_ast->accel, act_ast->deccel);
         }
-
         break;
       default:
         printf (" Warning : Unknown action type!\n");
         action_ok = false;
-      }
+      } /* switch (my_action->h.type) */
 
       if (action_ok)
       {
-        m_strat_state = STRAT_STATE_EXEC_ACTION_DBG;
+        if (m_dbg_step_by_step)
+        {
+          m_strat_state = STRAT_STATE_PAUSE2_DBG;
+        }
+        else
+        {
+          m_strat_state = STRAT_STATE_EXEC_ACTION_DBG;
+        }
         state_change_dbg = true;
       }
       else
@@ -646,6 +623,60 @@ void RobotStrat::taskFunction()
         printf ("\n");
         printf ("****************************************\n");
         printf ("* STRAT_STATE_EXEC_ACTION_DBG **********\n");
+        printf ("****************************************\n");
+        printf ("\n");
+        state_change_dbg = false;
+      }
+
+      soft_deadline_ms = my_time_ms + my_action->h.min_duration_ms;
+      hard_deadline_ms = my_time_ms + my_action->h.max_duration_ms;
+
+      switch (my_action->h.type) {
+      case STRAT_ACTION_TYPE_WAIT:
+        break;
+      case STRAT_ACTION_TYPE_TRAJ:
+        {
+          strat_action_traj_t *act_traj= (strat_action_traj_t *) my_action;
+          cmd_traj (act_traj->wp, act_traj->nwp, 
+                    act_traj->speed, act_traj->accel, act_traj->deccel);
+        }
+        break;
+      case STRAT_ACTION_TYPE_POINT_TO:
+        {
+          strat_action_point_to_t *act_pt= 
+            (strat_action_point_to_t *) my_action;
+          cmd_point_to (&(act_pt->target), 
+                        act_pt->speed, act_pt->accel, act_pt->deccel);
+        }
+        break;
+      case STRAT_ACTION_TYPE_NUCLEO_SEQ:
+        printf (" STRAT_ACTION_TYPE_NUCLEO_SEQ\n");
+        /* FIXME : TODO */
+        break;
+      case STRAT_ACTION_TYPE_GOTO_ASTAR:
+        {
+          strat_action_goto_astar_t *act_ast= 
+            (strat_action_goto_astar_t *) my_action;
+          /* execute action! */
+          cmd_traj (act_ast->wp, act_ast->nwp, 
+                    act_ast->speed, act_ast->accel, act_ast->deccel);
+        }
+        break;
+      default:
+        printf (" Warning : Unknown action type!\n");
+      } /* switch (my_action->h.type) */
+
+      m_strat_state = STRAT_STATE_WAIT_END_ACTION_DBG;
+      state_change_dbg = true;
+
+      break;
+
+    case STRAT_STATE_WAIT_END_ACTION_DBG:
+      if (state_change_dbg)
+      {
+        printf ("\n");
+        printf ("****************************************\n");
+        printf ("* STRAT_STATE_WAIT_END_ACTION_DBG ******\n");
         printf ("****************************************\n");
         printf ("\n");
         state_change_dbg = false;
@@ -719,6 +750,25 @@ void RobotStrat::taskFunction()
       {
         m_dbg_resume_match_sig = false;
         m_strat_state = STRAT_STATE_GET_ACTION_DBG;
+        state_change_dbg = true;
+      }
+      break;
+
+    case STRAT_STATE_PAUSE2_DBG:
+      if (state_change_dbg)
+      {
+        printf ("\n");
+        printf ("****************************************\n");
+        printf ("* STRAT_STATE_PAUSE2_DBG ***************\n");
+        printf ("****************************************\n");
+        printf ("\n");
+        state_change_dbg = false;
+      }
+
+      if (m_dbg_resume_match_sig)
+      {
+        m_dbg_resume_match_sig = false;
+        m_strat_state = STRAT_STATE_EXEC_ACTION_DBG;
         state_change_dbg = true;
       }
       break;
@@ -1142,6 +1192,8 @@ void RobotStrat::dbg_astar_test(int x_start_mm, int y_start_mm,
       x_wp = pathIt->first;
       y_wp = pathIt->second;
       y_wp -= Y_OFF_CM;
+      m_path_find_pg.m_playground[(y_wp+Y_OFF_CM)*(X_SZ_CM) + x_wp] = 
+        m_path_find_pg.PATH_WP;
       printf ("<%d,%d>\n",x_wp,y_wp);
     }
   }

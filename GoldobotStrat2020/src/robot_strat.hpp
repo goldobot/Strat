@@ -156,6 +156,7 @@ namespace goldobot
     static const unsigned char M_EXCL   =  65;
     static const unsigned char PATH     = 128;
     static const unsigned char OLD_PATH = 129;
+    static const unsigned char PATH_WP  = 160;
 
     unsigned char m_playground[X_SZ_CM * Y_SZ_CM];
     unsigned char m_stat_playground[X_SZ_CM * Y_SZ_CM];
@@ -261,6 +262,10 @@ namespace goldobot
 
     /* FIXME : DEBUG */
     StratTask m_task_dbg;
+
+    /* FIXME : DEBUG */
+    char m_dbg_fname[128];
+
 
     static RobotStrat s_instance;
   };

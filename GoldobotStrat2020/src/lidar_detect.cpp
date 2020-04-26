@@ -24,6 +24,8 @@ LidarDetect& LidarDetect::instance()
 LidarDetect::LidarDetect()
 {
   m_cur_ts_ms = 0;
+
+  m_detect_lock = false;
 }
 
 int LidarDetect::init()
@@ -62,6 +64,10 @@ int LidarDetect::init()
     m_detect_t_2[i].ax_mm_sec_2        = 0.0;
     m_detect_t_2[i].ay_mm_sec_2        = 0.0;
   }
+
+  m_detect_lock = false;
+
+  memcpy (m_detect_export, m_detect_t_0, sizeof(m_detect_t_0));
 
   return 0;
 }
@@ -277,11 +283,11 @@ void LidarDetect::updateDetection()
     m_detect_t_2[i].timestamp_ms       = m_detect_t_1[i].timestamp_ms;
     m_detect_t_2[i].id                 = m_detect_t_1[i].id;
     m_detect_t_2[i].x_mm               = m_detect_t_1[i].x_mm;
-    m_detect_t_2[i].y_mm               = m_detect_t_2[i].y_mm;
-    m_detect_t_2[i].vx_mm_sec          = m_detect_t_2[i].vx_mm_sec;
-    m_detect_t_2[i].vy_mm_sec          = m_detect_t_2[i].vy_mm_sec;
-    m_detect_t_2[i].ax_mm_sec_2        = m_detect_t_2[i].ax_mm_sec_2;
-    m_detect_t_2[i].ay_mm_sec_2        = m_detect_t_2[i].ay_mm_sec_2;
+    m_detect_t_2[i].y_mm               = m_detect_t_1[i].y_mm;
+    m_detect_t_2[i].vx_mm_sec          = m_detect_t_1[i].vx_mm_sec;
+    m_detect_t_2[i].vy_mm_sec          = m_detect_t_1[i].vy_mm_sec;
+    m_detect_t_2[i].ax_mm_sec_2        = m_detect_t_1[i].ax_mm_sec_2;
+    m_detect_t_2[i].ay_mm_sec_2        = m_detect_t_1[i].ay_mm_sec_2;
 
     m_detect_t_1[i].nb_rplidar_samples = m_detect_t_0[i].nb_rplidar_samples;
     m_detect_t_1[i].timestamp_ms       = m_detect_t_0[i].timestamp_ms;
@@ -364,6 +370,9 @@ void LidarDetect::updateDetection()
 
 #endif
 
+  m_detect_lock = true;
+  memcpy (m_detect_export, m_detect_t_0, sizeof(m_detect_t_0));
+  m_detect_lock = false;
 }
 
 
@@ -404,6 +413,14 @@ void LidarDetect::sendDetected()
     CommZmq::instance().send((const char*)(&my_message_type), 2, ZMQ_SNDMORE);
     CommZmq::instance().send((const char*)(&my_message), sizeof(my_message), 0);
   }
+}
+
+
+DetectedRobot& LidarDetect::get_detected_mob_obst(int _obst_idx)
+{
+  /* FIXME : TODO : improve synchronisation */
+  while(m_detect_lock); /* Warning : dangerous! */
+  return m_detect_export[_obst_idx];
 }
 
 

@@ -64,6 +64,8 @@ namespace goldobot
 
     void sendDetected();
 
+    DetectedRobot& get_detected_mob_obst(int _obst_idx);
+
   private:
     unsigned int m_cur_ts_ms = 0;
 
@@ -74,6 +76,10 @@ namespace goldobot
     DetectedRobot m_detect_t_0[MAX_NB_OF_DETECTED_ROBOTS]; /* detectes pendant le scan courant(t0) */
     DetectedRobot m_detect_t_1[MAX_NB_OF_DETECTED_ROBOTS]; /* detectes a t0-1*dt */
     DetectedRobot m_detect_t_2[MAX_NB_OF_DETECTED_ROBOTS]; /* detectes a t0-2*dt */
+    bool m_detect_lock; /* FIXME : TODO : improve synchronisation */
+
+    DetectedRobot m_detect_export[MAX_NB_OF_DETECTED_ROBOTS]; /* copie de m_detect_t_* pour visibilite depuis classes externes */
+
 
     static double dist(double x0, double y0, double x1, double y1);
 

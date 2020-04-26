@@ -213,6 +213,7 @@ void StratPlayground::feed_astar(AStar & _astar)
       switch (code) {
       case NO_OBST:
       case OLD_PATH:
+      case PATH_WP:
       case PATH:
         _astar.setWay(x, y+Y_OFFSET_CM, 1);
         break;
@@ -274,6 +275,11 @@ void StratPlayground::dump_playground_ppm(char *ppm_fname)
         color[1] = 255;  /* green */
         color[2] = 128;  /* blue */
         break;
+      case PATH_WP:
+        color[0] =   0;  /* red */
+        color[1] =   0;  /* green */
+        color[2] = 255;  /* blue */
+        break;
       case PATH:
         color[0] = 255;  /* red */
         color[1] = 255;  /* green */
@@ -334,6 +340,8 @@ RobotStrat::RobotStrat()
 
   m_dbg_resume_match_sig = false;
 
+  memset (m_dbg_fname, 0, sizeof(m_dbg_fname));
+
 }
 
 int RobotStrat::init(char *strat_file_name)
@@ -371,6 +379,8 @@ int RobotStrat::init(char *strat_file_name)
   m_dbg_resume_match_sig = false;
 
   m_task_dbg.init_dbg();
+
+  memset (m_dbg_fname, 0, sizeof(m_dbg_fname));
 
   return 0;
 }
@@ -523,9 +533,94 @@ void RobotStrat::taskFunction()
             (strat_action_goto_astar_t *) my_action;
           printf (" STRAT_ACTION_TYPE_GOTO_ASTAR\n");
           action_ok = true;
-          /* FIXME : TODO */
-          act_ast=act_ast;
+
+          /* clear playground */
+          m_path_find_pg.erase_mob_obst();
+
+          /* put mobile obstacles */
+          DetectedRobot& o0 = LidarDetect::instance().get_detected_mob_obst(0);
+          m_path_find_pg.put_mob_point_obst(o0.x_mm, o0.y_mm);
+          DetectedRobot& o1 = LidarDetect::instance().get_detected_mob_obst(1);
+          m_path_find_pg.put_mob_point_obst(o1.x_mm, o1.y_mm);
+          DetectedRobot& o2 = LidarDetect::instance().get_detected_mob_obst(2);
+          m_path_find_pg.put_mob_point_obst(o2.x_mm, o2.y_mm);
+
+          /* apply A* */
+          m_core_astar.setMatrix(m_path_find_pg.X_SZ_CM,m_path_find_pg.Y_SZ_CM);
+          m_path_find_pg.feed_astar(m_core_astar);
+
+          int x_start_cm = RobotState::instance().m_x_mm/10;
+          int y_start_cm = RobotState::instance().m_y_mm/10;
+          int x_end_cm   = act_ast->target.x_mm/10;
+          int y_end_cm   = act_ast->target.x_mm/10;
+          int Y_OFF_CM   = m_path_find_pg.Y_OFFSET_CM;
+          int X_SZ_CM = m_path_find_pg.X_SZ_CM;
+          bool isNewPath = false;
+
+          m_core_astar.setWay(x_start_cm, y_start_cm+Y_OFF_CM, 1);
+          m_core_astar.setWay(x_end_cm,   y_end_cm+Y_OFF_CM,   1);
+
+          m_core_astar.setStart(x_start_cm, y_start_cm+Y_OFF_CM);
+          m_core_astar.setEnd(x_end_cm, y_end_cm+Y_OFF_CM);
+
+          list<pair<UINT, UINT>> path= m_core_astar.getPathOnlyIfNeed(true, &isNewPath);
+
+          int x_wp = 0;
+          int y_wp = 0;
+          path = m_core_astar.getPath(AStarPathType::raw);
+          if(path.size() > 0)
+          {
+            list<pair<UINT, UINT>>::iterator pathIt;
+            for (pathIt = path.begin(); pathIt != path.end(); pathIt++)
+            {
+              x_wp = pathIt->first;
+              y_wp = pathIt->second;
+              y_wp -= Y_OFF_CM;
+              m_path_find_pg.m_playground[(y_wp+Y_OFF_CM)*(X_SZ_CM) + x_wp] = 
+                m_path_find_pg.PATH;
+            }
+          }
+
+          int wp_idx = 0;
+          path = m_core_astar.getPath(AStarPathType::smooth);
+          if(path.size() > 0)
+          {
+            list<pair<UINT, UINT>>::iterator pathIt;
+            for (pathIt = path.begin(); pathIt != path.end(); pathIt++)
+            {
+              int x_wp_mm;
+              int y_wp_mm;
+              x_wp = pathIt->first;
+              y_wp = pathIt->second;
+              y_wp -= Y_OFF_CM;
+              m_path_find_pg.m_playground[(y_wp+Y_OFF_CM)*(X_SZ_CM) + x_wp] = 
+                m_path_find_pg.PATH_WP;
+              x_wp_mm = x_wp*10;
+              y_wp_mm = y_wp*10;
+              if (wp_idx<_countof(act_ast->wp))
+              {
+                act_ast->wp[wp_idx].x_mm = x_wp_mm;
+                act_ast->wp[wp_idx].y_mm = y_wp_mm;
+                wp_idx++;
+                act_ast->nwp = wp_idx;
+              }
+              else 
+              {
+                /* FIXME : TODO : what to do? */
+              }
+              printf ("<%d,%d>\n",x_wp_mm,y_wp_mm);
+            }
+          }
+
+          /* dump result for debug */
+          sprintf(m_dbg_fname,"dump_astar_act%d.ppm",m_task_dbg.m_curr_act_idx);
+          m_path_find_pg.dump_playground_ppm(m_dbg_fname);
+
+          /* execute action! */
+          cmd_traj (act_ast->wp, act_ast->nwp, 
+                    act_ast->speed, act_ast->accel, act_ast->deccel);
         }
+
         break;
       default:
         printf (" Warning : Unknown action type!\n");

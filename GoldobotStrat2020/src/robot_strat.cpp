@@ -870,8 +870,8 @@ int RobotStrat::cmd_traj(strat_way_point_t *_wp, int _nwp, float speed, float ac
 
   for (int i=0; i<_nwp; i++) 
   {
-    unsigned int my_x = _wp[i].x_mm*0.001;
-    unsigned int my_y = _wp[i].y_mm*0.001;
+    float my_x = _wp[i].x_mm*0.001;
+    float my_y = _wp[i].y_mm*0.001;
 
     field_len = sizeof(float);
     memcpy (_pc, (unsigned char *)&(my_x), field_len);
@@ -898,8 +898,8 @@ int RobotStrat::cmd_point_to(strat_way_point_t *_wp, float speed, float accel, f
   int cmd_buf_len = 0;
   int field_len = 0;
 
-  unsigned int my_x = _wp->x_mm*0.001;
-  unsigned int my_y = _wp->y_mm*0.001;
+  float my_x = _wp->x_mm*0.001;
+  float my_y = _wp->y_mm*0.001;
 
   field_len = sizeof(unsigned short int);
   memcpy (_pc, (unsigned char *)&cmd_traj_code, field_len);
@@ -930,6 +930,8 @@ int RobotStrat::cmd_point_to(strat_way_point_t *_wp, float speed, float accel, f
   memcpy (_pc, (unsigned char *)&deccel, field_len);
   _pc += field_len;
   cmd_buf_len += field_len;
+
+  DirectUartNucleo::instance().send(m_nucleo_cmd_buf, cmd_buf_len);
 
   return 0;
 }

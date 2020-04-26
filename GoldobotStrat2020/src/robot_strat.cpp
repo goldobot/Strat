@@ -428,7 +428,7 @@ void RobotStrat::taskFunction()
       /* FIXME : DEBUG */
       m_task_dbg.m_curr_act_idx = 0;
 
-      if (((my_robot_sensors&2)==0) && m_start_match_sig)
+      if (((my_robot_sensors&2)==0) || m_start_match_sig)
       {
         printf ("\n DEBUG : Tirette!..\n\n");
 

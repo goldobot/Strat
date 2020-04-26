@@ -146,6 +146,14 @@ void CommZmq::taskFunction()
         printf ("  ZMQ DEBUG: RobotStratDbgStartMatch\n");
         RobotStrat::instance().start_match();
         break;
+      case 2049: /* RobotStratDbgPauseMatch        */
+        printf ("  ZMQ DEBUG: RobotStratDbgPauseMatch\n");
+        RobotStrat::instance().dbg_pause_match();
+        break;
+      case 2050: /* RobotStratDbgResumeMatch       */
+        printf ("  ZMQ DEBUG: RobotStratDbgResumeMatch\n");
+        RobotStrat::instance().dbg_resume_match();
+        break;
       }
     }
 

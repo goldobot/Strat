@@ -229,6 +229,8 @@ double AStar::pathCostToNode(UINT x, UINT y, UINT destX, UINT destY)
     double cost = 0;
     UINT originX, originY;
 
+    h = 0;
+
     originX = matrix[x][y].originX;
     originY = matrix[x][y].originY;
 

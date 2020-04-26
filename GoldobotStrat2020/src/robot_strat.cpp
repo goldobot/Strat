@@ -559,6 +559,13 @@ void RobotStrat::taskFunction()
           path = m_core_astar.getPath(AStarPathType::smooth);
           if(path.size() > 0)
           {
+            if(path.size() == 1) /* FIXME : TODO : workaround Nucleo bug */
+            {
+              act_ast->wp[wp_idx].x_mm = RobotState::instance().m_x_mm;
+              act_ast->wp[wp_idx].y_mm = RobotState::instance().m_y_mm;
+              wp_idx++;
+              act_ast->nwp = wp_idx;
+            }
             list<pair<UINT, UINT>>::iterator pathIt;
             for (pathIt = path.begin(); pathIt != path.end(); pathIt++)
             {
@@ -954,8 +961,8 @@ strat_way_point_t dbg_traj1[] = {
   { 1280.0, - 096.0},
   { 1153.0,   336.0},
   { 1300.0,   440.0},
-  { 1490.0,   270.0},
-  { 1740.0,   270.0},
+  { 1490.0,   240.0},
+  { 1740.0,   260.0},
 };
 
 strat_way_point_t dbg_traj2[] = {
@@ -963,7 +970,7 @@ strat_way_point_t dbg_traj2[] = {
   { 1490.0,   300.0},
 };
 
-strat_way_point_t dbg_point_to_point3 = {1490.0, -300.0};
+strat_way_point_t dbg_point_to_point3 = {1400.0, -300.0};
 
 strat_way_point_t dbg_target_point4 = {1850.0, -1350.0};
 

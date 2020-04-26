@@ -561,10 +561,13 @@ void RobotStrat::taskFunction()
           {
             if(path.size() == 1) /* FIXME : TODO : workaround Nucleo bug */
             {
-              act_ast->wp[wp_idx].x_mm = RobotState::instance().m_x_mm;
-              act_ast->wp[wp_idx].y_mm = RobotState::instance().m_y_mm;
+              int x_wp_mm = RobotState::instance().m_x_mm;
+              int y_wp_mm = RobotState::instance().m_y_mm;
+              act_ast->wp[wp_idx].x_mm = x_wp_mm;
+              act_ast->wp[wp_idx].y_mm = y_wp_mm;
               wp_idx++;
               act_ast->nwp = wp_idx;
+              printf ("<%d,%d>\n",x_wp_mm,y_wp_mm);
             }
             list<pair<UINT, UINT>>::iterator pathIt;
             for (pathIt = path.begin(); pathIt != path.end(); pathIt++)
@@ -591,6 +594,11 @@ void RobotStrat::taskFunction()
               }
               printf ("<%d,%d>\n",x_wp_mm,y_wp_mm);
             }
+          }
+          else
+          {
+            printf (" Cannot generate path!\n");
+            action_ok = false;
           }
           /* dump result for debug */
           sprintf(m_dbg_fname,"dump_astar_act%d.ppm",m_task_dbg.m_curr_act_idx);

@@ -388,6 +388,9 @@ int RobotStrat::init(char *strat_file_name)
 void RobotStrat::taskFunction()
 {
   bool state_change_dbg = true;
+  unsigned int soft_deadline_ms = 0;
+  unsigned int hard_deadline_ms = 0;
+  strat_action_t *my_action = NULL;
 
   m_task_running = true;
 
@@ -402,9 +405,6 @@ void RobotStrat::taskFunction()
   {
     struct timespec my_tp;
     unsigned int my_time_ms = 0;
-    unsigned int soft_deadline_ms = 0;
-    unsigned int hard_deadline_ms = 0;
-    strat_action_t *my_action = NULL;
     bool action_ok = false;
 
     volatile unsigned int my_robot_sensors = 
@@ -428,14 +428,12 @@ void RobotStrat::taskFunction()
       /* FIXME : DEBUG */
       m_task_dbg.m_curr_act_idx = 0;
 
-      if (((my_robot_sensors&2)==0))
+      if (((my_robot_sensors&2)==0) && m_start_match_sig)
       {
         printf ("\n DEBUG : Tirette!..\n\n");
 
         /* FIXME : TODO : necessary? */
         usleep (3000000);
-
-        m_start_match_sig = true;
 
         m_strat_state = STRAT_STATE_GET_ACTION_DBG;
         state_change_dbg = true;

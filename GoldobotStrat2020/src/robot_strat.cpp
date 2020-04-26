@@ -989,7 +989,7 @@ strat_way_point_t dbg_traj6[] = {
   { 1850.0,  -790.0},
 };
 
-strat_way_point_t dbg_point_to_point7 = {1850.0, -790.0};
+strat_way_point_t dbg_point_to_point7 = {300.0, -790.0};
 
 strat_way_point_t dbg_target_point8 = {300.0, -790.0};
 

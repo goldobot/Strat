@@ -387,6 +387,7 @@ int RobotStrat::init(char *strat_file_name)
 
 void RobotStrat::taskFunction()
 {
+  bool state_change_dbg = true;
 
   m_task_running = true;
 
@@ -403,7 +404,6 @@ void RobotStrat::taskFunction()
     unsigned int my_time_ms = 0;
     unsigned int soft_deadline_ms = 0;
     unsigned int hard_deadline_ms = 0;
-    bool state_change_dbg = true;
     strat_action_t *my_action = NULL;
     bool action_ok = false;
 

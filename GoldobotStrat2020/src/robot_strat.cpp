@@ -954,8 +954,8 @@ strat_way_point_t dbg_traj1[] = {
   { 1280.0, - 096.0},
   { 1153.0,   336.0},
   { 1300.0,   440.0},
-  { 1490.0,   300.0},
-  { 1740.0,   290.0},
+  { 1490.0,   270.0},
+  { 1740.0,   270.0},
 };
 
 strat_way_point_t dbg_traj2[] = {
@@ -963,7 +963,7 @@ strat_way_point_t dbg_traj2[] = {
   { 1490.0,   300.0},
 };
 
-strat_way_point_t dbg_point_to_point3 = {1490.0, 300.0};
+strat_way_point_t dbg_point_to_point3 = {1490.0, -300.0};
 
 strat_way_point_t dbg_target_point4 = {1850.0, -1350.0};
 

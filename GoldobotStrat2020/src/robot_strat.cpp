@@ -534,15 +534,16 @@ void RobotStrat::taskFunction()
           int y_end_cm   = act_ast->target.y_mm/10;
           int Y_OFF_CM   = m_path_find_pg.Y_OFFSET_CM;
           int X_SZ_CM    = m_path_find_pg.X_SZ_CM;
-          bool isNewPath = false;
+          printf ("START(cm) : <%d,%d>\n", x_start_cm, y_start_cm);
+          printf ("END(cm) : <%d,%d>\n", x_end_cm, y_end_cm);
           m_core_astar.setWay(x_start_cm, y_start_cm+Y_OFF_CM, 1);
           m_core_astar.setWay(x_end_cm,   y_end_cm+Y_OFF_CM,   1);
           m_core_astar.setStart(x_start_cm, y_start_cm+Y_OFF_CM);
           m_core_astar.setEnd(x_end_cm, y_end_cm+Y_OFF_CM);
-          list<pair<UINT, UINT>> path= m_core_astar.getPathOnlyIfNeed(true, &isNewPath);
+          m_core_astar.search();
           int x_wp = 0;
           int y_wp = 0;
-          path = m_core_astar.getPath(AStarPathType::raw);
+          list<pair<UINT,UINT>> path = m_core_astar.getPath(AStarPathType::raw);
           if(path.size() > 0)
           {
             list<pair<UINT, UINT>>::iterator pathIt;

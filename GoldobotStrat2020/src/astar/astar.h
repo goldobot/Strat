@@ -34,8 +34,6 @@ class AStar
     void openNode(UINT x, UINT y, UINT originX, UINT originY, list<NodeState> *changes = NULL);
     void freeNodes();
 
-    void search(bool saveChanges = false);
-
     void setOriginNode(UINT x, UINT y, UINT originX, UINT originY);
 
     double pathCostToNode(UINT x, UINT y, UINT destX, UINT destY);
@@ -58,6 +56,8 @@ public:
     void setWall(UINT x, UINT y);
     void setWay(UINT x, UINT y, UINT expandCost = 1);
     void setHeuristics(AStarHeuristics heuristic);
+
+    void search(bool saveChanges = false);
 
     NodeType getNodeType(UINT x, UINT y) const;
     pair<UINT, UINT> getStart() const;

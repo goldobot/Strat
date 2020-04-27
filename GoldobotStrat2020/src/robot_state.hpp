@@ -24,8 +24,8 @@ namespace goldobot
     /* FIXME : TODO : ok to let these fields in public access?*/
     unsigned int m_local_ts_ms; /* was g_odo_thread_time_ms */
     unsigned int m_remote_ts_ms; /* g_odo_time_ms */
-    unsigned int m_x_mm;
-    unsigned int m_y_mm;
+    int          m_x_mm;
+    int          m_y_mm;
     double       m_theta_deg;
     double       m_speed_abs;
     bool         m_forward_move;

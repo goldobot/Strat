@@ -134,6 +134,10 @@ void CommZmq::taskFunction()
         printf ("  ZMQ DEBUG: DbgPropulsionExecuteTrajectory\n");
         DirectUartNucleo::instance().send(buff, bytes_read);
         break;
+      case 99:   /* PropulsionClearError */
+        printf ("  ZMQ DEBUG: PropulsionClearError\n");
+        DirectUartNucleo::instance().send(buff, bytes_read);
+        break;
       case 1024: /* RplidarStart                   */
         printf ("  ZMQ DEBUG: RplidarStart\n");
         CommRplidar::instance().start_scan();

@@ -1,6 +1,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <math.h>
+#include <sys/time.h>
 
 #include "robot_state.hpp"
 
@@ -22,30 +23,34 @@ RobotState::RobotState()
   m_stop_task = false;
   m_task_running = false;
 
-  m_local_ts_ms  = 0;
-  m_remote_ts_ms = 0;
-  m_x_mm         = 0;
-  m_y_mm         = 0;
-  m_theta_deg    = 0.0;
+  m_s.local_ts_ms  = 0;
+  m_s.remote_ts_ms = 0;
+  m_s.x_mm         = 0;
+  m_s.y_mm         = 0;
+  m_s.theta_deg    = 0.0;
 
-  m_speed_abs = 0.0;
-  m_forward_move = true;
+  m_s.speed_abs = 0.0;
+  m_s.forward_move = true;
 
-  m_robot_sensors = 0;
+  m_s.robot_sensors = 0;
+
+  pthread_mutex_init(&m_lock, NULL);
 }
 
 int RobotState::init()
 {
-  m_local_ts_ms  = 0;
-  m_remote_ts_ms = 0;
-  m_x_mm         = 0;
-  m_y_mm         = 0;
-  m_theta_deg    = 0.0;
+  m_s.local_ts_ms  = 0;
+  m_s.remote_ts_ms = 0;
+  m_s.x_mm         = 0;
+  m_s.y_mm         = 0;
+  m_s.theta_deg    = 0.0;
 
-  m_speed_abs = 0.0;
-  m_forward_move = true;
+  m_s.speed_abs = 0.0;
+  m_s.forward_move = true;
 
-  m_robot_sensors = 0;
+  m_s.robot_sensors = 0;
+
+  pthread_mutex_init(&m_lock, NULL);
 
   return 0;
 }
@@ -80,8 +85,8 @@ void RobotState::taskFunction()
   int dbg_cnt = 0;
 
 
-  m_speed_abs = 0.0;
-  m_forward_move = true;
+  m_s.speed_abs = 0.0;
+  m_s.forward_move = true;
 
   l_dbg_thread_time_ms_old = 0;
   l_dbg_thread_time_ms_delta = 0;
@@ -113,23 +118,19 @@ void RobotState::taskFunction()
   {
 
     //if ((dbg_cnt%10)==0) 
-    if (RobotState::instance().m_local_ts_ms!=l_uart_thread_time_ms_old) 
+    if (m_s.local_ts_ms!=l_uart_thread_time_ms_old) 
     {
       struct timespec my_tp;
       unsigned int dbg_thread_time_ms;
 
-      RobotState::instance().lock();
-      volatile unsigned int my_uart_thread_time_ms = 
-        RobotState::instance().m_local_ts_ms;
-      volatile unsigned int my_odo_time_ms = 
-        RobotState::instance().m_remote_ts_ms;
-      volatile int    my_odo_x_mm = RobotState::instance().m_x_mm;
-      volatile int    my_odo_y_mm = RobotState::instance().m_y_mm;
-      volatile double my_odo_theta_deg = 
-        RobotState::instance().m_theta_deg;
-      volatile unsigned int my_robot_sensors = 
-        RobotState::instance().m_robot_sensors;
-      RobotState::instance().release();
+      lock();
+      volatile unsigned int my_uart_thread_time_ms = m_s.local_ts_ms;
+      volatile unsigned int my_odo_time_ms         = m_s.remote_ts_ms;
+      volatile int          my_odo_x_mm            = m_s.x_mm;
+      volatile int          my_odo_y_mm            = m_s.y_mm;
+      volatile double       my_odo_theta_deg       = m_s.theta_deg;
+      volatile unsigned int my_robot_sensors       = m_s.robot_sensors;
+      release();
 
       clock_gettime(1, &my_tp);
 
@@ -159,11 +160,11 @@ void RobotState::taskFunction()
         l_odo_y_mm_old = my_odo_y_mm;
         l_odo_theta_deg_old = my_odo_theta_deg;
 
-        if (l_odo_time_ms_delta==0) m_speed_abs = 0.0;
-        else m_speed_abs = ((double)l_odo_d_mm_delta/*/1000.0*/)/(l_odo_time_ms_delta/*/1000.0*/); // result in m/sec
-        if (m_speed_abs>0.005) 
+        if (l_odo_time_ms_delta==0) m_s.speed_abs = 0.0;
+        else m_s.speed_abs = ((double)l_odo_d_mm_delta/*/1000.0*/)/(l_odo_time_ms_delta/*/1000.0*/); // result in m/sec
+        if (m_s.speed_abs>0.005) 
         {
-          m_forward_move = ((l_odo_x_mm_delta*cos(l_odo_theta_rad) + l_odo_y_mm_delta*sin(l_odo_theta_rad)) > 0.0);
+          m_s.forward_move = ((l_odo_x_mm_delta*cos(l_odo_theta_rad) + l_odo_y_mm_delta*sin(l_odo_theta_rad)) > 0.0);
         }
       } 
       else 
@@ -184,14 +185,14 @@ void RobotState::taskFunction()
               my_odo_x_mm, my_odo_y_mm, l_odo_d_mm_delta_max,
               my_odo_theta_deg, l_odo_theta_deg_delta_max);
 
-      printf ("MOVE : %s %f m/s\n", m_forward_move?"FORWARDS":"BACKWARDS", m_speed_abs);
+      printf ("MOVE : %s %f m/s\n", m_s.forward_move?"FORWARDS":"BACKWARDS", m_s.speed_abs);
       printf ("robot_sensors = %.8x\n", my_robot_sensors);
 
       printf ("\n");
 #endif
       my_robot_sensors = my_robot_sensors; /* avoid stupid compiler message */
       dbg_cnt++;
-    } /* (RobotState::instance().m_local_ts_ms!=l_uart_thread_time_ms_old) */
+    } /* (m_s.local_ts_ms!=l_uart_thread_time_ms_old) */
     else
     {
       usleep (10000);
@@ -203,15 +204,56 @@ void RobotState::taskFunction()
   m_task_running = false;
 }
 
-int RobotState::lock()
+void RobotState::get_s(robot_state_info_t *_s)
 {
-  /* FIXME : TODO */
+  lock();
+  *_s = m_s;
+  release();
+}
 
-  return 0;
+void RobotState::set_s(robot_state_info_t *_s)
+{
+  lock();
+  m_s = *_s;
+  release();
+}
+
+int RobotState::lock(int timeout_ms)
+{
+  if (timeout_ms < 0)
+  {
+    if (pthread_mutex_lock(&m_lock) == 0)
+    {
+      return 0;
+    }
+  }
+  else if (timeout_ms == 0)
+  {
+    if (pthread_mutex_trylock(&m_lock) == 0)
+    {
+      return 0;
+    }
+  }
+  else
+  {
+    timespec wait_time;
+    timeval now;
+    gettimeofday(&now,NULL);
+
+    wait_time.tv_sec = timeout_ms/1000 + now.tv_sec;
+    wait_time.tv_nsec = (timeout_ms%1000)*1000000 + now.tv_usec*1000;
+        
+    if (pthread_mutex_timedlock(&m_lock,&wait_time) == 0)
+    {
+      return 0;
+    }
+  }
+
+  return -1;
 }
 
 void RobotState::release()
 {
-  /* FIXME : TODO */
+  pthread_mutex_unlock(&m_lock);
 }
 

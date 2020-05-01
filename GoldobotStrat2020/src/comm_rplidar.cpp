@@ -141,9 +141,9 @@ int CommRplidar::send_to_viewer()
   int l_odo_theta_deg_0_01 = 0;
 
   RobotState::instance().lock();
-  int l_odo_x_mm      = RobotState::instance().m_x_mm;
-  int l_odo_y_mm      = RobotState::instance().m_y_mm;
-  int l_odo_theta_deg = RobotState::instance().m_theta_deg;
+  int l_odo_x_mm      = RobotState::instance().s().x_mm;
+  int l_odo_y_mm      = RobotState::instance().s().y_mm;
+  int l_odo_theta_deg = RobotState::instance().s().theta_deg;
   RobotState::instance().release();
 
   /* header tlv */
@@ -279,10 +279,10 @@ void CommRplidar::taskFunction()
         double my_R = nodes[pos].distance_q2/4.0f;
 
         RobotState::instance().lock();
-        int l_odo_x_mm         = RobotState::instance().m_x_mm;
-        int l_odo_y_mm         = RobotState::instance().m_y_mm;
-        double l_odo_theta_deg = RobotState::instance().m_theta_deg;
-        bool l_forward_move    = RobotState::instance().m_forward_move;
+        int l_odo_x_mm         = RobotState::instance().s().x_mm;
+        int l_odo_y_mm         = RobotState::instance().s().y_mm;
+        double l_odo_theta_deg = RobotState::instance().s().theta_deg;
+        bool l_forward_move    = RobotState::instance().s().forward_move;
         RobotState::instance().release();
 
         if ((my_R < 1.0f) || (my_R > 3000.0f)) my_R = 0.0f;

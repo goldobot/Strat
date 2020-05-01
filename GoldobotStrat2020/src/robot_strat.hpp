@@ -138,7 +138,11 @@ namespace goldobot
 
     void feed_astar(AStar & _astar);
 
+    void create_playground_ppm();
+
     void dump_playground_ppm(char *ppm_fname);
+
+    void send_playground_ppm();
 
 
     static const int Y_OFFSET_CM     = 150;
@@ -166,6 +170,9 @@ namespace goldobot
     unsigned char m_stat_playground[X_SZ_CM * Y_SZ_CM];
     unsigned char m_stat_pattern[S_PATT_SZ_CM * S_PATT_SZ_CM];
     unsigned char m_mob_pattern[M_PATT_SZ_CM * M_PATT_SZ_CM];
+
+    int m_ppm_sz;
+    unsigned char m_ppm_buff[0x40000];
   };
 
 
@@ -227,6 +234,8 @@ namespace goldobot
     int cmd_traj (strat_way_point_t *_wp, int _nwp, float speed, float accel, float deccel);
 
     int cmd_point_to (strat_way_point_t *_wp, float speed, float accel, float deccel);
+
+    int cmd_clear_prop_err ();
 
     /* FIXME : TODO */
 

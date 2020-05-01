@@ -364,12 +364,12 @@ void DirectUartNucleo::taskFunction()
 #endif
 
         RobotState::instance().lock();
-        RobotState::instance().m_local_ts_ms   = my_time_ms;
-        RobotState::instance().m_remote_ts_ms  = cur_odo_time;
-        RobotState::instance().m_x_mm          = cur_odo_x_mm;
-        RobotState::instance().m_y_mm          = cur_odo_y_mm;
-        RobotState::instance().m_theta_deg     = cur_odo_theta_deg;
-        RobotState::instance().m_robot_sensors = cur_robot_sensors_32;
+        RobotState::instance().s().local_ts_ms   = my_time_ms;
+        RobotState::instance().s().remote_ts_ms  = cur_odo_time;
+        RobotState::instance().s().x_mm          = cur_odo_x_mm;
+        RobotState::instance().s().y_mm          = cur_odo_y_mm;
+        RobotState::instance().s().theta_deg     = cur_odo_theta_deg;
+        RobotState::instance().s().robot_sensors = cur_robot_sensors_32;
         RobotState::instance().release();
 
         break;

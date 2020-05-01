@@ -1,6 +1,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <math.h>
+#include <zmq.h>
 
 #include "comm_rplidar.hpp"
 #include "comm_zmq.hpp"
@@ -52,6 +53,8 @@ StratPlayground::StratPlayground()
   memset (m_mob_pattern, 0, sizeof(m_mob_pattern));
   memset (m_playground, 0, sizeof(m_playground));
   memset (m_stat_playground, 0, sizeof(m_stat_playground));
+  m_ppm_sz = 0;
+  memset (m_ppm_buff, 0, sizeof(m_ppm_buff));
 }
 
 void StratPlayground::init()
@@ -107,6 +110,10 @@ void StratPlayground::init()
 
   /* make backup */
   memcpy(m_stat_playground, m_playground, sizeof(m_playground));
+
+  /* ppm image for debug */
+  m_ppm_sz = 0;
+  memset (m_ppm_buff, 0, sizeof(m_ppm_buff));
 }
 
 void StratPlayground::init_pattern(unsigned char *_patt, 
@@ -235,20 +242,27 @@ void StratPlayground::erase_mob_obst()
   memcpy(m_playground, m_stat_playground, sizeof(m_playground));
 }
 
-void StratPlayground::dump_playground_ppm(char *ppm_fname)
+void StratPlayground::create_playground_ppm()
 {
+  unsigned char *p=m_ppm_buff;
   const int dimH = 300, dimV = 200;
   int i, j;
-  FILE *fp = fopen(ppm_fname, "wb"); /* b - binary mode */
-  (void) fprintf(fp, "P6\n%d %d\n255\n", dimH, dimV);
+
+  m_ppm_sz = 0;
+  memset (m_ppm_buff, 0, sizeof(m_ppm_buff));
+
+  int head_sz = sprintf((char *)p, "P6\n%d %d\n255\n", dimH, dimV);
+  p += head_sz;
+  m_ppm_sz += head_sz;
+
   for (j = 0; j < dimV; ++j)
   {
     for (i = 0; i < dimH; ++i)
     {
       unsigned char color[3];
-      //color[0] = i % 256;  /* red */
-      //color[1] = j % 256;  /* green */
-      //color[2] = (i * j) % 256;  /* blue */
+      color[0] = 255;  /* red   */
+      color[1] = 255;  /* green */
+      color[2] = 255;  /* blue  */
 
       unsigned char code = m_playground[(i)*(X_SZ_CM) + j];
 
@@ -287,12 +301,34 @@ void StratPlayground::dump_playground_ppm(char *ppm_fname)
         break;
       }
 
-      (void) fwrite(color, 1, 3, fp);
+      p[0] = color[0];
+      p[1] = color[1];
+      p[2] = color[2];
+      p += 3;
+      m_ppm_sz += 3;
     }
   }
+
+}
+
+void StratPlayground::dump_playground_ppm(char *ppm_fname)
+{
+  FILE *fp = fopen(ppm_fname, "wb"); /* b - binary mode */
+  (void) fwrite(m_ppm_buff, 1, m_ppm_sz, fp);
   (void) fclose(fp);
 }
 
+void StratPlayground::send_playground_ppm()
+{
+  unsigned short my_message_type = 2051;
+  unsigned char compress_flag = 0;
+
+  if (m_ppm_sz==0) return;
+
+  CommZmq::instance().send((const char*)(&my_message_type), 2, ZMQ_SNDMORE);
+  CommZmq::instance().send((const char*)(&compress_flag), 1, ZMQ_SNDMORE);
+  CommZmq::instance().send((const char*)(m_ppm_buff), m_ppm_sz, 0);
+}
 
 
 /******************************************************************************/
@@ -407,9 +443,6 @@ void RobotStrat::taskFunction()
     unsigned int my_time_ms = 0;
     bool action_ok = false;
 
-    volatile unsigned int my_robot_sensors = 
-      RobotState::instance().m_robot_sensors;
-
     clock_gettime(1, &my_tp);
     my_time_ms = my_tp.tv_sec*1000 + my_tp.tv_nsec/1000000;
 
@@ -428,9 +461,9 @@ void RobotStrat::taskFunction()
       /* FIXME : DEBUG */
       m_task_dbg.m_curr_act_idx = 0;
 
-      if (((my_robot_sensors&2)==0) || m_start_match_sig)
+      if ((!RobotState::instance().tirette_present()) || m_start_match_sig)
       {
-        printf ("\n DEBUG : Tirette!..\n\n");
+        printf ("\n DEBUG : GO!..\n\n");
 
         /* FIXME : TODO : necessary? */
         usleep (3000000);
@@ -528,8 +561,8 @@ void RobotStrat::taskFunction()
           /* apply A* */
           m_core_astar.setMatrix(m_path_find_pg.X_SZ_CM,m_path_find_pg.Y_SZ_CM);
           m_path_find_pg.feed_astar(m_core_astar);
-          int x_start_cm = RobotState::instance().m_x_mm/10;
-          int y_start_cm = RobotState::instance().m_y_mm/10;
+          int x_start_cm = RobotState::instance().s().x_mm/10;
+          int y_start_cm = RobotState::instance().s().y_mm/10;
           int x_end_cm   = act_ast->target.x_mm/10;
           int y_end_cm   = act_ast->target.y_mm/10;
           int Y_OFF_CM   = m_path_find_pg.Y_OFFSET_CM;
@@ -562,8 +595,8 @@ void RobotStrat::taskFunction()
           {
             if(path.size() == 1) /* FIXME : TODO : workaround Nucleo bug */
             {
-              int x_wp_mm = RobotState::instance().m_x_mm;
-              int y_wp_mm = RobotState::instance().m_y_mm;
+              int x_wp_mm = RobotState::instance().s().x_mm;
+              int y_wp_mm = RobotState::instance().s().y_mm;
               act_ast->wp[wp_idx].x_mm = x_wp_mm;
               act_ast->wp[wp_idx].y_mm = y_wp_mm;
               wp_idx++;
@@ -603,7 +636,9 @@ void RobotStrat::taskFunction()
           }
           /* dump result for debug */
           sprintf(m_dbg_fname,"dump_astar_act%d.ppm",m_task_dbg.m_curr_act_idx);
+          m_path_find_pg.create_playground_ppm();
           m_path_find_pg.dump_playground_ppm(m_dbg_fname);
+          m_path_find_pg.send_playground_ppm();
         }
         break;
       default:
@@ -699,7 +734,22 @@ void RobotStrat::taskFunction()
       if (my_time_ms > soft_deadline_ms)
       {
         if (my_time_ms < (soft_deadline_ms+20)) printf (".");
-        /* FIXME : TODO : add test for physical action completion */
+        /* FIXME : TODO : add completion test for actuators */
+        if (!RobotState::instance().propulsion_busy())
+        {
+          printf ("\n");
+          printf (" Action DONE\n");
+          m_strat_state = STRAT_STATE_END_ACTION_DBG;
+          state_change_dbg = true;
+        }
+        /* FIXME : TODO : error management */
+        else if (RobotState::instance().propulsion_error())
+        {
+          printf ("\n");
+          printf (" Propulsion ERROR\n");
+          m_strat_state = STRAT_STATE_IDDLE;
+          state_change_dbg = true;
+        }
       }
 
       if (my_time_ms > hard_deadline_ms)
@@ -952,6 +1002,24 @@ int RobotStrat::cmd_point_to(strat_way_point_t *_wp, float speed, float accel, f
   return 0;
 }
 
+int RobotStrat::cmd_clear_prop_err()
+{
+  /* FIXME : TODO : use defines.. */
+  unsigned short int cmd_traj_code = 0x0063; /*PropulsionClearError*/
+
+  unsigned char *_pc = m_nucleo_cmd_buf;
+  int cmd_buf_len = 0;
+  int field_len = 0;
+
+  field_len = sizeof(unsigned short int);
+  memcpy (_pc, (unsigned char *)&cmd_traj_code, field_len);
+  _pc += field_len;
+  cmd_buf_len += field_len;
+
+  DirectUartNucleo::instance().send(m_nucleo_cmd_buf, cmd_buf_len);
+
+  return 0;
+}
 
 
 /******************************************************************************/
@@ -1233,6 +1301,7 @@ void RobotStrat::dbg_astar_test(int x_start_mm, int y_start_mm,
   }
 
   /* dump result */
+  m_path_find_pg.create_playground_ppm();
   m_path_find_pg.dump_playground_ppm(dump_fname);
 
   printf ("\n");

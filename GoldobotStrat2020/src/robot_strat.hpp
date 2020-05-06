@@ -2,6 +2,9 @@
 #include <cstdint>
 #include <cstddef>
 
+#include "yaml-cpp/yaml.h"
+#include "yaml-cpp/eventhandler.h"
+
 #include "astar/astar.h"
 #include "goldo_thread.hpp"
 
@@ -182,8 +185,11 @@ namespace goldobot
   public:
     StratTask();
 
+    int read_yaml_conf (YAML::Node &yconf);
+
+    void dbg_dump_task();
+
     /* FIXME : TODO */
-    int init_dbg();
 
     char m_task_name[64];
     int m_curr_act_idx;
@@ -213,6 +219,8 @@ namespace goldobot
 
     int init(char *strat_file_name);
 
+    int read_yaml_conf (char *strat_file_name);
+
     virtual void taskFunction();
 
     void start_match();
@@ -227,6 +235,8 @@ namespace goldobot
                         int xo2_mm, int yo2_mm,
                         int xo3_mm, int yo3_mm,
                         char *dump_fname);
+
+    void dbg_dump();
 
     /* FIXME : TODO */
 

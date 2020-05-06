@@ -1,0 +1,135 @@
+dbg_task:
+  task_name: DebugTask
+  actions:
+  - # action 0:
+    min_duration_ms: 200
+    max_duration_ms: 6000
+    type: POINT_TO
+    param_point:
+      speed  : 0.400000
+      accel  : 0.300000
+      deccel : 0.300000
+      target:
+        [   556.0, -1133.0]
+  - # action 1:
+    min_duration_ms: 200
+    max_duration_ms: 20000
+    type: TRAJ
+    param_traj:
+      speed  : 0.300000
+      accel  : 0.200000
+      deccel : 0.200000
+      wp:
+        - [   556.0, -1133.0]
+        - [   336.0,  -990.0]
+        - [   233.0,  -950.0]
+        - [   223.0,  -726.0]
+        - [   626.0,  -396.0]
+        - [  1013.0,  -470.0]
+        - [  1280.0,   -96.0]
+        - [  1153.0,   336.0]
+        - [  1300.0,   440.0]
+        - [  1490.0,   240.0]
+        - [  1740.0,   260.0]
+  - # action 2:
+    min_duration_ms: 200
+    max_duration_ms: 20000
+    type: TRAJ
+    param_traj:
+      speed  : 0.300000
+      accel  : 0.200000
+      deccel : 0.200000
+      wp:
+        - [  1740.0,   290.0]
+        - [  1490.0,   300.0]
+  - # action 3:
+    min_duration_ms: 200
+    max_duration_ms: 6000
+    type: POINT_TO
+    param_point:
+      speed  : 0.400000
+      accel  : 0.300000
+      deccel : 0.300000
+      target:
+        [  1400.0,  -300.0]
+  - # action 4:
+    min_duration_ms: 200
+    max_duration_ms: 20000
+    type: GOTO_ASTAR
+    param_goto_astar:
+      speed  : 0.300000
+      accel  : 0.200000
+      deccel : 0.200000
+      target:
+        [  1850.0, -1350.0]
+  - # action 5:
+    min_duration_ms: 200
+    max_duration_ms: 6000
+    type: POINT_TO
+    param_point:
+      speed  : 0.400000
+      accel  : 0.300000
+      deccel : 0.300000
+      target:
+        [  1850.0,  -790.0]
+  - # action 6:
+    min_duration_ms: 200
+    max_duration_ms: 20000
+    type: TRAJ
+    param_traj:
+      speed  : 0.300000
+      accel  : 0.200000
+      deccel : 0.200000
+      wp:
+        - [  1850.0, -1350.0]
+        - [  1850.0,  -790.0]
+  - # action 7:
+    min_duration_ms: 200
+    max_duration_ms: 6000
+    type: POINT_TO
+    param_point:
+      speed  : 0.400000
+      accel  : 0.300000
+      deccel : 0.300000
+      target:
+        [   300.0,  -790.0]
+  - # action 8:
+    min_duration_ms: 200
+    max_duration_ms: 20000
+    type: GOTO_ASTAR
+    param_goto_astar:
+      speed  : 0.300000
+      accel  : 0.200000
+      deccel : 0.200000
+      target:
+        [   300.0,  -790.0]
+  - # action 9:
+    min_duration_ms: 200
+    max_duration_ms: 6000
+    type: POINT_TO
+    param_point:
+      speed  : 0.400000
+      accel  : 0.300000
+      deccel : 0.300000
+      target:
+        [   300.0, -1350.0]
+  - # action 10:
+    min_duration_ms: 200
+    max_duration_ms: 20000
+    type: GOTO_ASTAR
+    param_goto_astar:
+      speed  : 0.300000
+      accel  : 0.200000
+      deccel : 0.200000
+      target:
+        [   300.0, -1350.0]
+  - # action 11:
+    min_duration_ms: 200
+    max_duration_ms: 6000
+    type: POINT_TO
+    param_point:
+      speed  : 0.400000
+      accel  : 0.300000
+      deccel : 0.300000
+      target:
+        [   300.0,  -790.0]

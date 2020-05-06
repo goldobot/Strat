@@ -102,9 +102,11 @@ TARGET_SRC_ROOT = $(HOME_TREE)/src
 #SDK_TARGET = $(BUILD_OUTPUT_ROOT)/$(SDK_STATIC_MODULE)
 ifeq ($(BUILD_TARGET_ARCH),arm)
 RPLIDAR_SDK_IMPORT = $(HOME_TREE)/import/rplidar_sdk2018/lib/$(BUILD_TARGET_HW_PLATFORM)/$(SDK_STATIC_MODULE)
+YAML_IMPORT = $(HOME_TREE)/import/yaml/lib/$(BUILD_TARGET_HW_PLATFORM)/libyaml-cpp.a
 endif
 ifeq ($(BUILD_TARGET_ARCH),x86)
 RPLIDAR_SDK_IMPORT = $(HOME_TREE)/import/rplidar_sdk2018/lib/x86/$(SDK_STATIC_MODULE)
+YAML_IMPORT = $(HOME_TREE)/import/yaml/lib/x86/libyaml-cpp.a
 endif
 APP_TARGET=$(BUILD_OUTPUT_ROOT)/$(MODULE_NAME)
 
@@ -132,7 +134,7 @@ CXXDEFS +=
 CXXDEFS += $(CDEFS) $(EXTRA_DEFS)
 
 C_INCLUDES += -I$(HOME_TREE)/src
-C_INCLUDES += -I$(HOME_TREE)/import/rplidar_sdk2018/include
+C_INCLUDES += -I$(HOME_TREE)/import/rplidar_sdk2018/include -I$(HOME_TREE)/import/yaml/include
 # -I/opt/gumstix/include 
 # -I/usr/include/newlib -I/usr/include/newlib/c++/4.8 -I/usr/include/newlib/c++/4.8/arm-none-eabi 
 CXX_INCLUDES += $(C_INCLUDES) 

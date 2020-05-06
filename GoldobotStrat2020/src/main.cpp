@@ -36,7 +36,12 @@
 
 #include <signal.h>
 
+#include <fstream>
+#include <iostream>
+
 #include "rplidar.h" //RPLIDAR standard sdk, all-in-one header
+#include "yaml-cpp/yaml.h"
+#include "yaml-cpp/eventhandler.h"
 
 #include "comm_rplidar.hpp"
 #include "comm_zmq.hpp"
@@ -57,23 +62,31 @@ _u32         conf_rplidar_baudrate_def       = 115200;
 char         conf_nucleo_uart_dev_str_def[]  = "/dev/odometry";
 _u32         conf_nucleo_uart_baudrate_def   = 115200;
 _u32         conf_zmq_port_def               = 3101;
-char         conf_strat_file_str_def[]       = "strat.txt";
+char         conf_strat_file_str_def[]       = "strat.yaml";
 
-char       * conf_viewer_addr_str            = NULL;
+char         conf_viewer_addr_str[128]       = {0};
 double       conf_theta_correction_deg       = 0.0f;
-char       * conf_rplidar_dev_str            = NULL;
+char         conf_rplidar_dev_str[128]       = {0};
 _u32         conf_rplidar_baudrate           = 0;
-char       * conf_nucleo_uart_dev_str        = NULL;
+char         conf_nucleo_uart_dev_str[128]   = {0};
 _u32         conf_nucleo_uart_baudrate       = 0;
 _u32         conf_zmq_port                   = 0;
-char       * conf_strat_file_str             = NULL;
+char         conf_strat_file_str[128]        = {0};
 
 
 bool ctrl_c_pressed = false;
 void ctrlc(int);
 
 bool autotest_flag = false;
+bool test_astar_flag = false;
+bool test_strat_conf_flag = false;
+
+
+void set_default_conf();
+int parse_yaml_conf(const char * yaml_fname);
 int process_command_line(int argc, const char * argv[]);
+void display_conf();
+
 
 #ifdef GOLDO_GIT_VERSION
 #define _STRINGIFY(A) #A
@@ -95,7 +108,21 @@ int main(int argc, const char * argv[])
 
 
 //// Process command line parameters and read conf /////////////////////////////
-  process_command_line(argc, argv);
+  set_default_conf();
+
+  if (parse_yaml_conf("conf/GoldobotStrat2020.yaml")!=0)
+  {
+    fprintf(stderr, "Error, cannot parse conf file.\n");
+    return -1;
+  }
+
+  if (process_command_line(argc, argv)!=0)
+  {
+    fprintf(stderr, "Error, wrong command line arguments.\n");
+    return -1;
+  }
+
+  display_conf();
 
 
 //// Initialise software components ////////////////////////////////////////////
@@ -153,18 +180,23 @@ int main(int argc, const char * argv[])
 
   if (autotest_flag)
   {
-    char dbg_fname[128];
-
-    printf(" ASTAR TEST\n");
-
-    strncpy(dbg_fname,"astar_test1.ppm",sizeof(dbg_fname));
-
-    RobotStrat::instance().dbg_astar_test(1740,   290,
-                                          1850, -1350,
-                                           400, -1000,
-                                          1600,  -300,
-                                           200,   650,
-                                          dbg_fname);
+    if (test_astar_flag)
+    {
+      char dbg_fname[128];
+      printf(" ASTAR TEST\n");
+      strncpy(dbg_fname,"astar_test1.ppm",sizeof(dbg_fname));
+      RobotStrat::instance().dbg_astar_test(1740,   290,
+                                            1850, -1350,
+                                             400, -1000,
+                                            1600,  -300,
+                                             200,   650,
+                                            dbg_fname);
+    }
+    else if (test_strat_conf_flag)
+    {
+      printf(" STRAT CONF TEST\n");
+      RobotStrat::instance().dbg_dump();
+    }
     return 0;
   }
 
@@ -262,6 +294,23 @@ void ctrlc(int)
   ctrl_c_pressed = true;
 }
 
+
+void set_default_conf() 
+{
+  strncpy(conf_viewer_addr_str, conf_viewer_addr_str_def, 
+          sizeof (conf_viewer_addr_str));
+  conf_theta_correction_deg = conf_theta_correction_deg_def;
+  strncpy(conf_rplidar_dev_str, conf_rplidar_dev_str_def, 
+          sizeof (conf_rplidar_dev_str));
+  conf_rplidar_baudrate = conf_rplidar_baudrate_def;
+  strncpy(conf_nucleo_uart_dev_str, conf_nucleo_uart_dev_str_def, 
+          sizeof (conf_nucleo_uart_dev_str));
+  conf_nucleo_uart_baudrate = conf_nucleo_uart_baudrate_def;
+  conf_zmq_port = conf_zmq_port_def;
+  strncpy(conf_strat_file_str, conf_strat_file_str_def, 
+          sizeof (conf_strat_file_str));
+}
+
 int process_command_line(int argc, const char * argv[]) 
 {
   char dummy_str[256];
@@ -275,33 +324,29 @@ int process_command_line(int argc, const char * argv[])
     if (strncmp(argv[1],"test",4)==0)
     {
       autotest_flag = true;
-      conf_viewer_addr_str = conf_viewer_addr_str_def;
-      conf_theta_correction_deg = conf_theta_correction_deg_def;
-      conf_rplidar_dev_str = conf_rplidar_dev_str_def;
-      conf_rplidar_baudrate = conf_rplidar_baudrate_def;
-      conf_nucleo_uart_dev_str = conf_nucleo_uart_dev_str_def;
-      conf_nucleo_uart_baudrate = conf_nucleo_uart_baudrate_def;
-      conf_zmq_port = conf_zmq_port_def;
-      conf_strat_file_str = conf_strat_file_str_def;
+
+      if (strncmp(argv[1],"test_astar",10)==0)
+      {
+        test_astar_flag = true;
+      } 
+      else if (strncmp(argv[1],"test_strat_conf",15)==0) 
+      {
+        test_strat_conf_flag = true;
+      }
+
       return 0;
     }
   }
-
 
   // read viewer address
   if (argc>1) strncpy(dummy_str, argv[1], sizeof (dummy_str));
   if ((dummy_str[0]!='!') && (dummy_str[0]!='*')) 
   {
-    conf_viewer_addr_str = dummy_str;
-  }
-  else
-  {
-    conf_viewer_addr_str = conf_viewer_addr_str_def;
+    strncpy(conf_viewer_addr_str, dummy_str, 
+            sizeof (conf_viewer_addr_str));
   }
   memset (dummy_str, 0, sizeof (dummy_str));
   dummy_str[0] = '!'; dummy_str[1] = 0x00; 
-  printf ("  conf_viewer_addr_str      = %s\n", 
-             conf_viewer_addr_str);
 
   // read theta correction
   if (argc>2) strncpy(dummy_str, argv[2], sizeof (dummy_str));
@@ -309,29 +354,18 @@ int process_command_line(int argc, const char * argv[])
   {
     conf_theta_correction_deg = strtod(dummy_str, NULL);
   } 
-  else
-  {
-    conf_theta_correction_deg = conf_theta_correction_deg_def;
-  }
   memset (dummy_str, 0, sizeof (dummy_str));
   dummy_str[0] = '!'; dummy_str[1] = 0x00; 
-  printf ("  conf_theta_correction_deg = %f\n", 
-             conf_theta_correction_deg);
 
   // read rplidar device from the command line...
   if (argc>3) strncpy(dummy_str, argv[3], sizeof (dummy_str));
   if ((dummy_str[0]!='!') && (dummy_str[0]!='*')) 
   {
-    conf_rplidar_dev_str = dummy_str;
-  }
-  else
-  {
-    conf_rplidar_dev_str = conf_rplidar_dev_str_def;
+    strncpy(conf_rplidar_dev_str, dummy_str, 
+            sizeof (conf_rplidar_dev_str));
   }
   memset (dummy_str, 0, sizeof (dummy_str));
   dummy_str[0] = '!'; dummy_str[1] = 0x00; 
-  printf ("  conf_rplidar_dev_str      = %s\n", 
-             conf_rplidar_dev_str);
 
   // read rplidar baud rate from the command line...
   if (argc>4) strncpy(dummy_str, argv[4], sizeof (dummy_str));
@@ -339,29 +373,18 @@ int process_command_line(int argc, const char * argv[])
   {
     conf_rplidar_baudrate = strtoul(dummy_str, NULL, 10);
   }
-  else
-  {
-    conf_rplidar_baudrate = conf_rplidar_baudrate_def;
-  }
   memset (dummy_str, 0, sizeof (dummy_str));
   dummy_str[0] = '!'; dummy_str[1] = 0x00; 
-  printf ("  conf_rplidar_baudrate     = %d\n", 
-             conf_rplidar_baudrate);
 
   // read nucleo uart device from the command line...
   if (argc>5) strncpy(dummy_str, argv[5], sizeof (dummy_str));
   if ((dummy_str[0]!='!') && (dummy_str[0]!='*')) 
   {
-    conf_nucleo_uart_dev_str = dummy_str;
-  }
-  else
-  {
-    conf_nucleo_uart_dev_str = conf_nucleo_uart_dev_str_def;
+    strncpy(conf_nucleo_uart_dev_str, dummy_str, 
+            sizeof (conf_nucleo_uart_dev_str));
   }
   memset (dummy_str, 0, sizeof (dummy_str));
   dummy_str[0] = '!'; dummy_str[1] = 0x00; 
-  printf ("  conf_nucleo_uart_dev_str  = %s\n", 
-             conf_nucleo_uart_dev_str);
 
   // read nucleo uart baudrate from the command line...
   if (argc>6) strncpy(dummy_str, argv[6], sizeof (dummy_str));
@@ -369,14 +392,8 @@ int process_command_line(int argc, const char * argv[])
   {
     conf_nucleo_uart_baudrate = strtoul(dummy_str, NULL, 10);
   }
-  else
-  {
-    conf_nucleo_uart_baudrate = conf_nucleo_uart_baudrate_def;
-  }
   memset (dummy_str, 0, sizeof (dummy_str));
   dummy_str[0] = '!'; dummy_str[1] = 0x00; 
-  printf ("  conf_nucleo_uart_baudrate = %d\n", 
-             conf_nucleo_uart_baudrate);
 
   // read zmq port from the command line...
   if (argc>7) strncpy(dummy_str, argv[7], sizeof (dummy_str));
@@ -384,30 +401,123 @@ int process_command_line(int argc, const char * argv[])
   {
     conf_zmq_port = strtoul(dummy_str, NULL, 10);
   }
-  else
-  {
-    conf_zmq_port = conf_zmq_port_def;
-  }
   memset (dummy_str, 0, sizeof (dummy_str));
   dummy_str[0] = '!'; dummy_str[1] = 0x00; 
-  printf ("  conf_zmq_port             = %d\n", 
-             conf_zmq_port);
 
   // read strategy file name from the command line...
   if (argc>8) strncpy(dummy_str, argv[8], sizeof (dummy_str));
   if ((dummy_str[0]!='!') && (dummy_str[0]!='*')) 
   {
-    conf_strat_file_str = dummy_str;
-  }
-  else
-  {
-    conf_strat_file_str = conf_strat_file_str_def;
+    strncpy(conf_strat_file_str, dummy_str, 
+            sizeof (conf_strat_file_str));
   }
   memset (dummy_str, 0, sizeof (dummy_str));
   dummy_str[0] = '!'; dummy_str[1] = 0x00; 
-  printf ("  conf_strat_file_str       = %s\n", 
-             conf_strat_file_str);
 
   return 0;
 }
 
+void display_conf() 
+{
+  printf ("  conf_viewer_addr_str      = %s\n", 
+             conf_viewer_addr_str);
+  printf ("  conf_theta_correction_deg = %f\n", 
+             conf_theta_correction_deg);
+  printf ("  conf_rplidar_dev_str      = %s\n", 
+             conf_rplidar_dev_str);
+  printf ("  conf_rplidar_baudrate     = %d\n", 
+             conf_rplidar_baudrate);
+  printf ("  conf_nucleo_uart_dev_str  = %s\n", 
+             conf_nucleo_uart_dev_str);
+  printf ("  conf_nucleo_uart_baudrate = %d\n", 
+             conf_nucleo_uart_baudrate);
+  printf ("  conf_zmq_port             = %d\n", 
+             conf_zmq_port);
+  printf ("  conf_strat_file_str       = %s\n", 
+             conf_strat_file_str);
+}
+
+
+int parse_yaml_conf(const char * yaml_fname)
+{
+  int ret = 0;
+  std::ifstream fin;
+  const char *my_str = NULL;
+
+  try 
+  {
+    fin.open(yaml_fname);
+
+    YAML::Node yconf = YAML::Load(fin);
+    YAML::Node test_node;
+
+    test_node = yconf["environment"]["conf_viewer_addr_str"];
+    if (test_node) 
+    {
+      my_str = (const char *) test_node.as<std::string>().c_str();
+      strncpy(conf_viewer_addr_str, my_str, 
+              sizeof (conf_viewer_addr_str));
+    }
+
+    test_node = yconf["environment"]["conf_theta_correction_deg"];
+    if (test_node) 
+    {
+      my_str = (const char *) test_node.as<std::string>().c_str();
+      conf_theta_correction_deg = strtod(my_str, NULL);
+    }
+
+    test_node = yconf["environment"]["conf_rplidar_dev_str"];
+    if (test_node) 
+    {
+      my_str = (const char *) test_node.as<std::string>().c_str();
+      strncpy(conf_rplidar_dev_str, my_str, 
+              sizeof (conf_rplidar_dev_str));
+    }
+
+    test_node = yconf["environment"]["conf_rplidar_baudrate"];
+    if (test_node) 
+    {
+      my_str = (const char *) test_node.as<std::string>().c_str();
+      conf_rplidar_baudrate = strtoul(my_str, NULL, 10);
+    }
+
+    test_node = yconf["environment"]["conf_nucleo_uart_dev_str"];
+    if (test_node) 
+    {
+      my_str = (const char *) test_node.as<std::string>().c_str();
+      strncpy(conf_nucleo_uart_dev_str, my_str, 
+              sizeof (conf_nucleo_uart_dev_str));
+    }
+
+    test_node = yconf["environment"]["conf_nucleo_uart_baudrate"];
+    if (test_node) 
+    {
+      my_str = (const char *) test_node.as<std::string>().c_str();
+      conf_nucleo_uart_baudrate = strtoul(my_str, NULL, 10);
+    }
+
+    test_node = yconf["environment"]["conf_zmq_port"];
+    if (test_node) 
+    {
+      my_str = (const char *) test_node.as<std::string>().c_str();
+      conf_zmq_port = strtoul(my_str, NULL, 10);
+    }
+
+    test_node = yconf["environment"]["conf_strat_file_str"];
+    if (test_node) 
+    {
+      my_str = (const char *) test_node.as<std::string>().c_str();
+      strncpy(conf_strat_file_str, my_str, 
+              sizeof (conf_strat_file_str));
+    }
+
+    ret = 0;
+  } 
+  catch(const YAML::Exception& e)
+  {
+    std::cerr << e.what() << "\n";
+    ret = -1;
+  }
+
+  return ret;
+}

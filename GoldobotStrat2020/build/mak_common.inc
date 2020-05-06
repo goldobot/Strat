@@ -70,8 +70,12 @@ GOLDOFLAGS = -DGOLDO_GIT_VERSION="$(GIT_BRANCH) $(GIT_REF)"
 build_app: make_obj_subs $(APP_TARGET)
 
 clean_app:
-	$(RM) $(OBJ)
-	$(RM) $(APP_TARGET)
+	$(RMDIR) $(BUILD_OBJ_ROOT)/*
+	$(RM) $(BUILD_OUTPUT_ROOT)/*
+	$(RMDIR) $(BUILD_ROOT)/conf
+
+conf:
+	cp -a $(HOME_TREE)/conf $(BUILD_ROOT)/
 
 #$(SDK_TARGET): $(OBJ) $(EXTRA_OBJ)
 #	$(MKDIR) `dirname $@`
@@ -81,7 +85,7 @@ clean_app:
 $(APP_TARGET): $(OBJ) $(EXTRA_OBJ)
 	@$(MKDIR) `dirname $@`
 	@echo " LD   $@"
-	$(CMD_HIDE)$(CC) $(ALL_CXXFLAGS) -o $@ $^ $(RPLIDAR_SDK_IMPORT) $(LDFLAGS)  
+	$(CMD_HIDE)$(CC) $(ALL_CXXFLAGS) -o $@ $^ $(RPLIDAR_SDK_IMPORT) $(YAML_IMPORT) $(LDFLAGS)  
 
 
 #

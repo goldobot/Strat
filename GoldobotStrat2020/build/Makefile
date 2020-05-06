@@ -28,18 +28,26 @@ MODULE_NAME := GoldobotStrat2020
 
 include $(MAKE_TREE)/mak_def.inc
 
+ifeq ($(MODULE_NAME),GoldobotStrat2020_sim)
+CXXSRC += main.cpp comm_zmq.cpp sim/comm_rplidar.cpp sim/comm_nucleo.cpp robot_state.cpp lidar_detect.cpp robot_strat.cpp astar/astar.cpp
+else 
 CXXSRC += main.cpp comm_zmq.cpp comm_rplidar.cpp comm_nucleo.cpp robot_state.cpp lidar_detect.cpp robot_strat.cpp astar/astar.cpp
+endif
 
 EXTRA_OBJ := 
 LD_LIBS += -lstdc++ -lpthread -lm -lzmq 
 
 all: build_app
 
+sim:
+	make MODULE_NAME=GoldobotStrat2020_sim
+
 include $(MAKE_TREE)/mak_common.inc
 
 clean: clean_app
 
 print_bidule:
+	@echo "MODULE_NAME = $(MODULE_NAME)"
 	@echo "BUILD_TARGET_ARCH = $(BUILD_TARGET_ARCH)"
 	@echo "BUILD_HOST_PLATFORM = $(BUILD_HOST_PLATFORM)"
 	@echo "BUILD_HOST_HW_PLATFORM = $(BUILD_HOST_HW_PLATFORM)"

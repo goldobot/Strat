@@ -3,6 +3,9 @@
 #include <math.h>
 #include <zmq.h>
 
+#include <fstream>
+#include <iostream>
+
 #include "comm_rplidar.hpp"
 #include "comm_zmq.hpp"
 #include "comm_nucleo.hpp"
@@ -40,6 +43,149 @@ StratTask::StratTask()
   m_max_init_goto_duration_ms = 20000.0; /* FIXME : TODO : heuristics.. */
   m_required_pos_accuracy_mm = 50.0;
   m_required_ang_accuracy_cos = 0.999; /* WARNING : NOT RADIANS! */
+}
+
+int StratTask::read_yaml_conf(YAML::Node &yconf)
+{
+  if (!yconf["actions"]) 
+  {
+    printf ("  ERROR : no actions\n");
+    return -1;
+  }
+
+  YAML::Node name_node = yconf["task_name"];
+  if (name_node) 
+  {
+    strncpy(m_task_name, name_node.as<std::string>().c_str(), 
+            sizeof (m_task_name));
+  }
+  else
+  {
+    strncpy(m_task_name, "DebugTask", sizeof (m_task_name));
+  }
+
+  m_n_actions = yconf["actions"].size();
+
+  m_curr_act_idx = 0;
+
+  memset (m_action_list, 0, sizeof(m_action_list));
+
+  memset (m_action_buf, 0, sizeof(m_action_buf));
+
+  m_priority = 0;
+
+  m_started = false;
+
+  m_completed = false;
+
+  unsigned char *curr_act_p = m_action_buf;
+
+  for (int i=0; i<m_n_actions; i++)
+  {
+    YAML::Node act_node = yconf["actions"][i];
+    const char *act_type_str = act_node["type"].as<std::string>().c_str();
+    const char *my_str = NULL;
+
+    if (strcmp(act_type_str,"WAIT")==0)
+    {
+      strat_action_wait_t *action = (strat_action_wait_t *) curr_act_p;
+      action->h.type = STRAT_ACTION_TYPE_WAIT;
+      my_str = act_node["min_duration_ms"].as<std::string>().c_str();
+      action->h.min_duration_ms = strtoul(my_str, NULL, 10);
+      my_str = act_node["max_duration_ms"].as<std::string>().c_str();
+      action->h.max_duration_ms = strtoul(my_str, NULL, 10);
+      m_action_list[i] = (strat_action_t *) action;
+      curr_act_p += sizeof(*action);
+    }
+    else if (strcmp(act_type_str,"TRAJ")==0)
+    {
+      strat_action_traj_t *action = (strat_action_traj_t *) curr_act_p;
+      action->h.type = STRAT_ACTION_TYPE_TRAJ;
+      my_str = act_node["min_duration_ms"].as<std::string>().c_str();
+      action->h.min_duration_ms = strtoul(my_str, NULL, 10);
+      my_str = act_node["max_duration_ms"].as<std::string>().c_str();
+      action->h.max_duration_ms = strtoul(my_str, NULL, 10);
+      my_str = act_node["param_traj"]["speed"].as<std::string>().c_str();
+      action->speed = strtof(my_str, NULL);
+      my_str = act_node["param_traj"]["accel"].as<std::string>().c_str();
+      action->accel = strtof(my_str, NULL);
+      my_str = act_node["param_traj"]["deccel"].as<std::string>().c_str();
+      action->deccel = strtof(my_str, NULL);
+      YAML::Node wp_node = act_node["param_traj"]["wp"];
+      action->nwp = wp_node.size();
+      for (int j=0; j<action->nwp; j++)
+      {
+        my_str = wp_node[j][0].as<std::string>().c_str();
+        action->wp[j].x_mm = strtof(my_str, NULL);
+        my_str = wp_node[j][1].as<std::string>().c_str();
+        action->wp[j].y_mm = strtof(my_str, NULL);
+      }
+      m_action_list[i] = (strat_action_t *) action;
+      curr_act_p += sizeof(*action);
+    }
+    else if (strcmp(act_type_str,"POINT_TO")==0)
+    {
+      strat_action_point_to_t *action = (strat_action_point_to_t *) curr_act_p;
+      action->h.type = STRAT_ACTION_TYPE_POINT_TO;
+      my_str = act_node["min_duration_ms"].as<std::string>().c_str();
+      action->h.min_duration_ms = strtoul(my_str, NULL, 10);
+      my_str = act_node["max_duration_ms"].as<std::string>().c_str();
+      action->h.max_duration_ms = strtoul(my_str, NULL, 10);
+      my_str = act_node["param_point"]["speed"].as<std::string>().c_str();
+      action->speed = strtof(my_str, NULL);
+      my_str = act_node["param_point"]["accel"].as<std::string>().c_str();
+      action->accel = strtof(my_str, NULL);
+      my_str = act_node["param_point"]["deccel"].as<std::string>().c_str();
+      action->deccel = strtof(my_str, NULL);
+      my_str = act_node["param_point"]["target"][0].as<std::string>().c_str();
+      action->target.x_mm = strtof(my_str, NULL);
+      my_str = act_node["param_point"]["target"][1].as<std::string>().c_str();
+      action->target.y_mm = strtof(my_str, NULL);
+      m_action_list[i] = (strat_action_t *) action;
+      curr_act_p += sizeof(*action);
+    }
+    else if (strcmp(act_type_str,"NUCLEO_SEQ")==0)
+    {
+      strat_action_nucleo_seq_t *action = (strat_action_nucleo_seq_t *) curr_act_p;
+      action->h.type = STRAT_ACTION_TYPE_NUCLEO_SEQ;
+      my_str = act_node["min_duration_ms"].as<std::string>().c_str();
+      action->h.min_duration_ms = strtoul(my_str, NULL, 10);
+      my_str = act_node["max_duration_ms"].as<std::string>().c_str();
+      action->h.max_duration_ms = strtoul(my_str, NULL, 10);
+      my_str = act_node["param_nucleo_seq"]["id"].as<std::string>().c_str();
+      action->nucleo_seq_id = strtoul(my_str, NULL, 10);
+      m_action_list[i] = (strat_action_t *) action;
+      curr_act_p += sizeof(*action);
+    }
+    else if (strcmp(act_type_str,"GOTO_ASTAR")==0)
+    {
+      strat_action_goto_astar_t *action = (strat_action_goto_astar_t *) curr_act_p;
+      action->h.type = STRAT_ACTION_TYPE_GOTO_ASTAR;
+      my_str = act_node["min_duration_ms"].as<std::string>().c_str();
+      action->h.min_duration_ms = strtoul(my_str, NULL, 10);
+      my_str = act_node["max_duration_ms"].as<std::string>().c_str();
+      action->h.max_duration_ms = strtoul(my_str, NULL, 10);
+      my_str = act_node["param_goto_astar"]["speed"].as<std::string>().c_str();
+      action->speed = strtof(my_str, NULL);
+      my_str = act_node["param_goto_astar"]["accel"].as<std::string>().c_str();
+      action->accel = strtof(my_str, NULL);
+      my_str = act_node["param_goto_astar"]["deccel"].as<std::string>().c_str();
+      action->deccel = strtof(my_str, NULL);
+      my_str = act_node["param_goto_astar"]["target"][0].as<std::string>().c_str();
+      action->target.x_mm = strtof(my_str, NULL);
+      my_str = act_node["param_goto_astar"]["target"][1].as<std::string>().c_str();
+      action->target.y_mm = strtof(my_str, NULL);
+      m_action_list[i] = (strat_action_t *) action;
+      curr_act_p += sizeof(*action);
+    }
+    else
+    {
+      printf ("  ERROR : unknown action\n");
+    }
+
+  } /* for (int i=0; i<m_n_actions; i++) */
+
+  return 0;
 }
 
 
@@ -406,6 +552,8 @@ int RobotStrat::init(char *strat_file_name)
 
   m_core_astar.setMatrix(m_path_find_pg.X_SZ_CM, m_path_find_pg.Y_SZ_CM);
 
+  read_yaml_conf (m_strat_file_name);
+
 
   /* DEBUG */
   m_dbg_step_by_step = false;
@@ -414,9 +562,41 @@ int RobotStrat::init(char *strat_file_name)
 
   m_dbg_resume_match_sig = false;
 
-  m_task_dbg.init_dbg();
-
   memset (m_dbg_fname, 0, sizeof(m_dbg_fname));
+
+  return 0;
+}
+
+int RobotStrat::read_yaml_conf(char *fname)
+{
+  std::ifstream fin;
+  YAML::Node yconf;
+  YAML::Node dbg_node;
+
+  try 
+  {
+    fin.open(fname);
+    yconf = YAML::Load(fin);
+  } 
+  catch(const YAML::Exception& e)
+  {
+    printf ("  ERROR : %s\n", e.what());
+    return -1;
+  }
+
+  /* Load debug task */
+  dbg_node = yconf["dbg_task"];
+  if (!dbg_node) 
+  {
+    printf ("  ERROR : no 'dbg_task' section\n");
+    return -1;
+  }
+  if (m_task_dbg.read_yaml_conf(dbg_node)!=0)
+  {
+    return -1;
+  }
+
+  /* FIXME : TODO */
 
   return 0;
 }
@@ -1026,210 +1206,82 @@ int RobotStrat::cmd_clear_prop_err()
 /**  DEBUG  *******************************************************************/
 /******************************************************************************/
 
-strat_way_point_t dbg_point_to_point0 = {556.0, -1133.0};
-
-strat_way_point_t dbg_traj1[] = {
-  {  556.0, -1133.0},
-  {  336.0, - 990.0},
-  {  233.0, - 950.0},
-  {  223.0, - 726.0},
-  {  626.0, - 396.0},
-  { 1013.0, - 470.0},
-  { 1280.0, - 096.0},
-  { 1153.0,   336.0},
-  { 1300.0,   440.0},
-  { 1490.0,   240.0},
-  { 1740.0,   260.0},
-};
-
-strat_way_point_t dbg_traj2[] = {
-  { 1740.0,   290.0},
-  { 1490.0,   300.0},
-};
-
-strat_way_point_t dbg_point_to_point3 = {1400.0, -300.0};
-
-strat_way_point_t dbg_target_point4 = {1850.0, -1350.0};
-
-strat_way_point_t dbg_point_to_point5 = {1850.0, -790.0};
-
-strat_way_point_t dbg_traj6[] = {
-  { 1850.0, -1350.0},
-  { 1850.0,  -790.0},
-};
-
-strat_way_point_t dbg_point_to_point7 = {300.0, -790.0};
-
-strat_way_point_t dbg_target_point8 = {300.0, -790.0};
-
-strat_way_point_t dbg_point_to_point9 = {300.0, -1350.0};
-
-strat_way_point_t dbg_target_point10 = {300.0, -1350.0};
-
-strat_way_point_t dbg_point_to_point11 = {300.0, -790.0};
-
-int StratTask::init_dbg()
+void StratTask::dbg_dump_task()
 {
-  strncpy(m_task_name,"DebugTask",sizeof(m_task_name));
-  m_n_actions = 0;
-  m_curr_act_idx = 0;
-  memset (m_action_list, 0, sizeof(m_action_list));
-  memset (m_action_buf, 0, sizeof(m_action_buf));
-  m_priority = 0;
-  m_started = false;
-  m_completed = false;
+  int i,j;
+  strat_action_traj_t *act_traj = NULL;
+  strat_action_point_to_t *act_point = NULL;
+  strat_action_nucleo_seq_t *act_nuc = NULL;
+  strat_action_goto_astar_t *act_astar = NULL;
 
-  unsigned char *curr_act_p = m_action_buf;
-
-  strat_action_point_to_t *action0 = (strat_action_point_to_t *) curr_act_p;
-  action0->h.type = STRAT_ACTION_TYPE_POINT_TO;
-  action0->h.min_duration_ms = 200;
-  action0->h.max_duration_ms = 6000;
-  action0->speed = 0.4;
-  action0->accel = 0.3;
-  action0->deccel = 0.3;
-  action0->target = dbg_point_to_point0;
-  m_action_list[m_n_actions] = (strat_action_t *) action0;
-  m_n_actions++;
-  curr_act_p += sizeof(strat_action_point_to_t);
-
-  strat_action_traj_t *action1 = (strat_action_traj_t *) curr_act_p;
-  action1->h.type = STRAT_ACTION_TYPE_TRAJ;
-  action1->h.min_duration_ms = 200;
-  action1->h.max_duration_ms = 20000;
-  action1->speed = 0.3;
-  action1->accel = 0.2;
-  action1->deccel = 0.2;
-  action1->nwp = _countof(dbg_traj1);
-  memcpy (action1->wp, dbg_traj1, sizeof(dbg_traj1));
-  m_action_list[m_n_actions] = (strat_action_t *) action1;
-  m_n_actions++;
-  curr_act_p += sizeof(strat_action_traj_t);
-
-  strat_action_traj_t *action2 = (strat_action_traj_t *) curr_act_p;
-  action2->h.type = STRAT_ACTION_TYPE_TRAJ;
-  action2->h.min_duration_ms = 200;
-  action2->h.max_duration_ms = 20000;
-  action2->speed = 0.3;
-  action2->accel = 0.2;
-  action2->deccel = 0.2;
-  action2->nwp = _countof(dbg_traj2);
-  memcpy (action2->wp, dbg_traj2, sizeof(dbg_traj2));
-  m_action_list[m_n_actions] = (strat_action_t *) action2;
-  m_n_actions++;
-  curr_act_p += sizeof(strat_action_traj_t);
-
-  strat_action_point_to_t *action3 = (strat_action_point_to_t *) curr_act_p;
-  action3->h.type = STRAT_ACTION_TYPE_POINT_TO;
-  action3->h.min_duration_ms = 200;
-  action3->h.max_duration_ms = 6000;
-  action3->speed = 0.4;
-  action3->accel = 0.3;
-  action3->deccel = 0.3;
-  action3->target = dbg_point_to_point3;
-  m_action_list[m_n_actions] = (strat_action_t *) action3;
-  m_n_actions++;
-  curr_act_p += sizeof(strat_action_point_to_t);
-
-  strat_action_goto_astar_t *action4 = (strat_action_goto_astar_t *) curr_act_p;
-  action4->h.type = STRAT_ACTION_TYPE_GOTO_ASTAR;
-  action4->h.min_duration_ms = 200;
-  action4->h.max_duration_ms = 20000;
-  action4->speed = 0.3;
-  action4->accel = 0.2;
-  action4->deccel = 0.2;
-  action4->target = dbg_target_point4;
-  m_action_list[m_n_actions] = (strat_action_t *) action4;
-  m_n_actions++;
-  curr_act_p += sizeof(strat_action_goto_astar_t);
-
-  strat_action_point_to_t *action5 = (strat_action_point_to_t *) curr_act_p;
-  action5->h.type = STRAT_ACTION_TYPE_POINT_TO;
-  action5->h.min_duration_ms = 200;
-  action5->h.max_duration_ms = 6000;
-  action5->speed = 0.4;
-  action5->accel = 0.3;
-  action5->deccel = 0.3;
-  action5->target = dbg_point_to_point5;
-  m_action_list[m_n_actions] = (strat_action_t *) action5;
-  m_n_actions++;
-  curr_act_p += sizeof(strat_action_point_to_t);
-
-  strat_action_traj_t *action6 = (strat_action_traj_t *) curr_act_p;
-  action6->h.type = STRAT_ACTION_TYPE_TRAJ;
-  action6->h.min_duration_ms = 200;
-  action6->h.max_duration_ms = 20000;
-  action6->speed = 0.3;
-  action6->accel = 0.2;
-  action6->deccel = 0.2;
-  action6->nwp = _countof(dbg_traj6);
-  memcpy (action6->wp, dbg_traj6, sizeof(dbg_traj6));
-  m_action_list[m_n_actions] = (strat_action_t *) action6;
-  m_n_actions++;
-  curr_act_p += sizeof(strat_action_traj_t);
-
-  strat_action_point_to_t *action7 = (strat_action_point_to_t *) curr_act_p;
-  action7->h.type = STRAT_ACTION_TYPE_POINT_TO;
-  action7->h.min_duration_ms = 200;
-  action7->h.max_duration_ms = 6000;
-  action7->speed = 0.4;
-  action7->accel = 0.3;
-  action7->deccel = 0.3;
-  action7->target = dbg_point_to_point7;
-  m_action_list[m_n_actions] = (strat_action_t *) action7;
-  m_n_actions++;
-  curr_act_p += sizeof(strat_action_point_to_t);
-
-  strat_action_goto_astar_t *action8 = (strat_action_goto_astar_t *) curr_act_p;
-  action8->h.type = STRAT_ACTION_TYPE_GOTO_ASTAR;
-  action8->h.min_duration_ms = 200;
-  action8->h.max_duration_ms = 20000;
-  action8->speed = 0.3;
-  action8->accel = 0.2;
-  action8->deccel = 0.2;
-  action8->target = dbg_target_point8;
-  m_action_list[m_n_actions] = (strat_action_t *) action8;
-  m_n_actions++;
-  curr_act_p += sizeof(strat_action_goto_astar_t);
-
-  strat_action_point_to_t *action9 = (strat_action_point_to_t *) curr_act_p;
-  action9->h.type = STRAT_ACTION_TYPE_POINT_TO;
-  action9->h.min_duration_ms = 200;
-  action9->h.max_duration_ms = 6000;
-  action9->speed = 0.4;
-  action9->accel = 0.3;
-  action9->deccel = 0.3;
-  action9->target = dbg_point_to_point9;
-  m_action_list[m_n_actions] = (strat_action_t *) action9;
-  m_n_actions++;
-  curr_act_p += sizeof(strat_action_point_to_t);
-
-  strat_action_goto_astar_t *action10 = (strat_action_goto_astar_t *)curr_act_p;
-  action10->h.type = STRAT_ACTION_TYPE_GOTO_ASTAR;
-  action10->h.min_duration_ms = 200;
-  action10->h.max_duration_ms = 20000;
-  action10->speed = 0.3;
-  action10->accel = 0.2;
-  action10->deccel = 0.2;
-  action10->target = dbg_target_point10;
-  m_action_list[m_n_actions] = (strat_action_t *) action10;
-  m_n_actions++;
-  curr_act_p += sizeof(strat_action_goto_astar_t);
-
-  strat_action_point_to_t *action11 = (strat_action_point_to_t *) curr_act_p;
-  action11->h.type = STRAT_ACTION_TYPE_POINT_TO;
-  action11->h.min_duration_ms = 200;
-  action11->h.max_duration_ms = 6000;
-  action11->speed = 0.4;
-  action11->accel = 0.3;
-  action11->deccel = 0.3;
-  action11->target = dbg_point_to_point11;
-  m_action_list[m_n_actions] = (strat_action_t *) action11;
-  m_n_actions++;
-  curr_act_p += sizeof(strat_action_point_to_t);
-
-  return 0;
+  printf ("\n");
+  printf ("dbg_task:\n");
+  printf ("  task_name: %s\n", m_task_name);
+  printf ("  curr_act_idx: %d\n", m_curr_act_idx);
+  printf ("  n_actions: %d\n", m_n_actions);
+  printf ("  actions:\n");
+  for (i=0; i<m_n_actions; i++)
+  {
+    strat_action_t *act = m_action_list[i];
+    printf ("  - # action %d:\n", i);
+    printf ("    min_duration_ms: %d\n", act->h.min_duration_ms);
+    printf ("    max_duration_ms: %d\n", act->h.max_duration_ms);
+    switch (act->h.type) {
+    case STRAT_ACTION_TYPE_NONE:
+      printf ("    type: NONE\n");
+      break;
+    case STRAT_ACTION_TYPE_WAIT:
+      printf ("    type: WAIT\n");
+      break;
+    case STRAT_ACTION_TYPE_TRAJ:
+      act_traj = (strat_action_traj_t *)act;
+      printf ("    type: TRAJ\n");
+      printf ("    param_traj:\n");
+      printf ("      speed  : %f\n", act_traj->speed);
+      printf ("      accel  : %f\n", act_traj->accel);
+      printf ("      deccel : %f\n", act_traj->deccel);
+      printf ("      nwp    : %d\n", act_traj->nwp);
+      printf ("      wp:\n");
+      for (j=0; j<act_traj->nwp; j++)
+      {
+        printf ("        - [%8.1f,%8.1f]\n", 
+                act_traj->wp[j].x_mm, act_traj->wp[j].y_mm);
+      }
+      break;
+    case STRAT_ACTION_TYPE_POINT_TO:
+      act_point = (strat_action_point_to_t *)act;
+      printf ("    type: POINT_TO\n");
+      printf ("    param_point:\n");
+      printf ("      speed  : %f\n", act_point->speed);
+      printf ("      accel  : %f\n", act_point->accel);
+      printf ("      deccel : %f\n", act_point->deccel);
+      printf ("      target:\n");
+      printf ("        [%8.1f,%8.1f]\n", 
+              act_point->target.x_mm, act_point->target.y_mm);
+      break;
+    case STRAT_ACTION_TYPE_NUCLEO_SEQ:
+      act_nuc = (strat_action_nucleo_seq_t *)act;
+      printf ("    type: NUCLEO_SEQ\n");
+      printf ("    param_nucleo_seq:\n");
+      printf ("      nucleo_seq_id: %d\n", act_nuc->nucleo_seq_id);
+      break;
+    case STRAT_ACTION_TYPE_GOTO_ASTAR:
+      act_astar = (strat_action_goto_astar_t *)act;
+      printf ("    type: GOTO_ASTAR\n");
+      printf ("    param_goto_astar:\n");
+      printf ("      speed  : %f\n", act_astar->speed);
+      printf ("      accel  : %f\n", act_astar->accel);
+      printf ("      deccel : %f\n", act_astar->deccel);
+      printf ("      target:\n");
+      printf ("        [%8.1f,%8.1f]\n", 
+              act_astar->target.x_mm, act_astar->target.y_mm);
+      break;
+    default:
+      printf ("    UNKNOWN type!(%d)\n", act->h.type);
+    }
+  }
 }
+
 
 void RobotStrat::dbg_astar_test(int x_start_mm, int y_start_mm,
                                 int x_end_mm, int y_end_mm,
@@ -1306,5 +1358,11 @@ void RobotStrat::dbg_astar_test(int x_start_mm, int y_start_mm,
 
   printf ("\n");
 }
+
+void RobotStrat::dbg_dump()
+{
+  m_task_dbg.dbg_dump_task();
+}
+
 
 

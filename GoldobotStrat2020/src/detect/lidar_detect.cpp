@@ -8,8 +8,9 @@
 #include <pthread.h>
 #include <iostream>
 
-#include "lidar_detect.hpp"
+#include "detect/lidar_detect.hpp"
 #include "comm_zmq.hpp"
+#include "playground_state.hpp"
 
 using namespace goldobot;
 
@@ -34,7 +35,7 @@ int LidarDetect::init()
 
   for (int i=0; i<MAX_NB_OF_DETECTED_ROBOTS; i++)
   {
-    m_detect_t_0[i].nb_rplidar_samples = 0;
+    m_detect_t_0[i].detect_quality     = 0;
     m_detect_t_0[i].timestamp_ms       = 0;
     m_detect_t_0[i].id                 = i;
     m_detect_t_0[i].x_mm               = 0.0;
@@ -44,7 +45,7 @@ int LidarDetect::init()
     m_detect_t_0[i].ax_mm_sec_2        = 0.0;
     m_detect_t_0[i].ay_mm_sec_2        = 0.0;
 
-    m_detect_t_1[i].nb_rplidar_samples = 0;
+    m_detect_t_1[i].detect_quality     = 0;
     m_detect_t_1[i].timestamp_ms       = 0;
     m_detect_t_1[i].id                 = i;
     m_detect_t_1[i].x_mm               = 0.0;
@@ -54,7 +55,7 @@ int LidarDetect::init()
     m_detect_t_1[i].ax_mm_sec_2        = 0.0;
     m_detect_t_1[i].ay_mm_sec_2        = 0.0;
 
-    m_detect_t_2[i].nb_rplidar_samples = 0;
+    m_detect_t_2[i].detect_quality     = 0;
     m_detect_t_2[i].timestamp_ms       = 0;
     m_detect_t_2[i].id                 = i;
     m_detect_t_2[i].x_mm               = 0.0;
@@ -107,7 +108,7 @@ void LidarDetect::taskFunctionFunny()
     if (curr_time_ms > (old_time_ms + 100)) 
     {
       unsigned short my_message_type;
-      RobotDetectionMsg my_message;
+      robot_detection_msg_t my_message;
 
       my_message_type = 1280; /* FIXME : TODO : use mesage_types.hpp */
 
@@ -258,19 +259,19 @@ void LidarDetect::updateDetection()
     }
   }
 
-  m_detect_candidate[0].nb_rplidar_samples = m_detect_slot[best_pos].nb_rplidar_samples;
+  m_detect_candidate[0].detect_quality     = m_detect_slot[best_pos].nb_rplidar_samples;
   m_detect_candidate[0].timestamp_ms       = m_detect_slot[best_pos].timestamp_ms;
   m_detect_candidate[0].id                 = 0xffffffff;
   m_detect_candidate[0].x_mm               = m_detect_slot[best_pos].x_mm;
   m_detect_candidate[0].y_mm               = m_detect_slot[best_pos].y_mm;
 
-  m_detect_candidate[1].nb_rplidar_samples = m_detect_slot[second_pos].nb_rplidar_samples;
+  m_detect_candidate[1].detect_quality     = m_detect_slot[second_pos].nb_rplidar_samples;
   m_detect_candidate[1].timestamp_ms       = m_detect_slot[second_pos].timestamp_ms;
   m_detect_candidate[1].id                 = 0xffffffff;
   m_detect_candidate[1].x_mm               = m_detect_slot[second_pos].x_mm;
   m_detect_candidate[1].y_mm               = m_detect_slot[second_pos].y_mm;
 
-  m_detect_candidate[2].nb_rplidar_samples = m_detect_slot[third_pos].nb_rplidar_samples;
+  m_detect_candidate[2].detect_quality     = m_detect_slot[third_pos].nb_rplidar_samples;
   m_detect_candidate[2].timestamp_ms       = m_detect_slot[third_pos].timestamp_ms;
   m_detect_candidate[2].id                 = 0xffffffff;
   m_detect_candidate[2].x_mm               = m_detect_slot[third_pos].x_mm;
@@ -279,7 +280,7 @@ void LidarDetect::updateDetection()
 #ifdef MULTITRACKING
   for (int i=0; i<MAX_NB_OF_DETECTED_ROBOTS; i++)
   {
-    m_detect_t_2[i].nb_rplidar_samples = m_detect_t_1[i].nb_rplidar_samples;
+    m_detect_t_2[i].detect_quality     = m_detect_t_1[i].detect_quality;
     m_detect_t_2[i].timestamp_ms       = m_detect_t_1[i].timestamp_ms;
     m_detect_t_2[i].id                 = m_detect_t_1[i].id;
     m_detect_t_2[i].x_mm               = m_detect_t_1[i].x_mm;
@@ -289,7 +290,7 @@ void LidarDetect::updateDetection()
     m_detect_t_2[i].ax_mm_sec_2        = m_detect_t_1[i].ax_mm_sec_2;
     m_detect_t_2[i].ay_mm_sec_2        = m_detect_t_1[i].ay_mm_sec_2;
 
-    m_detect_t_1[i].nb_rplidar_samples = m_detect_t_0[i].nb_rplidar_samples;
+    m_detect_t_1[i].detect_quality     = m_detect_t_0[i].detect_quality;
     m_detect_t_1[i].timestamp_ms       = m_detect_t_0[i].timestamp_ms;
     m_detect_t_1[i].id                 = m_detect_t_0[i].id;
     m_detect_t_1[i].x_mm               = m_detect_t_0[i].x_mm;
@@ -303,19 +304,19 @@ void LidarDetect::updateDetection()
   for (int i=0; i<MAX_NB_OF_DETECTED_ROBOTS; i++)
   {
     m_detect_t_0[i].id                 = 0xffffffff;
-    if ((m_detect_t_0[i].nb_rplidar_samples>0))
+    if ((m_detect_t_0[i].detect_quality>0))
     {
       for (int j=0; j<MAX_NB_OF_DETECTED_ROBOTS; j++)
       {
-        if ((m_detect_candidate[j].nb_rplidar_samples>0) && dist(m_detect_t_0[i],m_detect_candidate[j])<100.0)
+        if ((m_detect_candidate[j].detect_quality>0) && dist(m_detect_t_0[i],m_detect_candidate[j])<100.0)
         {
-          m_detect_t_0[i].nb_rplidar_samples = m_detect_candidate[j].nb_rplidar_samples;
-          m_detect_t_0[i].timestamp_ms       = m_detect_candidate[j].timestamp_ms;
-          m_detect_t_0[i].id                 = i;
-          m_detect_t_0[i].x_mm               = m_detect_candidate[j].x_mm;
-          m_detect_t_0[i].y_mm               = m_detect_candidate[j].y_mm;
+          m_detect_t_0[i].detect_quality = m_detect_candidate[j].detect_quality;
+          m_detect_t_0[i].timestamp_ms   = m_detect_candidate[j].timestamp_ms;
+          m_detect_t_0[i].id             = i;
+          m_detect_t_0[i].x_mm           = m_detect_candidate[j].x_mm;
+          m_detect_t_0[i].y_mm           = m_detect_candidate[j].y_mm;
 
-          m_detect_candidate[j].id           = i;
+          m_detect_candidate[j].id       = i;
         }
       }
     }
@@ -323,15 +324,15 @@ void LidarDetect::updateDetection()
     {
       for (int j=0; j<MAX_NB_OF_DETECTED_ROBOTS; j++)
       {
-        if ((m_detect_candidate[j].nb_rplidar_samples>0) && (m_detect_candidate[j].id==0xffffffff))
+        if ((m_detect_candidate[j].detect_quality>0) && (m_detect_candidate[j].id==0xffffffff))
         {
-          m_detect_t_0[i].nb_rplidar_samples = m_detect_candidate[j].nb_rplidar_samples;
-          m_detect_t_0[i].timestamp_ms       = m_detect_candidate[j].timestamp_ms;
-          m_detect_t_0[i].id                 = i;
-          m_detect_t_0[i].x_mm               = m_detect_candidate[j].x_mm;
-          m_detect_t_0[i].y_mm               = m_detect_candidate[j].y_mm;
+          m_detect_t_0[i].detect_quality = m_detect_candidate[j].detect_quality;
+          m_detect_t_0[i].timestamp_ms   = m_detect_candidate[j].timestamp_ms;
+          m_detect_t_0[i].id             = i;
+          m_detect_t_0[i].x_mm           = m_detect_candidate[j].x_mm;
+          m_detect_t_0[i].y_mm           = m_detect_candidate[j].y_mm;
 
-          m_detect_candidate[j].id           = i;
+          m_detect_candidate[j].id       = i;
         }
       }
     }
@@ -350,19 +351,19 @@ void LidarDetect::updateDetection()
 
 #else
 
-  m_detect_t_0[0].nb_rplidar_samples = m_detect_slot[best_pos].nb_rplidar_samples;
+  m_detect_t_0[0].detect_quality     = m_detect_slot[best_pos].nb_rplidar_samples;
   m_detect_t_0[0].timestamp_ms       = m_detect_slot[best_pos].timestamp_ms;
   m_detect_t_0[0].id                 = 0;
   m_detect_t_0[0].x_mm               = m_detect_slot[best_pos].x_mm;
   m_detect_t_0[0].y_mm               = m_detect_slot[best_pos].y_mm;
 
-  m_detect_t_0[1].nb_rplidar_samples = m_detect_slot[second_pos].nb_rplidar_samples;
+  m_detect_t_0[1].detect_quality     = m_detect_slot[second_pos].nb_rplidar_samples;
   m_detect_t_0[1].timestamp_ms       = m_detect_slot[second_pos].timestamp_ms;
   m_detect_t_0[1].id                 = 1;
   m_detect_t_0[1].x_mm               = m_detect_slot[second_pos].x_mm;
   m_detect_t_0[1].y_mm               = m_detect_slot[second_pos].y_mm;
 
-  m_detect_t_0[2].nb_rplidar_samples = m_detect_slot[third_pos].nb_rplidar_samples;
+  m_detect_t_0[2].detect_quality     = m_detect_slot[third_pos].nb_rplidar_samples;
   m_detect_t_0[2].timestamp_ms       = m_detect_slot[third_pos].timestamp_ms;
   m_detect_t_0[2].id                 = 2;
   m_detect_t_0[2].x_mm               = m_detect_slot[third_pos].x_mm;
@@ -373,19 +374,26 @@ void LidarDetect::updateDetection()
   m_detect_lock = true;
   memcpy (m_detect_export, m_detect_t_0, sizeof(m_detect_t_0));
   m_detect_lock = false;
+
+  /* FIXME : TODO : refactor */
+  PlaygroundState::instance().lock();
+  PlaygroundState::instance().detected_robot(0) = m_detect_export[0];
+  PlaygroundState::instance().detected_robot(1) = m_detect_export[1];
+  PlaygroundState::instance().detected_robot(2) = m_detect_export[2];
+  PlaygroundState::instance().release();
 }
 
 
 void LidarDetect::sendDetected()
 {
   unsigned short my_message_type;
-  RobotDetectionMsg my_message;
+  robot_detection_msg_t my_message;
 
   my_message_type = 1280; /* FIXME : TODO : use mesage_types.hpp */
 
   for (int i=0; i<MAX_NB_OF_DETECTED_ROBOTS; i++)
   {
-    if (m_detect_t_0[1].nb_rplidar_samples>0)
+    if (m_detect_t_0[1].detect_quality>0)
     {
       my_message.timestamp_ms   = m_detect_t_0[i].timestamp_ms;
       my_message.id             = m_detect_t_0[i].id;
@@ -395,7 +403,7 @@ void LidarDetect::sendDetected()
       my_message.vy_mm_sec      = m_detect_t_0[i].vy_mm_sec;
       my_message.ax_mm_sec_2    = m_detect_t_0[i].ax_mm_sec_2;
       my_message.ay_mm_sec_2    = m_detect_t_0[i].ay_mm_sec_2;
-      my_message.detect_quality = m_detect_t_0[i].nb_rplidar_samples;
+      my_message.detect_quality = m_detect_t_0[i].detect_quality;
     }
     else
     {
@@ -416,7 +424,7 @@ void LidarDetect::sendDetected()
 }
 
 
-DetectedRobot& LidarDetect::get_detected_mob_obst(int _obst_idx)
+detected_robot_info_t& LidarDetect::detected_robot(int _obst_idx)
 {
   /* FIXME : TODO : improve synchronisation */
   while(m_detect_lock); /* Warning : dangerous! */
@@ -430,7 +438,7 @@ double LidarDetect::dist(double x0, double y0, double x1, double y1)
 }
 
 
-double LidarDetect::dist(DetectedRobot &R0, DetectedRobot &R1)
+double LidarDetect::dist(detected_robot_info_t &R0, detected_robot_info_t &R1)
 {
   return sqrt((R0.x_mm-R1.x_mm)*(R0.x_mm-R1.x_mm) + (R0.y_mm-R1.y_mm)*(R0.y_mm-R1.y_mm));
 }

@@ -13,7 +13,7 @@
 #include "rplidar.h" //RPLIDAR standard sdk, all-in-one header
 
 #include "comm_rplidar.hpp"
-#include "lidar_detect.hpp"
+#include "detect/lidar_detect.hpp"
 
 
 using namespace goldobot;

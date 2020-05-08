@@ -47,8 +47,9 @@
 #include "comm_zmq.hpp"
 #include "comm_nucleo.hpp"
 #include "robot_state.hpp"
-#include "lidar_detect.hpp"
-#include "robot_strat.hpp"
+#include "playground_state.hpp"
+#include "detect/lidar_detect.hpp"
+#include "strat/robot_strat.hpp"
 
 #include "astar/astar.h"
 
@@ -134,6 +135,12 @@ int main(int argc, const char * argv[])
     return -1;
   }
 
+  if (PlaygroundState::instance().init()!=0)
+  {
+    fprintf(stderr, "Error, cannot init playground state.\n");
+    return -1;
+  }
+
   if ((!autotest_flag) && (DirectUartNucleo::instance().init(conf_nucleo_uart_dev_str, conf_nucleo_uart_baudrate)!=0))
   {
     fprintf(stderr, "Error, cannot init nucleo uart direct interface.\n");
@@ -210,6 +217,12 @@ int main(int argc, const char * argv[])
     return -1;
   }
 
+  if (PlaygroundState::instance().startProcessing()!=0)
+  {
+    fprintf(stderr, "Error, cannot start the playground thread.\n");
+    return -1;
+  }
+
   if (DirectUartNucleo::instance().startProcessing()!=0)
   {
     fprintf(stderr, "Error, cannot start the nucleo uart thread.\n");
@@ -252,6 +265,7 @@ int main(int argc, const char * argv[])
 
       CommZmq::instance().stopTask();
       RobotState::instance().stopTask();
+      PlaygroundState::instance().stopTask();
       DirectUartNucleo::instance().stopTask();
       CommRplidar::instance().stopTask();
       RobotStrat::instance().stopTask();
@@ -270,6 +284,7 @@ int main(int argc, const char * argv[])
     if (!(
           CommZmq::instance().taskRunning() ||
           RobotState::instance().taskRunning() ||
+          PlaygroundState::instance().taskRunning() ||
           DirectUartNucleo::instance().taskRunning() ||
           CommRplidar::instance().taskRunning() ||
           RobotStrat::instance().taskRunning()

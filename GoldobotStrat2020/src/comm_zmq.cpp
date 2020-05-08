@@ -10,7 +10,7 @@
 #include "comm_zmq.hpp"
 #include "comm_nucleo.hpp"
 #include "comm_rplidar.hpp"
-#include "robot_strat.hpp"
+#include "strat/robot_strat.hpp"
 
 
 using namespace goldobot;

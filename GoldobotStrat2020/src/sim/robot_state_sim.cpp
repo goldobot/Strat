@@ -3,7 +3,10 @@
 #include <math.h>
 #include <sys/time.h>
 
+#define ROBOT_SIM 1
+
 #include "robot_state.hpp"
+#include "sim/virtual_robot.hpp"
 
 
 using namespace goldobot;
@@ -18,7 +21,7 @@ RobotState& RobotState::instance()
 
 RobotState::RobotState()
 {
-  strncpy(m_thread_name,"RobotState",sizeof(m_thread_name));
+  strncpy(m_thread_name,"RobotState_sim",sizeof(m_thread_name));
 
   m_stop_task = false;
   m_task_running = false;
@@ -33,6 +36,8 @@ RobotState::RobotState()
   m_s.forward_move = true;
 
   m_s.robot_sensors = 0;
+
+  m_vr = new VirtualRobot();
 
   pthread_mutex_init(&m_lock, NULL);
 }
@@ -51,6 +56,8 @@ int RobotState::init()
   m_s.robot_sensors = GPIO_START_MASK;
 
   pthread_mutex_init(&m_lock, NULL);
+
+  /* FIXME : TODO : init virtual robot */
 
   return 0;
 }
@@ -257,3 +264,14 @@ void RobotState::release()
   pthread_mutex_unlock(&m_lock);
 }
 
+void RobotState::sim_send(const unsigned char *msg_buf, size_t msg_len)
+{
+  if (m_vr) m_vr->sim_receive(msg_buf, msg_len);
+}
+
+void RobotState::sim_recv(unsigned char *msg_buf, size_t msg_len)
+{
+  /* bouchon */
+  msg_buf = msg_buf;
+  msg_len = msg_len;
+}

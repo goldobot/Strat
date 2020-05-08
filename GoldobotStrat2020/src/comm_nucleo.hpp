@@ -58,9 +58,9 @@ namespace goldobot
 
     virtual void taskFunction();
 
-    int send(const void *buf, size_t len);
+    int send(const unsigned char *buf, size_t len);
 
-    int recv(void *buf, size_t len);
+    int recv(unsigned char *buf, size_t len);
 
     int set_interface_attribs(int fd, int speed);
 

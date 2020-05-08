@@ -271,8 +271,7 @@ void RobotStrat::taskFunction()
         break;
       case STRAT_ACTION_TYPE_NUCLEO_SEQ:
         printf (" STRAT_ACTION_TYPE_NUCLEO_SEQ\n");
-        action_ok = false;
-        /* FIXME : TODO */
+        action_ok = true;
         break;
       case STRAT_ACTION_TYPE_GOTO_ASTAR:
         {
@@ -438,8 +437,11 @@ void RobotStrat::taskFunction()
         }
         break;
       case STRAT_ACTION_TYPE_NUCLEO_SEQ:
-        printf (" STRAT_ACTION_TYPE_NUCLEO_SEQ\n");
-        /* FIXME : TODO */
+        {
+          strat_action_nucleo_seq_t *act_nucleo_seq= 
+            (strat_action_nucleo_seq_t *) my_action;
+          cmd_nucleo_seq (act_nucleo_seq->nucleo_seq_id);
+        }
         break;
       case STRAT_ACTION_TYPE_GOTO_ASTAR:
         {
@@ -733,6 +735,69 @@ int RobotStrat::cmd_point_to(strat_way_point_t *_wp, float speed, float accel, f
 
   field_len = sizeof(float);
   memcpy (_pc, (unsigned char *)&deccel, field_len);
+  _pc += field_len;
+  cmd_buf_len += field_len;
+
+  DirectUartNucleo::instance().send(m_nucleo_cmd_buf, cmd_buf_len);
+
+  return 0;
+}
+
+int RobotStrat::cmd_set_pose(float x_mm, float y_mm, float theta_deg)
+{
+  /* FIXME : TODO : use defines.. */
+  unsigned short int cmd_traj_code = 0x0053; /*DbgPropulsionSetPose*/
+
+  unsigned char *_pc = m_nucleo_cmd_buf;
+  int cmd_buf_len = 0;
+  int field_len = 0;
+
+  float my_x = x_mm*0.001;
+  float my_y = y_mm*0.001;
+  float my_theta = theta_deg*M_PI/180.0;
+
+  field_len = sizeof(unsigned short int);
+  memcpy (_pc, (unsigned char *)&cmd_traj_code, field_len);
+  _pc += field_len;
+  cmd_buf_len += field_len;
+
+  field_len = sizeof(float);
+  memcpy (_pc, (unsigned char *)&(my_x), field_len);
+  _pc += field_len;
+  cmd_buf_len += field_len;
+
+  field_len = sizeof(float);
+  memcpy (_pc, (unsigned char *)&(my_y), field_len);
+  _pc += field_len;
+  cmd_buf_len += field_len;
+
+  field_len = sizeof(float);
+  memcpy (_pc, (unsigned char *)&my_theta, field_len);
+  _pc += field_len;
+  cmd_buf_len += field_len;
+
+  DirectUartNucleo::instance().send(m_nucleo_cmd_buf, cmd_buf_len);
+
+  return 0;
+}
+
+int RobotStrat::cmd_nucleo_seq (unsigned int seq_id)
+{
+  /* FIXME : TODO : use defines.. */
+  unsigned short int cmd_traj_code = 0x002b; /*MainSequenceStartSequence*/
+
+  unsigned char *_pc = m_nucleo_cmd_buf;
+  int cmd_buf_len = 0;
+  int field_len = 0;
+  unsigned short seq_id_s = (unsigned short) seq_id;
+
+  field_len = sizeof(unsigned short int);
+  memcpy (_pc, (unsigned char *)&cmd_traj_code, field_len);
+  _pc += field_len;
+  cmd_buf_len += field_len;
+
+  field_len = sizeof(unsigned short int);
+  memcpy (_pc, (unsigned char *)&(seq_id_s), field_len);
   _pc += field_len;
   cmd_buf_len += field_len;
 

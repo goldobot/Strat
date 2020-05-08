@@ -3,6 +3,9 @@
 #include <cstddef>
 
 #include "goldo_thread.hpp"
+#ifdef ROBOT_SIM
+#include "sim/virtual_robot.hpp"
+#endif
 
 namespace goldobot
 {
@@ -64,12 +67,19 @@ namespace goldobot
     static const unsigned int FLAG_PROPULSION_BUSY_MASK    = 0x00010000;
     static const unsigned int FLAG_PROPULSION_ERROR_MASK   = 0x00020000;
 
+    void sim_send(const unsigned char *msg_buf, size_t msg_len);
+    void sim_recv(unsigned char *msg_buf, size_t msg_len);
+
   private:
     robot_state_info_t m_s;
 
     pthread_mutex_t m_lock;
 
     static RobotState s_instance;
+
+#ifdef ROBOT_SIM
+    VirtualRobot *m_vr;
+#endif
   };
 }
 

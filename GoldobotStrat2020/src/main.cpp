@@ -280,7 +280,7 @@ int main(int argc, const char * argv[])
 
   /* wait for all threads to terminate .. */
   printf(" Waiting for all threads to terminate .. \n");
-  for (int i=0; i<1000; i++) {
+  for (int i=0; i<3000; i++) {
     if (!(
           CommZmq::instance().taskRunning() ||
           RobotState::instance().taskRunning() ||

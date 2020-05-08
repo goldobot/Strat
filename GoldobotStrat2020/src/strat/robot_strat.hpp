@@ -75,6 +75,10 @@ namespace goldobot
 
     int cmd_point_to (strat_way_point_t *_wp, float speed, float accel, float deccel);
 
+    int cmd_set_pose (float x_mm, float y_mm, float theta_deg);
+
+    int cmd_nucleo_seq (unsigned int seq_id);
+
     int cmd_clear_prop_err ();
 
     /* FIXME : TODO */

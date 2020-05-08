@@ -66,6 +66,36 @@ int StratTask::read_yaml_conf(YAML::Node &yconf)
     strncpy(m_task_name, "DebugTask", sizeof (m_task_name));
   }
 
+  YAML::Node init_pos_node = yconf["init_pos"];
+  if (init_pos_node) 
+  {
+    const char *my_str = NULL;
+    my_str = init_pos_node[0].as<std::string>().c_str();
+    m_init_pos_wp.x_mm = strtof(my_str, NULL);
+    my_str = init_pos_node[1].as<std::string>().c_str();
+    m_init_pos_wp.y_mm = strtof(my_str, NULL);
+  }
+  else
+  {
+    m_init_pos_wp.x_mm = 0.0;
+    m_init_pos_wp.y_mm = 0.0;
+  }
+
+  YAML::Node init_point_to_node = yconf["init_point_to"];
+  if (init_point_to_node) 
+  {
+    const char *my_str = NULL;
+    my_str = init_point_to_node[0].as<std::string>().c_str();
+    m_init_point_to_wp.x_mm = strtof(my_str, NULL);
+    my_str = init_point_to_node[1].as<std::string>().c_str();
+    m_init_point_to_wp.y_mm = strtof(my_str, NULL);
+  }
+  else
+  {
+    m_init_point_to_wp.x_mm = 1.0;
+    m_init_point_to_wp.y_mm = 0.0;
+  }
+
   m_n_actions = yconf["actions"].size();
 
   m_curr_act_idx = 0;
@@ -494,6 +524,12 @@ void StratTask::dbg_dump_task()
   printf ("\n");
   printf ("dbg_task:\n");
   printf ("  task_name: %s\n", m_task_name);
+  printf ("  init_pos:\n");
+  printf ("    [%8.1f,%8.1f]\n", 
+          m_init_pos_wp.x_mm, m_init_pos_wp.y_mm);
+  printf ("  init_point_to:\n");
+  printf ("    [%8.1f,%8.1f]\n", 
+          m_init_point_to_wp.x_mm, m_init_point_to_wp.y_mm);
   printf ("  curr_act_idx: %d\n", m_curr_act_idx);
   printf ("  n_actions: %d\n", m_n_actions);
   printf ("  actions:\n");

@@ -18,7 +18,7 @@ PlaygroundState& PlaygroundState::instance()
 
 PlaygroundState::PlaygroundState()
 {
-  strncpy(m_thread_name,"PlaygroundState",sizeof(m_thread_name));
+  strncpy(m_thread_name,"PlaygroundState_sim",sizeof(m_thread_name));
 
   memset (&m_s, 0, sizeof(m_s));
 

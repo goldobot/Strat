@@ -421,7 +421,7 @@ void DirectUartNucleo::taskFunction()
   m_task_running = false;
 }
 
-int DirectUartNucleo::send(const void *msg_buf, size_t msg_len)
+int DirectUartNucleo::send(const unsigned char *msg_buf, size_t msg_len)
 {
   unsigned char *pc = NULL;
   unsigned int  *pw = NULL;
@@ -464,7 +464,7 @@ int DirectUartNucleo::send(const void *msg_buf, size_t msg_len)
   return 0;
 }
 
-int DirectUartNucleo::recv(void *msg_buf, size_t msg_len)
+int DirectUartNucleo::recv(unsigned char *msg_buf, size_t msg_len)
 {
   /* FIXME : TODO */
   return -1; /* not implemented yet */

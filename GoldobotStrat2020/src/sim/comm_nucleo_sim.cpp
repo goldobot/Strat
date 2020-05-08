@@ -79,7 +79,7 @@ void DirectUartNucleo::taskFunction()
   while(!m_stop_task)
   {
 
-    /* FIXME : TODO */
+    /* FIXME : TODO : robot simulation */
 #if 0
     RobotState::instance().lock();
     RobotState::instance().s().local_ts_ms   = my_time_ms;
@@ -99,47 +99,26 @@ void DirectUartNucleo::taskFunction()
   m_task_running = false;
 }
 
-int DirectUartNucleo::send(const void *msg_buf, size_t msg_len)
+int DirectUartNucleo::send(const unsigned char *msg_buf, size_t msg_len)
 {
-  unsigned char *pc = NULL;
-  unsigned int  *pw = NULL;
-
-  if ((msg_len<0) || (msg_len>(SEND_BUF_SZ-10)) || (msg_buf==NULL)) {
-    return -1;
-  }
-
-  memset(m_send_buf, 0, SEND_BUF_SZ);
-
-  m_send_buf[0] = 0x55;
-  m_send_buf[1] = 0x24;
-  m_send_buf[2] = 0x00;
-  m_send_buf[3] = (unsigned char) msg_len + 8;
-
-  pw = (unsigned int *) &m_send_buf[4];
-  *pw = m_uart_send_seq;
-  m_uart_send_seq++;
-
-  pc = (unsigned char *) &m_send_buf[8];
-  memcpy (pc, msg_buf, msg_len);
-
 #if 1 /* FIXME : DEBUG */
   {
-    int i;
-    int dbg_len = msg_len + 8;
-    printf("DEBUG: direct_uart: sending %d bytes:\n", dbg_len);
-    for (i=0; i<dbg_len; i++) printf ("%.2x ",m_send_buf[i]);
+    printf("DEBUG: direct_uart_sim: sending %lu bytes:\n", msg_len);
+    for (unsigned int i=0; i<msg_len; i++) printf ("%.2x ",msg_buf[i]);
     printf ("\n");
   }
 #endif
 
-  /* FIXME : TODO */
+  RobotState::instance().sim_send(msg_buf, msg_len);
 
   return 0;
 }
 
-int DirectUartNucleo::recv(void *msg_buf, size_t msg_len)
+int DirectUartNucleo::recv(unsigned char *msg_buf, size_t msg_len)
 {
   /* FIXME : TODO */
+  msg_buf = msg_buf;
+  msg_len = msg_len;
   return -1; /* not implemented yet */
 }
 

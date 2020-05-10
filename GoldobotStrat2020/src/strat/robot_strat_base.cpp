@@ -49,11 +49,13 @@ StratTask::StratTask()
 
 int StratTask::read_yaml_conf(YAML::Node &yconf)
 {
+#if 0 /* FIXME : DEBUG */
   if (!yconf["actions"]) 
   {
     printf ("  ERROR : no actions\n");
     return -1;
   }
+#endif
 
   YAML::Node name_node = yconf["task_name"];
   if (name_node) 

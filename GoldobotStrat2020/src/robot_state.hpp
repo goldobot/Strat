@@ -3,9 +3,6 @@
 #include <cstddef>
 
 #include "goldo_thread.hpp"
-#ifdef ROBOT_SIM
-#include "sim/virtual_robot.hpp"
-#endif
 
 namespace goldobot
 {
@@ -76,10 +73,6 @@ namespace goldobot
     pthread_mutex_t m_lock;
 
     static RobotState s_instance;
-
-#ifdef ROBOT_SIM
-    VirtualRobot *m_vr;
-#endif
   };
 }
 

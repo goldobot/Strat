@@ -160,6 +160,8 @@ void RobotState::taskFunction()
         l_odo_y_mm_old = my_odo_y_mm;
         l_odo_theta_deg_old = my_odo_theta_deg;
 
+        l_odo_theta_rad = my_odo_theta_deg*M_PI/180.0;
+
         if (l_odo_time_ms_delta==0) m_s.speed_abs = 0.0;
         else m_s.speed_abs = ((double)l_odo_d_mm_delta/*/1000.0*/)/(l_odo_time_ms_delta/*/1000.0*/); // result in m/sec
         if (m_s.speed_abs>0.005) 

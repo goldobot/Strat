@@ -7,7 +7,7 @@
 
 
 #define ROBOT_SIM 1
-#define SIM_DEBUG 1
+//#define SIM_DEBUG 1
 
 #include "robot_state.hpp"
 #include "sim/virtual_robot.hpp"
@@ -75,6 +75,7 @@ VirtualRobot::VirtualRobot()
   m_prop_semi_axis = 0.1;
 
   /* FIXME : TODO */
+  m_dbg_duration = 0.0;
 }
 
 int VirtualRobot::read_yaml_conf(YAML::Node &yconf)
@@ -85,9 +86,9 @@ int VirtualRobot::read_yaml_conf(YAML::Node &yconf)
 
 void VirtualRobot::sim_update(double t_inc)
 {
-  m_sv.p.x   += m_sv.v.x*t_inc;
-  m_sv.p.y   += m_sv.v.y*t_inc;
-  m_sv.theta += m_sv.v_theta*t_inc;
+  double old_v_x     = m_sv.v.x;
+  double old_v_y     = m_sv.v.y;
+  double old_v_theta = m_sv.v_theta;
 
   if ((m_me!=NULL) && (m_me_idx!=-1) && (m_me_idx!=m_me_cnt))
   {
@@ -97,19 +98,78 @@ void VirtualRobot::sim_update(double t_inc)
       double a_y     = m_me[m_me_idx].u.dyn.lin_accel * sin(m_sv.theta);
       double a_theta = m_me[m_me_idx].u.dyn.ang_accel;
 
+      if ((m_me[m_me_idx].u.dyn.duration-t_inc)<0.0) 
+      {
+        t_inc = m_me[m_me_idx].u.dyn.duration;
+        m_me[m_me_idx].u.dyn.duration = 0.0;
+
+#ifdef SIM_DEBUG
+        printf ("\n");
+        printf ("DEBUG : VirtualRobot::sim_update() : m_dbg_duration=%f\n",
+                m_dbg_duration);
+        printf ("DEBUG : VirtualRobot::sim_update() : m_sv.p.x=%f mm\n",
+                m_sv.p.x*1000.0);
+        printf ("DEBUG : VirtualRobot::sim_update() : m_sv.p.y=%f mm\n",
+                m_sv.p.y*1000.0);
+        printf ("DEBUG : VirtualRobot::sim_update() : m_sv.v.x=%f mm/s\n",
+                m_sv.v.x*1000.0);
+        printf ("DEBUG : VirtualRobot::sim_update() : m_sv.v.y=%f mm/s\n",
+                m_sv.v.y*1000.0);
+        printf ("DEBUG : VirtualRobot::sim_update() : a_x=%f mm/s2\n",
+                a_x*1000.0);
+        printf ("DEBUG : VirtualRobot::sim_update() : a_y=%f mm/s2\n",
+                a_y*1000.0);
+        printf ("DEBUG : VirtualRobot::sim_update() : m_sv.theta=%f°\n",
+                (m_sv.theta*180.0/M_PI));
+        printf ("DEBUG : VirtualRobot::sim_update() : m_sv.v_theta=%f(%f°)\n",
+                m_sv.v_theta, (m_sv.v_theta*180.0/M_PI));
+        printf ("DEBUG : VirtualRobot::sim_update() : a_theta=%f(%f°)\n",
+                a_theta, (a_theta*180.0/M_PI));
+#endif /* SIM_DEBUG */
+        m_me_idx++;
+        if (m_me_idx==m_me_cnt) 
+        {
+          m_gpio = m_gpio&(~FLAG_PROPULSION_BUSY_MASK);
+#ifdef SIM_DEBUG
+          printf ("DEBUG : VirtualRobot::sim_update() : end actions\n");
+#endif /* SIM_DEBUG */
+          m_dbg_duration = 0.0;
+        }
+      }
+      else
+      {
+        m_me[m_me_idx].u.dyn.duration -= t_inc;
+      }
+
+      m_dbg_duration += t_inc;
+
       m_sv.v.x     += a_x*t_inc;
       m_sv.v.y     += a_y*t_inc;
       m_sv.v_theta += a_theta*t_inc;
 
-      m_me[m_me_idx].u.dyn.duration -= t_inc;
-      if (m_me[m_me_idx].u.dyn.duration<0.0) m_me_idx++;
     }
     else
     {
       /* FIXME : TODO */
       m_me_idx++;
+      if (m_me_idx==m_me_cnt) 
+      {
+        m_gpio = m_gpio&(~FLAG_PROPULSION_BUSY_MASK);
+#ifdef SIM_DEBUG
+        printf ("DEBUG : VirtualRobot::sim_update() : no actions\n");
+        printf ("DEBUG : VirtualRobot::sim_update() : m_dbg_duration=%f\n",
+                m_dbg_duration);
+#endif /* SIM_DEBUG */
+        m_dbg_duration = 0.0;
+      }
     }
   }
+
+  m_sv.p.x   += old_v_x*t_inc;
+  m_sv.p.y   += old_v_y*t_inc;
+  m_sv.theta += old_v_theta*t_inc;
+  m_sv.theta = sim_normalize_angle(m_sv.theta);
+
 }
 
 void VirtualRobot::sim_receive(const unsigned char *msg_buf, size_t msg_len)
@@ -195,12 +255,24 @@ void VirtualRobot::sim_compute_motion_times(
   }
 }
 
-void VirtualRobot::create_rotation_me(sim_vec_2d_t &orig, double orig_theta,
-                                      sim_vec_2d_t &target,
+void VirtualRobot::create_rotation_me(sim_vec_2d_t &orig, double orig_theta, 
+                                      sim_vec_2d_t &target, 
                                       float speed, float accel, float deccel)
 {
+#ifdef SIM_DEBUG
+  printf ("DEBUG : create_rotation_me() : orig=[%f,%f]\n", orig.x, orig.y);
+  printf ("DEBUG : create_rotation_me() : target=[%f,%f]\n",target.x,target.y);
+#endif /* SIM_DEBUG */
+
   double new_theta = sim_compute_theta(orig, target);
   double d_theta = sim_normalize_angle(new_theta - orig_theta);
+
+#ifdef SIM_DEBUG
+  printf ("DEBUG : create_rotation_me() : orig_theta=%f\n", orig_theta);
+  printf ("DEBUG : create_rotation_me() : new_theta=%f\n", new_theta);
+  printf ("DEBUG : create_rotation_me() : d_theta=%f(%f°)\n", 
+          d_theta, d_theta*180.0/M_PI);
+#endif /* SIM_DEBUG */
 
   speed  = speed/m_prop_semi_axis;
   accel  = accel/m_prop_semi_axis;
@@ -210,6 +282,11 @@ void VirtualRobot::create_rotation_me(sim_vec_2d_t &orig, double orig_theta,
   double t_i;
   double t_d;
   sim_compute_motion_times(fabs(d_theta), speed, accel, deccel, t_a, t_i, t_d);
+#ifdef SIM_DEBUG
+  printf ("DEBUG : create_rotation_me() : t_a=%f\n", t_a);
+  printf ("DEBUG : create_rotation_me() : t_i=%f\n", t_i);
+  printf ("DEBUG : create_rotation_me() : t_d=%f\n", t_d);
+#endif /* SIM_DEBUG */
 
   if (d_theta<0)
   {
@@ -221,7 +298,7 @@ void VirtualRobot::create_rotation_me(sim_vec_2d_t &orig, double orig_theta,
   m_me[m_me_cnt].type = SM_ELEM_DYN;
   m_me[m_me_cnt].u.dyn.duration  = t_a;
   m_me[m_me_cnt].u.dyn.lin_accel = 0.0;
-  m_me[m_me_cnt].u.dyn.ang_accel = accel/m_prop_semi_axis;
+  m_me[m_me_cnt].u.dyn.ang_accel = accel;
   m_me_cnt++;
 
   if (t_i>0.0)
@@ -236,12 +313,12 @@ void VirtualRobot::create_rotation_me(sim_vec_2d_t &orig, double orig_theta,
   m_me[m_me_cnt].type = SM_ELEM_DYN;
   m_me[m_me_cnt].u.dyn.duration  = t_d;
   m_me[m_me_cnt].u.dyn.lin_accel = 0.0;
-  m_me[m_me_cnt].u.dyn.ang_accel = deccel/m_prop_semi_axis;
+  m_me[m_me_cnt].u.dyn.ang_accel = -deccel;
   m_me_cnt++;
 }
 
-void VirtualRobot::create_translation_me(sim_vec_2d_t &orig, 
-                                         sim_vec_2d_t &target,
+void VirtualRobot::create_translation_me(sim_vec_2d_t &orig, bool forward,
+                                         sim_vec_2d_t &target, 
                                          float speed, float accel, float deccel)
 {
   double dist = sim_dist(target, orig);
@@ -250,6 +327,18 @@ void VirtualRobot::create_translation_me(sim_vec_2d_t &orig,
   double t_i;
   double t_d;
   sim_compute_motion_times(dist, speed, accel, deccel, t_a, t_i, t_d);
+#ifdef SIM_DEBUG
+  printf ("DEBUG : create_translation_me() : t_a=%f\n", t_a);
+  printf ("DEBUG : create_translation_me() : t_i=%f\n", t_i);
+  printf ("DEBUG : create_translation_me() : t_d=%f\n", t_d);
+#endif /* SIM_DEBUG */
+
+  if (!forward)
+  {
+    speed  = -speed;
+    accel  = -accel;
+    deccel = -deccel;
+  }
 
   m_me[m_me_cnt].type = SM_ELEM_DYN;
   m_me[m_me_cnt].u.dyn.duration  = t_a;
@@ -268,8 +357,8 @@ void VirtualRobot::create_translation_me(sim_vec_2d_t &orig,
 
   m_me[m_me_cnt].type = SM_ELEM_DYN;
   m_me[m_me_cnt].u.dyn.duration  = t_d;
-  m_me[m_me_cnt].u.dyn.lin_accel = 0.0;
-  m_me[m_me_cnt].u.dyn.ang_accel = deccel;
+  m_me[m_me_cnt].u.dyn.lin_accel = -deccel;
+  m_me[m_me_cnt].u.dyn.ang_accel = 0.0;
   m_me_cnt++;
 }
 
@@ -323,8 +412,11 @@ void VirtualRobot::on_cmd_execute_trajectory(unsigned char *msg_buf,
     wp[i].y_mm = my_y*1000.0;
   }
 
-
-  /* FIXME : TODO */
+  if (nwp<2)
+  {
+    delete wp;
+    return;
+  }
 
 #ifdef SIM_DEBUG
   printf ("DEBUG : VirtualRobot::on_cmd_execute_trajectory():\n");
@@ -355,16 +447,46 @@ void VirtualRobot::on_cmd_execute_trajectory(unsigned char *msg_buf,
 
   sim_vec_2d_t orig_vec = m_sv.p;
   double orig_theta = m_sv.theta;
+  double new_theta = m_sv.theta;
   sim_vec_2d_t target_vec;
+  sim_vec_2d_t inv_target_vec;
+  bool forward = true;
 
-  for (int i=0; i<nwp; i++) 
+  target_vec.x = wp[1].x_mm*0.001;
+  target_vec.y = wp[1].y_mm*0.001;
+
+  new_theta = sim_compute_theta(orig_vec, target_vec);
+
+  if (fabs(sim_normalize_angle(new_theta-orig_theta))>(M_PI/2))
+  {
+    forward = false;
+  }
+
+  for (int i=1; i<nwp; i++) 
   {
     target_vec.x = wp[i].x_mm*0.001;
     target_vec.y = wp[i].y_mm*0.001;
+    inv_target_vec.x = 2.0*orig_vec.x - target_vec.x;
+    inv_target_vec.y = 2.0*orig_vec.y - target_vec.y;
+    new_theta = sim_compute_theta(orig_vec, target_vec);
 
-    create_rotation_me(orig_vec, orig_theta, target_vec, speed, accel, deccel);
+    if (forward)
+    {
+      create_rotation_me(orig_vec, orig_theta, target_vec, 
+                         speed, accel, deccel);
+      create_translation_me(orig_vec, forward, target_vec, 
+                         speed, accel, deccel);
+    }
+    else
+    {
+      create_rotation_me(orig_vec, orig_theta, inv_target_vec, 
+                         speed, accel, deccel);
+      create_translation_me(orig_vec, forward, target_vec, 
+                         speed, accel, deccel);
+      new_theta = fabs(sim_normalize_angle(M_PI-new_theta));
+    }
 
-    orig_theta = sim_compute_theta(orig_vec, target_vec);
+    orig_theta = new_theta;
     orig_vec = target_vec;
   }
 
@@ -433,6 +555,12 @@ void VirtualRobot::on_cmd_execute_point_to(unsigned char *msg_buf,
 
   m_gpio = m_gpio|FLAG_PROPULSION_BUSY_MASK;
 
+  m_dbg_duration = 0.0;
+#ifdef SIM_DEBUG
+  printf ("DEBUG : VirtualRobot::on_cmd_execute_point_to() : "
+          "m_dbg_duration=%f\n", m_dbg_duration);
+#endif /* SIM_DEBUG */
+
   m_me_idx = -1; /* execution disabled */
   m_me_cnt = 0;
 
@@ -450,12 +578,9 @@ void VirtualRobot::on_cmd_set_pose(unsigned char *msg_buf,
 {
   unsigned char *_pc = msg_buf;
   int field_len = 0;
-  float x_mm;
-  float y_mm;
-  float theta_deg;
+  float my_theta;
   float my_x;
   float my_y;
-  float my_theta;
 
   field_len = sizeof(float);
   memcpy ((unsigned char *)&my_x, _pc, field_len);
@@ -467,17 +592,16 @@ void VirtualRobot::on_cmd_set_pose(unsigned char *msg_buf,
   _pc += field_len;
   msg_len -= field_len;
 
-  x_mm = my_x*1000.0;
-  y_mm = my_y*1000.0;
-
   field_len = sizeof(float);
   memcpy ((unsigned char *)&my_theta, _pc, field_len);
   _pc += field_len;
   msg_len -= field_len;
 
-  theta_deg = my_theta*180.0/M_PI;
-
 #ifdef SIM_DEBUG
+  float theta_deg = my_theta*180.0/M_PI;
+  float x_mm = my_x*1000.0;
+  float y_mm = my_y*1000.0;
+
   printf ("DEBUG : VirtualRobot::on_cmd_set_pose():\n");
   printf ("  x_mm = %f\n", x_mm);
   printf ("  y_mm = %f\n", y_mm);
@@ -496,16 +620,14 @@ void VirtualRobot::on_cmd_start_sequence(unsigned char *msg_buf,
   unsigned char *_pc = msg_buf;
   int field_len = 0;
   unsigned short seq_id_s = 0;
-  unsigned int seq_id = 0;
 
   field_len = sizeof(unsigned short int);
   memcpy ((unsigned char *)&seq_id_s, _pc, field_len);
   _pc += field_len;
   msg_len -= field_len;
 
-  seq_id = seq_id_s;
-
 #ifdef SIM_DEBUG
+  unsigned int seq_id = seq_id_s;
   printf ("DEBUG : VirtualRobot::on_cmd_start_sequence():\n");
   printf ("  seq_id = %u\n", seq_id);
   printf ("\n");

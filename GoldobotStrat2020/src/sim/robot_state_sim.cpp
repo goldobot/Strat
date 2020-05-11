@@ -5,7 +5,7 @@
 
 #define ROBOT_SIM 1
 
-#define SIM_GRANULARITY 1000
+#define SIM_GRANULARITY 10000
 
 #include "robot_state.hpp"
 #include "comm_zmq.hpp"
@@ -62,6 +62,8 @@ int RobotState::init()
   VirtualRobot::myself().set_autom(false);
 
   /* FIXME : TODO : finish init of virtual robots and load conf */
+  //VirtualRobot::myself().sv().p.x = 1.0; /* FIXME : TODO :remove after dbg! */
+  //VirtualRobot::myself().sv().p.y = 0.0; /* FIXME : TODO :remove after dbg! */
   VirtualRobot::myself().sv().p.x = 0.8; /* FIXME : TODO :remove after dbg! */
   VirtualRobot::myself().sv().p.y =-1.4; /* FIXME : TODO :remove after dbg! */
   VirtualRobot::myself().sv().theta= M_PI/2;/* FIXME : TODO:remove after dbg! */
@@ -163,6 +165,31 @@ void RobotState::taskFunction()
     release();
 
     /**  Send the new state information to the HMI  ***************************/
+
+    /* FIXME : TODO : define method.. */
+    {
+      unsigned char msg_buf[64];
+
+      /* FIXME : TODO : use defines.. */
+      unsigned short int msg_code = 0x0001; /*Heartbeat*/
+      unsigned char *_pc = msg_buf;
+      int msg_buf_len = 0;
+      int field_len = 0;
+
+      field_len = sizeof(unsigned short);
+      memcpy (_pc, (unsigned char *)&msg_code, field_len);
+      _pc += field_len;
+      msg_buf_len += field_len;
+
+      /* timestamp */
+      int msg_timestamp = time_ms; /* FIXME : TODO */
+      field_len = sizeof(int);
+      memcpy (_pc, (unsigned char *)&msg_timestamp, field_len);
+      _pc += field_len;
+      msg_buf_len += field_len;
+
+      CommZmq::instance().send(msg_buf, msg_buf_len, 0);
+    }
 
     /* FIXME : TODO : define method.. */
     {

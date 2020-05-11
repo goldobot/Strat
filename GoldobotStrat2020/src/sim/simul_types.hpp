@@ -77,22 +77,22 @@ namespace goldobot
     double dy = target_y - orig_y;
     double theta = 0.0;
 
-    if (dy==0.0)
+    if (dx==0.0)
     {
-      if (dx>0.0)
+      if (dy>0.0)
         theta = M_PI/2;
-      else if (dx<0.0)
+      else if (dy<0.0)
         theta = -M_PI/2;
     }
     else
     {
-      theta = atan(dx/dy);
+      theta = atan(dy/fabs(dx));
       if (dx<0.0)
       {
         if (theta<0.0)
-          theta += M_PI;
+          theta = -M_PI -theta;
         else
-          theta -= M_PI;
+          theta =  M_PI -theta;
       }
     }
 

@@ -68,7 +68,7 @@ namespace goldobot
     void create_rotation_me(sim_vec_2d_t &orig, double orig_theta, 
                             sim_vec_2d_t &target, 
                             float speed, float accel, float deccel);
-    void create_translation_me(sim_vec_2d_t &orig, 
+    void create_translation_me(sim_vec_2d_t &orig, bool forward, 
                                sim_vec_2d_t &target, 
                                float speed, float accel, float deccel);
 
@@ -78,6 +78,8 @@ namespace goldobot
 
     /* FIXME : TODO : geometric model of the robot (with conf section) */
     double m_prop_semi_axis;
+
+    double m_dbg_duration;
 
     sim_motion_state_vector_t m_sv;
 

@@ -544,9 +544,10 @@ void RobotStrat::taskFunction()
       if (state_change_dbg)
       {
         printf ("\n");
-        printf ("****************************************\n");
-        printf ("* STRAT_STATE_PAUSE_DBG ****************\n");
-        printf ("****************************************\n");
+        //printf ("****************************************\n");
+        //printf ("* STRAT_STATE_PAUSE_DBG ****************\n");
+        //printf ("****************************************\n");
+        printf ("! DBG_PAUSE\n");
         printf ("\n");
         state_change_dbg = false;
       }
@@ -563,9 +564,10 @@ void RobotStrat::taskFunction()
       if (state_change_dbg)
       {
         printf ("\n");
-        printf ("****************************************\n");
-        printf ("* STRAT_STATE_PAUSE2_DBG ***************\n");
-        printf ("****************************************\n");
+        //printf ("****************************************\n");
+        //printf ("* STRAT_STATE_PAUSE2_DBG ***************\n");
+        //printf ("****************************************\n");
+        printf ("! DBG_PAUSE\n");
         printf ("\n");
         state_change_dbg = false;
       }

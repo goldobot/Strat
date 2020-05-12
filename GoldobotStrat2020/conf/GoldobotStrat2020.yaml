@@ -7,3 +7,4 @@ environment:
   conf_nucleo_uart_baudrate: 115200
   conf_zmq_port:             3101
   conf_strat_file_str:       conf/strat.yaml
+  conf_simul_file_str:       conf/simul.yaml

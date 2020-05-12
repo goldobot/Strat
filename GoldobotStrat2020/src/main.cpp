@@ -36,13 +36,9 @@
 
 #include <signal.h>
 
-#include <fstream>
-#include <iostream>
-
 #include "rplidar.h" //RPLIDAR standard sdk, all-in-one header
-#include "yaml-cpp/yaml.h"
-#include "yaml-cpp/eventhandler.h"
 
+#include "goldo_conf.hpp"
 #include "comm_rplidar.hpp"
 #include "comm_zmq.hpp"
 #include "comm_nucleo.hpp"
@@ -56,25 +52,6 @@
 using namespace goldobot;
 
 
-char         conf_viewer_addr_str_def[]      = "192.168.0.241";
-double       conf_theta_correction_deg_def   = 30.0f; /* PR 28/05/2019 */
-char         conf_rplidar_dev_str_def[]      = "/dev/rplidar";
-_u32         conf_rplidar_baudrate_def       = 115200;
-char         conf_nucleo_uart_dev_str_def[]  = "/dev/odometry";
-_u32         conf_nucleo_uart_baudrate_def   = 115200;
-_u32         conf_zmq_port_def               = 3101;
-char         conf_strat_file_str_def[]       = "strat.yaml";
-
-char         conf_viewer_addr_str[128]       = {0};
-double       conf_theta_correction_deg       = 0.0f;
-char         conf_rplidar_dev_str[128]       = {0};
-_u32         conf_rplidar_baudrate           = 0;
-char         conf_nucleo_uart_dev_str[128]   = {0};
-_u32         conf_nucleo_uart_baudrate       = 0;
-_u32         conf_zmq_port                   = 0;
-char         conf_strat_file_str[128]        = {0};
-
-
 bool ctrl_c_pressed = false;
 void ctrlc(int);
 
@@ -83,10 +60,7 @@ bool test_astar_flag = false;
 bool test_strat_conf_flag = false;
 
 
-void set_default_conf();
-int parse_yaml_conf(const char * yaml_fname);
 int process_command_line(int argc, const char * argv[]);
-void display_conf();
 
 
 #ifdef GOLDO_GIT_VERSION
@@ -108,72 +82,71 @@ int main(int argc, const char * argv[])
   printf("GoldobotStrat2020 (%s)\n",my_firmware_ver);
 
 
-//// Process command line parameters and read conf /////////////////////////////
-  set_default_conf();
-
-  if (parse_yaml_conf("conf/GoldobotStrat2020.yaml")!=0)
+//// Read conf and process command line parameters /////////////////////////////
+  if (GoldoConf::instance().init("conf/GoldobotStrat2020.yaml")!=0)
   {
-    fprintf(stderr, "Error, cannot parse conf file.\n");
+    fprintf(stderr, "ERROR : cannot parse conf file.\n");
     return -1;
   }
 
   if (process_command_line(argc, argv)!=0)
   {
-    fprintf(stderr, "Error, wrong command line arguments.\n");
+    fprintf(stderr, "ERROR : wrong command line arguments.\n");
     return -1;
   }
 
-  display_conf();
+  GoldoConf::instance().display_conf();
 
 
 //// Initialise software components ////////////////////////////////////////////
   printf(" Initialising software components .. \n");
+  goldo_conf_info_t& ci = GoldoConf::instance().c();
 
   if (RobotState::instance().init()!=0)
   {
-    fprintf(stderr, "Error, cannot init odometry state.\n");
+    fprintf(stderr, "ERROR : cannot init odometry state.\n");
     return -1;
   }
 
   if (PlaygroundState::instance().init()!=0)
   {
-    fprintf(stderr, "Error, cannot init playground state.\n");
+    fprintf(stderr, "ERROR : cannot init playground state.\n");
     return -1;
   }
 
-  if ((!autotest_flag) && (DirectUartNucleo::instance().init(conf_nucleo_uart_dev_str, conf_nucleo_uart_baudrate)!=0))
+  if ((!autotest_flag) && (DirectUartNucleo::instance().init(ci.conf_nucleo_uart_dev_str, ci.conf_nucleo_uart_baudrate)!=0))
   {
-    fprintf(stderr, "Error, cannot init nucleo uart direct interface.\n");
+    fprintf(stderr, "ERROR : cannot init nucleo uart direct interface.\n");
     return -1;
   }
 
-  if ((!autotest_flag) && (CommZmq::instance().init(conf_zmq_port)!=0))
+  if ((!autotest_flag) && (CommZmq::instance().init(ci.conf_zmq_port)!=0))
   {
-    fprintf(stderr, "Error, cannot init ZMQ interface.\n");
+    fprintf(stderr, "ERROR : cannot init ZMQ interface.\n");
     return -1;
   }
 
-  if ((!autotest_flag) && (CommRplidar::instance().init(conf_rplidar_dev_str, conf_theta_correction_deg*M_PI/180.0f, conf_rplidar_baudrate)!=0))
+  if ((!autotest_flag) && (CommRplidar::instance().init(ci.conf_rplidar_dev_str, ci.conf_theta_correction_deg*M_PI/180.0f, ci.conf_rplidar_baudrate)!=0))
   {
-    fprintf(stderr, "Error, cannot init the rplidar interface.\n");
+    fprintf(stderr, "ERROR : cannot init the rplidar interface.\n");
     return -1;
   }
 
-  if ((!autotest_flag) && (CommRplidar::instance().init_viewer_sock(conf_viewer_addr_str)!=0))
+  if ((!autotest_flag) && (CommRplidar::instance().init_viewer_sock(ci.conf_viewer_addr_str)!=0))
   {
-    fprintf(stderr, "Error, cannot init the rplidar debug socket.\n");
+    fprintf(stderr, "ERROR : cannot init the rplidar debug socket.\n");
     //return -1;
   }
 
   if (LidarDetect::instance().init()!=0)
   {
-    fprintf(stderr, "Error, cannot init adversary tracker.\n");
+    fprintf(stderr, "ERROR : cannot init adversary tracker.\n");
     return -1;
   }
 
-  if (RobotStrat::instance().init(conf_strat_file_str)!=0)
+  if (RobotStrat::instance().init(ci.conf_strat_file_str)!=0)
   {
-    fprintf(stderr, "Error, cannot init strategy module.\n");
+    fprintf(stderr, "ERROR : cannot init strategy module.\n");
     return -1;
   }
   printf(" Initialising software components DONE\n");
@@ -213,45 +186,45 @@ int main(int argc, const char * argv[])
 
   if (RobotState::instance().startProcessing()!=0)
   {
-    fprintf(stderr, "Error, cannot start the odometry thread.\n");
+    fprintf(stderr, "ERROR : cannot start the odometry thread.\n");
     return -1;
   }
 
   if (PlaygroundState::instance().startProcessing()!=0)
   {
-    fprintf(stderr, "Error, cannot start the playground thread.\n");
+    fprintf(stderr, "ERROR : cannot start the playground thread.\n");
     return -1;
   }
 
   if (DirectUartNucleo::instance().startProcessing()!=0)
   {
-    fprintf(stderr, "Error, cannot start the nucleo uart thread.\n");
+    fprintf(stderr, "ERROR : cannot start the nucleo uart thread.\n");
     return -1;
   }
 
   if (CommZmq::instance().startProcessing()!=0)
   {
-    fprintf(stderr, "Error, cannot start the ZMQ thread.\n");
+    fprintf(stderr, "ERROR : cannot start the ZMQ thread.\n");
     return -1;
   }
 
   if (CommRplidar::instance().startProcessing()!=0)
   {
-    fprintf(stderr, "Error, cannot start the rplidar thread.\n");
+    fprintf(stderr, "ERROR : cannot start the rplidar thread.\n");
     return -1;
   }
 
 #if 0 /* FIXME : DEBUG */
   if (LidarDetect::instance().startProcessing()!=0)
   {
-    fprintf(stderr, "Error, cannot start the adversary tracker thread.\n");
+    fprintf(stderr, "ERROR : cannot start the adversary tracker thread.\n");
     return -1;
   }
 #endif
 
   if (RobotStrat::instance().startProcessing()!=0)
   {
-    fprintf(stderr, "Error, cannot start the strategy thread.\n");
+    fprintf(stderr, "ERROR : cannot start the strategy thread.\n");
     return -1;
   }
   printf(" Creating and launching worker threads DONE\n");
@@ -280,7 +253,7 @@ int main(int argc, const char * argv[])
 
   /* wait for all threads to terminate .. */
   printf(" Waiting for all threads to terminate .. \n");
-  for (int i=0; i<3000; i++) {
+  for (int i=0; i<1000; i++) {
     if (!(
           CommZmq::instance().taskRunning() ||
           RobotState::instance().taskRunning() ||
@@ -310,28 +283,8 @@ void ctrlc(int)
 }
 
 
-void set_default_conf() 
-{
-  strncpy(conf_viewer_addr_str, conf_viewer_addr_str_def, 
-          sizeof (conf_viewer_addr_str));
-  conf_theta_correction_deg = conf_theta_correction_deg_def;
-  strncpy(conf_rplidar_dev_str, conf_rplidar_dev_str_def, 
-          sizeof (conf_rplidar_dev_str));
-  conf_rplidar_baudrate = conf_rplidar_baudrate_def;
-  strncpy(conf_nucleo_uart_dev_str, conf_nucleo_uart_dev_str_def, 
-          sizeof (conf_nucleo_uart_dev_str));
-  conf_nucleo_uart_baudrate = conf_nucleo_uart_baudrate_def;
-  conf_zmq_port = conf_zmq_port_def;
-  strncpy(conf_strat_file_str, conf_strat_file_str_def, 
-          sizeof (conf_strat_file_str));
-}
-
 int process_command_line(int argc, const char * argv[]) 
 {
-  char dummy_str[256];
-
-  memset (dummy_str, 0, sizeof (dummy_str));
-  dummy_str[0] = '!'; dummy_str[1] = 0x00; 
 
   // detect autotest request
   if (argc>1)
@@ -353,186 +306,6 @@ int process_command_line(int argc, const char * argv[])
     }
   }
 
-  // read viewer address
-  if (argc>1) strncpy(dummy_str, argv[1], sizeof (dummy_str));
-  if ((dummy_str[0]!='!') && (dummy_str[0]!='*')) 
-  {
-    strncpy(conf_viewer_addr_str, dummy_str, 
-            sizeof (conf_viewer_addr_str));
-  }
-  memset (dummy_str, 0, sizeof (dummy_str));
-  dummy_str[0] = '!'; dummy_str[1] = 0x00; 
-
-  // read theta correction
-  if (argc>2) strncpy(dummy_str, argv[2], sizeof (dummy_str));
-  if ((dummy_str[0]!='!') && (dummy_str[0]!='*')) 
-  {
-    conf_theta_correction_deg = strtod(dummy_str, NULL);
-  } 
-  memset (dummy_str, 0, sizeof (dummy_str));
-  dummy_str[0] = '!'; dummy_str[1] = 0x00; 
-
-  // read rplidar device from the command line...
-  if (argc>3) strncpy(dummy_str, argv[3], sizeof (dummy_str));
-  if ((dummy_str[0]!='!') && (dummy_str[0]!='*')) 
-  {
-    strncpy(conf_rplidar_dev_str, dummy_str, 
-            sizeof (conf_rplidar_dev_str));
-  }
-  memset (dummy_str, 0, sizeof (dummy_str));
-  dummy_str[0] = '!'; dummy_str[1] = 0x00; 
-
-  // read rplidar baud rate from the command line...
-  if (argc>4) strncpy(dummy_str, argv[4], sizeof (dummy_str));
-  if ((dummy_str[0]!='!') && (dummy_str[0]!='*')) 
-  {
-    conf_rplidar_baudrate = strtoul(dummy_str, NULL, 10);
-  }
-  memset (dummy_str, 0, sizeof (dummy_str));
-  dummy_str[0] = '!'; dummy_str[1] = 0x00; 
-
-  // read nucleo uart device from the command line...
-  if (argc>5) strncpy(dummy_str, argv[5], sizeof (dummy_str));
-  if ((dummy_str[0]!='!') && (dummy_str[0]!='*')) 
-  {
-    strncpy(conf_nucleo_uart_dev_str, dummy_str, 
-            sizeof (conf_nucleo_uart_dev_str));
-  }
-  memset (dummy_str, 0, sizeof (dummy_str));
-  dummy_str[0] = '!'; dummy_str[1] = 0x00; 
-
-  // read nucleo uart baudrate from the command line...
-  if (argc>6) strncpy(dummy_str, argv[6], sizeof (dummy_str));
-  if ((dummy_str[0]!='!') && (dummy_str[0]!='*')) 
-  {
-    conf_nucleo_uart_baudrate = strtoul(dummy_str, NULL, 10);
-  }
-  memset (dummy_str, 0, sizeof (dummy_str));
-  dummy_str[0] = '!'; dummy_str[1] = 0x00; 
-
-  // read zmq port from the command line...
-  if (argc>7) strncpy(dummy_str, argv[7], sizeof (dummy_str));
-  if ((dummy_str[0]!='!') && (dummy_str[0]!='*')) 
-  {
-    conf_zmq_port = strtoul(dummy_str, NULL, 10);
-  }
-  memset (dummy_str, 0, sizeof (dummy_str));
-  dummy_str[0] = '!'; dummy_str[1] = 0x00; 
-
-  // read strategy file name from the command line...
-  if (argc>8) strncpy(dummy_str, argv[8], sizeof (dummy_str));
-  if ((dummy_str[0]!='!') && (dummy_str[0]!='*')) 
-  {
-    strncpy(conf_strat_file_str, dummy_str, 
-            sizeof (conf_strat_file_str));
-  }
-  memset (dummy_str, 0, sizeof (dummy_str));
-  dummy_str[0] = '!'; dummy_str[1] = 0x00; 
-
   return 0;
 }
 
-void display_conf() 
-{
-  printf ("  conf_viewer_addr_str      = %s\n", 
-             conf_viewer_addr_str);
-  printf ("  conf_theta_correction_deg = %f\n", 
-             conf_theta_correction_deg);
-  printf ("  conf_rplidar_dev_str      = %s\n", 
-             conf_rplidar_dev_str);
-  printf ("  conf_rplidar_baudrate     = %d\n", 
-             conf_rplidar_baudrate);
-  printf ("  conf_nucleo_uart_dev_str  = %s\n", 
-             conf_nucleo_uart_dev_str);
-  printf ("  conf_nucleo_uart_baudrate = %d\n", 
-             conf_nucleo_uart_baudrate);
-  printf ("  conf_zmq_port             = %d\n", 
-             conf_zmq_port);
-  printf ("  conf_strat_file_str       = %s\n", 
-             conf_strat_file_str);
-}
-
-
-int parse_yaml_conf(const char * yaml_fname)
-{
-  int ret = 0;
-  std::ifstream fin;
-  const char *my_str = NULL;
-
-  try 
-  {
-    fin.open(yaml_fname);
-
-    YAML::Node yconf = YAML::Load(fin);
-    YAML::Node test_node;
-
-    test_node = yconf["environment"]["conf_viewer_addr_str"];
-    if (test_node) 
-    {
-      my_str = (const char *) test_node.as<std::string>().c_str();
-      strncpy(conf_viewer_addr_str, my_str, 
-              sizeof (conf_viewer_addr_str));
-    }
-
-    test_node = yconf["environment"]["conf_theta_correction_deg"];
-    if (test_node) 
-    {
-      my_str = (const char *) test_node.as<std::string>().c_str();
-      conf_theta_correction_deg = strtod(my_str, NULL);
-    }
-
-    test_node = yconf["environment"]["conf_rplidar_dev_str"];
-    if (test_node) 
-    {
-      my_str = (const char *) test_node.as<std::string>().c_str();
-      strncpy(conf_rplidar_dev_str, my_str, 
-              sizeof (conf_rplidar_dev_str));
-    }
-
-    test_node = yconf["environment"]["conf_rplidar_baudrate"];
-    if (test_node) 
-    {
-      my_str = (const char *) test_node.as<std::string>().c_str();
-      conf_rplidar_baudrate = strtoul(my_str, NULL, 10);
-    }
-
-    test_node = yconf["environment"]["conf_nucleo_uart_dev_str"];
-    if (test_node) 
-    {
-      my_str = (const char *) test_node.as<std::string>().c_str();
-      strncpy(conf_nucleo_uart_dev_str, my_str, 
-              sizeof (conf_nucleo_uart_dev_str));
-    }
-
-    test_node = yconf["environment"]["conf_nucleo_uart_baudrate"];
-    if (test_node) 
-    {
-      my_str = (const char *) test_node.as<std::string>().c_str();
-      conf_nucleo_uart_baudrate = strtoul(my_str, NULL, 10);
-    }
-
-    test_node = yconf["environment"]["conf_zmq_port"];
-    if (test_node) 
-    {
-      my_str = (const char *) test_node.as<std::string>().c_str();
-      conf_zmq_port = strtoul(my_str, NULL, 10);
-    }
-
-    test_node = yconf["environment"]["conf_strat_file_str"];
-    if (test_node) 
-    {
-      my_str = (const char *) test_node.as<std::string>().c_str();
-      strncpy(conf_strat_file_str, my_str, 
-              sizeof (conf_strat_file_str));
-    }
-
-    ret = 0;
-  } 
-  catch(const YAML::Exception& e)
-  {
-    std::cerr << e.what() << "\n";
-    ret = -1;
-  }
-
-  return ret;
-}

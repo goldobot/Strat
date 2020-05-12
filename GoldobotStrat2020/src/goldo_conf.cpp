@@ -68,72 +68,72 @@ int GoldoConf::parse_yaml_conf(const char * yaml_fname)
     fin.open(yaml_fname);
 
     YAML::Node yconf = YAML::Load(fin);
-    YAML::Node test_node;
+    YAML::Node conf_node;
 
-    test_node = yconf["environment"]["conf_viewer_addr_str"];
-    if (test_node) 
+    conf_node = yconf["environment"]["conf_viewer_addr_str"];
+    if (conf_node) 
     {
-      my_str = (const char *) test_node.as<std::string>().c_str();
+      my_str = (const char *) conf_node.as<std::string>().c_str();
       strncpy(m_c.conf_viewer_addr_str, my_str, 
               sizeof (m_c.conf_viewer_addr_str));
     }
 
-    test_node = yconf["environment"]["conf_theta_correction_deg"];
-    if (test_node) 
+    conf_node = yconf["environment"]["conf_theta_correction_deg"];
+    if (conf_node) 
     {
-      my_str = (const char *) test_node.as<std::string>().c_str();
+      my_str = (const char *) conf_node.as<std::string>().c_str();
       m_c.conf_theta_correction_deg = strtod(my_str, NULL);
     }
 
-    test_node = yconf["environment"]["conf_rplidar_dev_str"];
-    if (test_node) 
+    conf_node = yconf["environment"]["conf_rplidar_dev_str"];
+    if (conf_node) 
     {
-      my_str = (const char *) test_node.as<std::string>().c_str();
+      my_str = (const char *) conf_node.as<std::string>().c_str();
       strncpy(m_c.conf_rplidar_dev_str, my_str, 
               sizeof (m_c.conf_rplidar_dev_str));
     }
 
-    test_node = yconf["environment"]["conf_rplidar_baudrate"];
-    if (test_node) 
+    conf_node = yconf["environment"]["conf_rplidar_baudrate"];
+    if (conf_node) 
     {
-      my_str = (const char *) test_node.as<std::string>().c_str();
+      my_str = (const char *) conf_node.as<std::string>().c_str();
       m_c.conf_rplidar_baudrate = strtoul(my_str, NULL, 10);
     }
 
-    test_node = yconf["environment"]["conf_nucleo_uart_dev_str"];
-    if (test_node) 
+    conf_node = yconf["environment"]["conf_nucleo_uart_dev_str"];
+    if (conf_node) 
     {
-      my_str = (const char *) test_node.as<std::string>().c_str();
+      my_str = (const char *) conf_node.as<std::string>().c_str();
       strncpy(m_c.conf_nucleo_uart_dev_str, my_str, 
               sizeof (m_c.conf_nucleo_uart_dev_str));
     }
 
-    test_node = yconf["environment"]["conf_nucleo_uart_baudrate"];
-    if (test_node) 
+    conf_node = yconf["environment"]["conf_nucleo_uart_baudrate"];
+    if (conf_node) 
     {
-      my_str = (const char *) test_node.as<std::string>().c_str();
+      my_str = (const char *) conf_node.as<std::string>().c_str();
       m_c.conf_nucleo_uart_baudrate = strtoul(my_str, NULL, 10);
     }
 
-    test_node = yconf["environment"]["conf_zmq_port"];
-    if (test_node) 
+    conf_node = yconf["environment"]["conf_zmq_port"];
+    if (conf_node) 
     {
-      my_str = (const char *) test_node.as<std::string>().c_str();
+      my_str = (const char *) conf_node.as<std::string>().c_str();
       m_c.conf_zmq_port = strtoul(my_str, NULL, 10);
     }
 
-    test_node = yconf["environment"]["conf_strat_file_str"];
-    if (test_node) 
+    conf_node = yconf["environment"]["conf_strat_file_str"];
+    if (conf_node) 
     {
-      my_str = (const char *) test_node.as<std::string>().c_str();
+      my_str = (const char *) conf_node.as<std::string>().c_str();
       strncpy(m_c.conf_strat_file_str, my_str, 
               sizeof (m_c.conf_strat_file_str));
     }
 
-    test_node = yconf["environment"]["conf_simul_file_str"];
-    if (test_node) 
+    conf_node = yconf["environment"]["conf_simul_file_str"];
+    if (conf_node) 
     {
-      my_str = (const char *) test_node.as<std::string>().c_str();
+      my_str = (const char *) conf_node.as<std::string>().c_str();
       strncpy(m_c.conf_simul_file_str, my_str, 
               sizeof (m_c.conf_simul_file_str));
     }

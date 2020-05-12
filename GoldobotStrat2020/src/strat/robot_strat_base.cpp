@@ -10,7 +10,6 @@
 #include "comm_zmq.hpp"
 #include "comm_nucleo.hpp"
 #include "robot_state.hpp"
-#include "playground_state.hpp"
 #include "detect/lidar_detect.hpp"
 #include "strat/robot_strat_types.hpp"
 #include "strat/robot_strat_base.hpp"
@@ -287,6 +286,10 @@ void StratPlayground::init()
   put_stat_rect_obst(1850, 2000,  -610,  -590);
   put_stat_rect_obst(1850, 2000,   610,   590);
   put_stat_rect_obst(1700, 2000,   -10,    10);
+
+  /* FIXME : TODO : make these zones (adversary homes) configurable */
+  put_stat_rect_obst(1700, 2000,  -450,  -150);
+  put_stat_rect_obst( 500, 1100,  1100,  1500);
 
   /* make backup */
   memcpy(m_stat_playground, m_playground, sizeof(m_playground));

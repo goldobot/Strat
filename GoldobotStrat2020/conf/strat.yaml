@@ -17,7 +17,7 @@ dbg_task:
         [   556.0, -1133.0]
   - # action 1:
     min_duration_ms: 200
-    max_duration_ms: 20000
+    max_duration_ms: 40000
     type: TRAJ
     param_traj:
       speed  : 0.300000
@@ -59,7 +59,7 @@ dbg_task:
         [  1400.0,  -300.0]
   - # action 4:
     min_duration_ms: 200
-    max_duration_ms: 20000
+    max_duration_ms: 40000
     type: GOTO_ASTAR
     param_goto_astar:
       speed  : 0.300000
@@ -100,7 +100,7 @@ dbg_task:
         [   300.0,  -790.0]
   - # action 8:
     min_duration_ms: 200
-    max_duration_ms: 20000
+    max_duration_ms: 40000
     type: GOTO_ASTAR
     param_goto_astar:
       speed  : 0.300000
@@ -120,7 +120,7 @@ dbg_task:
         [   300.0, -1350.0]
   - # action 10:
     min_duration_ms: 200
-    max_duration_ms: 20000
+    max_duration_ms: 40000
     type: GOTO_ASTAR
     param_goto_astar:
       speed  : 0.300000

@@ -28,9 +28,13 @@ namespace goldobot
 
     void set_enable(bool enable_flag) {m_enabled = enable_flag;};
 
+    bool enabled() {return m_enabled;};
+
     void set_autom(bool autom_flag) {m_automatic = autom_flag;};
 
-    int read_yaml_conf(YAML::Node &yconf);
+    virtual int read_yaml_conf(YAML::Node &yconf);
+
+    void create_me_list_from_strat();
 
     sim_motion_state_vector_t& sv() {return m_sv;};
 
@@ -47,11 +51,11 @@ namespace goldobot
 
     unsigned int& gpio() {return m_gpio;};
 
-    void sim_update(double t_inc);
+    virtual void sim_update(double t_inc);
 
     void sim_receive(const unsigned char *msg_buf, size_t msg_len);
 
-    void sim_brutal_stop();
+    virtual void sim_brutal_stop();
 
     void sim_compute_motion_times(double L, double V, 
                                   double A, double D, 
@@ -85,7 +89,7 @@ namespace goldobot
 
     unsigned int m_gpio;
 
-    StratTask *default_strat;
+    StratTask *m_default_strat;
 
     static const int MOTION_ELEM_LIST_SZ = 10000;
     sim_motion_element_t *m_me;

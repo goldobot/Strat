@@ -7,6 +7,7 @@
 #include <math.h>
 #include <pthread.h>
 
+#include "world_state.hpp"
 #include "comm_zmq.hpp"
 #include "comm_nucleo.hpp"
 #include "comm_rplidar.hpp"
@@ -149,6 +150,7 @@ void CommZmq::taskFunction()
       case 2048: /* RobotStratDbgStartMatch        */
         printf ("  ZMQ DEBUG: RobotStratDbgStartMatch\n");
         RobotStrat::instance().start_match();
+        WorldState::instance().start_signal();
         break;
       case 2049: /* RobotStratDbgPauseMatch        */
         printf ("  ZMQ DEBUG: RobotStratDbgPauseMatch\n");

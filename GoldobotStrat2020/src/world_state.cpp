@@ -3,22 +3,22 @@
 #include <math.h>
 #include <sys/time.h>
 
-#include "playground_state.hpp"
+#include "world_state.hpp"
 
 
 using namespace goldobot;
 
 
-PlaygroundState PlaygroundState::s_instance;
+WorldState WorldState::s_instance;
 
-PlaygroundState& PlaygroundState::instance()
+WorldState& WorldState::instance()
 {
   return s_instance;
 }
 
-PlaygroundState::PlaygroundState()
+WorldState::WorldState()
 {
-  strncpy(m_thread_name,"PlaygroundState",sizeof(m_thread_name));
+  strncpy(m_thread_name,"WorldState",sizeof(m_thread_name));
 
   memset (&m_s, 0, sizeof(m_s));
 
@@ -28,7 +28,7 @@ PlaygroundState::PlaygroundState()
   pthread_mutex_init(&m_lock, NULL);
 }
 
-int PlaygroundState::init()
+int WorldState::init()
 {
   memset (&m_s, 0, sizeof(m_s));
 
@@ -37,14 +37,19 @@ int PlaygroundState::init()
   return 0;
 }
 
-void PlaygroundState::taskFunction()
+void WorldState::taskFunction()
 {
+  unsigned int time_ms = 0;
+  struct timespec my_tp;
 
   m_task_running = true;
 
   while(!m_stop_task)
   {
-    /* FIXME : TODO */
+    clock_gettime(1, &my_tp);
+
+    time_ms = my_tp.tv_sec*1000 + my_tp.tv_nsec/1000000;
+    m_s.local_ts_ms = time_ms;
 
     usleep (10000);
 
@@ -54,13 +59,13 @@ void PlaygroundState::taskFunction()
   m_task_running = false;
 }
 
-detected_robot_info_t& PlaygroundState::detected_robot(int _obst_idx)
+detected_robot_info_t& WorldState::detected_robot(int _obst_idx)
 {
   /* FIXME : TODO : throw exception if _obst_idx out of bounds */
   return m_s.detected_robot[_obst_idx];
 }
 
-int PlaygroundState::lock(int timeout_ms)
+int WorldState::lock(int timeout_ms)
 {
   if (timeout_ms < 0)
   {
@@ -94,8 +99,36 @@ int PlaygroundState::lock(int timeout_ms)
   return -1;
 }
 
-void PlaygroundState::release()
+void WorldState::release()
 {
   pthread_mutex_unlock(&m_lock);
 }
+
+int WorldState::read_yaml_conf(const char *)
+{
+  /* bouchon */
+  return 0;
+}
+
+void WorldState::start_signal()
+{
+  /* bouchon */
+}
+
+void WorldState::sim_send_heartbeat(int time_ms)
+{
+  /* bouchon */
+  time_ms = time_ms;
+}
+
+void WorldState::sim_send_propulsion_telemetry()
+{
+  /* bouchon */
+}
+
+void WorldState::sim_send_robot_detection()
+{
+  /* bouchon */
+}
+
 

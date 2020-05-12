@@ -64,9 +64,6 @@ namespace goldobot
     static const unsigned int FLAG_PROPULSION_BUSY_MASK    = 0x00010000;
     static const unsigned int FLAG_PROPULSION_ERROR_MASK   = 0x00020000;
 
-    void sim_send(const unsigned char *msg_buf, size_t msg_len);
-    void sim_recv(unsigned char *msg_buf, size_t msg_len);
-
   private:
     robot_state_info_t m_s;
 

@@ -53,7 +53,12 @@ VirtualRobot::VirtualRobot()
 
   m_gpio = GPIO_START_MASK;
 
-  default_strat = new StratTask();
+  m_default_strat = new StratTask();
+  if (!m_default_strat)
+  {
+    m_default_strat = NULL;
+    printf ("ERROR : VirtualRobot::VirtualRobot() : cannot alloc memory\n");
+  }
 
   m_me = new sim_motion_element_t[MOTION_ELEM_LIST_SZ];
   if (m_me)
@@ -80,8 +85,31 @@ VirtualRobot::VirtualRobot()
 
 int VirtualRobot::read_yaml_conf(YAML::Node &yconf)
 {
-  /* FIXME : TODO */
-  return -1;
+  if(m_default_strat->read_yaml_conf(yconf)==0) {
+    sim_vec_2d_t orig_vec;
+    sim_vec_2d_t target_vec;
+    orig_vec.x = m_default_strat->m_init_pos_wp.x_mm*0.001;
+    orig_vec.y = m_default_strat->m_init_pos_wp.y_mm*0.001;
+    target_vec.x = m_default_strat->m_init_point_to_wp.x_mm*0.001;
+    target_vec.y = m_default_strat->m_init_point_to_wp.y_mm*0.001;
+    m_sv.p = orig_vec;
+    m_sv.theta = sim_compute_theta(orig_vec, target_vec);
+#ifdef SIM_DEBUG
+    printf ("\n");
+    printf ("DEBUG : VirtualRobot::read_yaml_conf() : m_sv.p.x=%f mm\n",
+            m_sv.p.x*1000.0);
+    printf ("DEBUG : VirtualRobot::read_yaml_conf() : m_sv.p.y=%f mm\n",
+            m_sv.p.y*1000.0);
+    printf ("DEBUG : VirtualRobot::read_yaml_conf() : m_sv.theta=%f°\n",
+            (m_sv.theta*180.0/M_PI));
+#endif /* SIM_DEBUG */
+  }
+  else
+  {
+    return -1;
+  }
+
+  return 0;
 }
 
 void VirtualRobot::sim_update(double t_inc)
@@ -649,4 +677,138 @@ void VirtualRobot::on_cmd_propulsion_clear_error(unsigned char *msg_buf,
 #endif /* SIM_DEBUG */
 
   m_gpio &= (~FLAG_PROPULSION_ERROR_MASK);
+}
+
+void VirtualRobot::create_me_list_from_strat()
+{
+  if (!m_default_strat) return;
+
+  if (!m_automatic) 
+  {
+    printf ("ERROR : calling VirtualRobot::create_me_list_from_strat() "
+            "for not automatic robot\n");
+    return;
+  }
+
+  sim_vec_2d_t iter_p = m_sv.p;
+  double iter_theta = m_sv.theta;
+
+  /* FIXME : TODO : is this necessary? */
+  sim_brutal_stop();
+
+  m_me_idx = -1; /* execution disabled */
+  m_me_cnt = 0;
+
+  /* FIXME : TODO : is this necessary? */
+  m_gpio = m_gpio|FLAG_PROPULSION_BUSY_MASK;
+
+  /* FIXME : TODO : is this necessary? */
+  m_dbg_duration = 0.0;
+
+  for (int i=0; i<m_default_strat->m_n_actions; i++)
+  {
+    strat_action_t *act = m_default_strat->m_action_list[i];
+    switch (act->h.type) {
+    case STRAT_ACTION_TYPE_NONE:
+      break;
+    case STRAT_ACTION_TYPE_WAIT:
+      /* FIXME : TODO */
+      printf ("ERROR : action WAIT not yet implemented\n");
+      break;
+
+    case STRAT_ACTION_TYPE_TRAJ:
+    {
+      strat_action_traj_t *act_traj = (strat_action_traj_t *)act;
+
+      /* FIXME : TODO : is this necessary? */
+      double speed  = fabs(act_traj->speed);
+      double accel  = fabs(act_traj->accel);
+      double deccel = fabs(act_traj->deccel);
+
+      sim_vec_2d_t orig_vec = iter_p;
+      double orig_theta = iter_theta;
+      double new_theta = iter_theta;
+      sim_vec_2d_t target_vec;
+      sim_vec_2d_t inv_target_vec;
+      bool forward = true;
+
+      target_vec.x = act_traj->wp[1].x_mm*0.001;
+      target_vec.y = act_traj->wp[1].y_mm*0.001;
+
+      new_theta = sim_compute_theta(orig_vec, target_vec);
+
+      if (fabs(sim_normalize_angle(new_theta-orig_theta))>(M_PI/2))
+      {
+        forward = false;
+      }
+
+      for (int j=1; j<act_traj->nwp; j++) 
+      {
+        target_vec.x = act_traj->wp[j].x_mm*0.001;
+        target_vec.y = act_traj->wp[j].y_mm*0.001;
+        inv_target_vec.x = 2.0*orig_vec.x - target_vec.x;
+        inv_target_vec.y = 2.0*orig_vec.y - target_vec.y;
+        new_theta = sim_compute_theta(orig_vec, target_vec);
+
+        if (forward)
+        {
+          create_rotation_me(orig_vec, orig_theta, target_vec, 
+                             speed, accel, deccel);
+          create_translation_me(orig_vec, forward, target_vec, 
+                                speed, accel, deccel);
+        }
+        else
+        {
+          create_rotation_me(orig_vec, orig_theta, inv_target_vec, 
+                             speed, accel, deccel);
+          create_translation_me(orig_vec, forward, target_vec, 
+                                speed, accel, deccel);
+          new_theta = fabs(sim_normalize_angle(M_PI-new_theta));
+        }
+
+        orig_theta = new_theta;
+        orig_vec = target_vec;
+      }
+
+      iter_p = target_vec;
+      iter_theta = new_theta;
+
+      break;
+    }
+
+    case STRAT_ACTION_TYPE_POINT_TO:
+    {
+      strat_action_point_to_t *act_point = (strat_action_point_to_t *)act;
+
+      /* FIXME : TODO : is this necessary? */
+      double speed  = fabs(act_point->speed);
+      double accel  = fabs(act_point->accel);
+      double deccel = fabs(act_point->deccel);
+
+      sim_vec_2d_t target_vec;
+      target_vec.x = act_point->target.x_mm*0.001;
+      target_vec.y = act_point->target.y_mm*0.001;
+
+      create_rotation_me(iter_p, iter_theta, target_vec, 
+                         speed, accel, deccel);
+
+      iter_theta = sim_compute_theta(iter_p, target_vec);
+
+      break;
+    }
+
+    case STRAT_ACTION_TYPE_NUCLEO_SEQ:
+      printf ("ERROR : action NUCLEO_SEQ not simulated\n");
+      break;
+
+    case STRAT_ACTION_TYPE_GOTO_ASTAR:
+      printf ("ERROR : action GOTO_ASTAR not simulated\n");
+      break;
+
+    default:
+      printf ("ERROR : bad action type(%d)\n", act->h.type);
+    } /* switch (act->h.type) */
+  } /* for (int i=0; i<m_default_strat->m_n_actions; i++) */
+
+  m_me_idx = 0; /* execution enabled */
 }

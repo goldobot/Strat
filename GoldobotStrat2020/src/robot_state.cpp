@@ -259,17 +259,3 @@ void RobotState::release()
   pthread_mutex_unlock(&m_lock);
 }
 
-void RobotState::sim_send(const unsigned char *msg_buf, size_t msg_len)
-{
-  /* bouchon */
-  msg_buf = msg_buf;
-  msg_len = msg_len;
-}
-
-void RobotState::sim_recv(unsigned char *msg_buf, size_t msg_len)
-{
-  /* bouchon */
-  msg_buf = msg_buf;
-  msg_len = msg_len;
-}
-

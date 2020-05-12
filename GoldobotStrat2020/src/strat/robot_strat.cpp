@@ -10,7 +10,7 @@
 #include "comm_zmq.hpp"
 #include "comm_nucleo.hpp"
 #include "robot_state.hpp"
-#include "playground_state.hpp"
+#include "world_state.hpp"
 #include "detect/lidar_detect.hpp"
 #include "strat/robot_strat_types.hpp"
 #include "strat/robot_strat_base.hpp"
@@ -166,7 +166,7 @@ void RobotStrat::taskFunction()
   usleep (100000);
 
   /* FIXME : DEBUG */
-  m_dbg_step_by_step = true;
+  //m_dbg_step_by_step = true;
 
   while(!m_stop_task)
   {
@@ -197,7 +197,7 @@ void RobotStrat::taskFunction()
         printf ("\n DEBUG : GO!..\n\n");
 
         /* FIXME : TODO : necessary? */
-        usleep (3000000);
+        usleep (100000);
 
         m_strat_state = STRAT_STATE_GET_ACTION_DBG;
         state_change_dbg = true;
@@ -282,14 +282,14 @@ void RobotStrat::taskFunction()
           /* clear playground */
           m_path_find_pg.erase_mob_obst();
           /* put mobile obstacles */
-          PlaygroundState::instance().lock();
+          WorldState::instance().lock();
           detected_robot_info_t& o0 = 
-            PlaygroundState::instance().detected_robot(0);
+            WorldState::instance().detected_robot(0);
           detected_robot_info_t& o1 = 
-            PlaygroundState::instance().detected_robot(1);
+            WorldState::instance().detected_robot(1);
           detected_robot_info_t& o2 = 
-            PlaygroundState::instance().detected_robot(2);
-          PlaygroundState::instance().release();
+            WorldState::instance().detected_robot(2);
+          WorldState::instance().release();
           if (o0.detect_quality>2)
             m_path_find_pg.put_mob_point_obst(o0.x_mm, o0.y_mm);
           if (o1.detect_quality>2)

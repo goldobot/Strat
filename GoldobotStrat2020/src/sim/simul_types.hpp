@@ -48,12 +48,14 @@ namespace goldobot
     {
       nf = theta/(2.0*M_PI);
       n = nf;
+      n++;
       return theta-(double)n*(2.0*M_PI);
     }
     else if (theta<=-M_PI)
     {
       nf = -theta/(2.0*M_PI);
       n = nf;
+      n++;
       return theta+(double)n*(2.0*M_PI);
     }
     return theta;

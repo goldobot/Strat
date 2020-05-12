@@ -7,7 +7,10 @@
 #include <math.h>
 #include <pthread.h>
 
+#define ROBOT_SIM 1
+
 #include "comm_nucleo.hpp"
+#include "sim/virtual_robot.hpp"
 
 
 using namespace goldobot;
@@ -109,7 +112,7 @@ int DirectUartNucleo::send(const unsigned char *msg_buf, size_t msg_len)
   }
 #endif
 
-  RobotState::instance().sim_send(msg_buf, msg_len);
+  VirtualRobot::myself().sim_receive(msg_buf, msg_len);
 
   return 0;
 }

@@ -29,9 +29,9 @@ MODULE_NAME := GoldobotStrat2020
 include $(MAKE_TREE)/mak_def.inc
 
 ifeq ($(MODULE_NAME),GoldobotStrat2020_sim)
-CXXSRC += main.cpp goldo_conf.cpp comm_zmq.cpp sim/comm_rplidar_sim.cpp sim/comm_nucleo_sim.cpp sim/robot_state_sim.cpp sim/playground_state_sim.cpp sim/virtual_robot.cpp detect/lidar_detect.cpp strat/robot_strat_base.cpp strat/robot_strat.cpp astar/astar.cpp
+CXXSRC += main.cpp goldo_conf.cpp comm_zmq.cpp sim/comm_rplidar_sim.cpp sim/comm_nucleo_sim.cpp sim/robot_state_sim.cpp sim/world_state_sim.cpp sim/virtual_robot.cpp detect/lidar_detect.cpp strat/robot_strat_base.cpp strat/robot_strat.cpp astar/astar.cpp
 else 
-CXXSRC += main.cpp goldo_conf.cpp comm_zmq.cpp comm_rplidar.cpp comm_nucleo.cpp robot_state.cpp playground_state.cpp detect/lidar_detect.cpp strat/robot_strat_base.cpp strat/robot_strat.cpp astar/astar.cpp
+CXXSRC += main.cpp goldo_conf.cpp comm_zmq.cpp comm_rplidar.cpp comm_nucleo.cpp robot_state.cpp world_state.cpp detect/lidar_detect.cpp strat/robot_strat_base.cpp strat/robot_strat.cpp astar/astar.cpp
 endif
 
 EXTRA_OBJ := 

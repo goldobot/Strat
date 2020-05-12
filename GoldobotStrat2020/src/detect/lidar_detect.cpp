@@ -10,7 +10,7 @@
 
 #include "detect/lidar_detect.hpp"
 #include "comm_zmq.hpp"
-#include "playground_state.hpp"
+#include "world_state.hpp"
 
 using namespace goldobot;
 
@@ -376,11 +376,11 @@ void LidarDetect::updateDetection()
   m_detect_lock = false;
 
   /* FIXME : TODO : refactor */
-  PlaygroundState::instance().lock();
-  PlaygroundState::instance().detected_robot(0) = m_detect_export[0];
-  PlaygroundState::instance().detected_robot(1) = m_detect_export[1];
-  PlaygroundState::instance().detected_robot(2) = m_detect_export[2];
-  PlaygroundState::instance().release();
+  WorldState::instance().lock();
+  WorldState::instance().detected_robot(0) = m_detect_export[0];
+  WorldState::instance().detected_robot(1) = m_detect_export[1];
+  WorldState::instance().detected_robot(2) = m_detect_export[2];
+  WorldState::instance().release();
 }
 
 

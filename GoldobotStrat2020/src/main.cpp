@@ -43,7 +43,7 @@
 #include "comm_zmq.hpp"
 #include "comm_nucleo.hpp"
 #include "robot_state.hpp"
-#include "playground_state.hpp"
+#include "world_state.hpp"
 #include "detect/lidar_detect.hpp"
 #include "strat/robot_strat.hpp"
 
@@ -108,9 +108,9 @@ int main(int argc, const char * argv[])
     return -1;
   }
 
-  if (PlaygroundState::instance().init()!=0)
+  if (WorldState::instance().init()!=0)
   {
-    fprintf(stderr, "ERROR : cannot init playground state.\n");
+    fprintf(stderr, "ERROR : cannot init 'world representation' state.\n");
     return -1;
   }
 
@@ -190,9 +190,9 @@ int main(int argc, const char * argv[])
     return -1;
   }
 
-  if (PlaygroundState::instance().startProcessing()!=0)
+  if (WorldState::instance().startProcessing()!=0)
   {
-    fprintf(stderr, "ERROR : cannot start the playground thread.\n");
+    fprintf(stderr, "ERROR : cannot start the 'world representation' thread.\n");
     return -1;
   }
 
@@ -238,7 +238,7 @@ int main(int argc, const char * argv[])
 
       CommZmq::instance().stopTask();
       RobotState::instance().stopTask();
-      PlaygroundState::instance().stopTask();
+      WorldState::instance().stopTask();
       DirectUartNucleo::instance().stopTask();
       CommRplidar::instance().stopTask();
       RobotStrat::instance().stopTask();
@@ -257,7 +257,7 @@ int main(int argc, const char * argv[])
     if (!(
           CommZmq::instance().taskRunning() ||
           RobotState::instance().taskRunning() ||
-          PlaygroundState::instance().taskRunning() ||
+          WorldState::instance().taskRunning() ||
           DirectUartNucleo::instance().taskRunning() ||
           CommRplidar::instance().taskRunning() ||
           RobotStrat::instance().taskRunning()

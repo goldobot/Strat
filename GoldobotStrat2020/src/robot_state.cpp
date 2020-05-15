@@ -1,3 +1,7 @@
+#ifdef WIN32
+#include <windows.h>
+#endif
+
 #include <string.h>
 #include <unistd.h>
 #include <math.h>
@@ -197,10 +201,19 @@ void RobotState::taskFunction()
     } /* (m_s.local_ts_ms!=l_uart_thread_time_ms_old) */
     else
     {
-      usleep (10000);
+
+#ifndef WIN32
+      usleep(10000);
+#else
+      Sleep(10);
+#endif
     }
 
+#ifndef WIN32
     pthread_yield();
+#else
+    sched_yield();
+#endif
   } /* while(!m_stop_task) */
 
   m_task_running = false;

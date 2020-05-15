@@ -1,3 +1,8 @@
+#ifdef WIN32
+#include <winsock2.h>
+#include <windows.h>
+#endif
+
 #include <string.h>
 #include <unistd.h>
 #include <math.h>
@@ -18,6 +23,10 @@
 
 
 using namespace goldobot;
+
+#ifndef M_PI
+#define M_PI 3.141592653589793
+#endif
 
 #ifndef _countof
 #define _countof(_Array) (int)(sizeof(_Array) / sizeof(_Array[0]))
@@ -163,7 +172,11 @@ void RobotStrat::taskFunction()
 
   /* FIXME : TODO : synchronise with comm threads to avoid fake event 
      detection */
-  usleep (100000);
+#ifndef WIN32
+  usleep(100000);
+#else
+  Sleep(100);
+#endif
 
   /* FIXME : DEBUG */
   //m_dbg_step_by_step = true;
@@ -197,7 +210,11 @@ void RobotStrat::taskFunction()
         printf ("\n DEBUG : GO!..\n\n");
 
         /* FIXME : TODO : necessary? */
-        usleep (100000);
+#ifndef WIN32
+        usleep(100000);
+#else
+        Sleep(100);
+#endif
 
         m_strat_state = STRAT_STATE_GET_ACTION_DBG;
         state_change_dbg = true;
@@ -618,10 +635,17 @@ void RobotStrat::taskFunction()
       state_change_dbg = true;
     }
 
+#ifndef WIN32
+    usleep(10000);
+#else
+    Sleep(10);
+#endif
 
-    usleep (10000);
-
+#ifndef WIN32
     pthread_yield();
+#else
+    sched_yield();
+#endif
   } /* while(!m_stop_task) */
 
   m_task_running = false;

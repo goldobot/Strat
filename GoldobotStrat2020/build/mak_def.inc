@@ -100,14 +100,25 @@ SDK_STATIC_MODULE:=lib$(SDK_LIB_CORENAME).a
 TARGET_OBJ_ROOT = $(BUILD_OBJ_ROOT)/$(MODULE_NAME)
 TARGET_SRC_ROOT = $(HOME_TREE)/src
 #SDK_TARGET = $(BUILD_OUTPUT_ROOT)/$(SDK_STATIC_MODULE)
+
+# rplidar lib import
+ifneq ($(MODULE_NAME),GoldobotStrat2020_sim)
 ifeq ($(BUILD_TARGET_ARCH),arm)
 RPLIDAR_SDK_IMPORT = $(HOME_TREE)/import/rplidar_sdk2018/lib/$(BUILD_TARGET_HW_PLATFORM)/$(SDK_STATIC_MODULE)
-YAML_IMPORT = $(HOME_TREE)/import/yaml/lib/$(BUILD_TARGET_HW_PLATFORM)/libyaml-cpp.a
 endif
 ifeq ($(BUILD_TARGET_ARCH),x86)
 RPLIDAR_SDK_IMPORT = $(HOME_TREE)/import/rplidar_sdk2018/lib/x86/$(SDK_STATIC_MODULE)
-YAML_IMPORT = $(HOME_TREE)/import/yaml/lib/x86/libyaml-cpp.a
 endif
+endif
+
+# yaml-cpp lib import
+ifeq ($(BUILD_TARGET_ARCH),arm)
+YAML_IMPORT = $(HOME_TREE)/import/yaml/lib/$(BUILD_TARGET_HW_PLATFORM)/libyaml-cpp.a
+endif
+ifeq ($(BUILD_TARGET_ARCH),x86)
+YAML_IMPORT = $(HOME_TREE)/import/yaml/lib/x86/$(BUILD_HOST_PLATFORM)/libyaml-cpp.a
+endif
+
 APP_TARGET=$(BUILD_OUTPUT_ROOT)/$(MODULE_NAME)
 
 # Debugging format.
@@ -121,11 +132,11 @@ ifeq ($(BUILD_TARGET_ARCH),x86)
 CDEFS += -D_CPU_ENDIAN_SMALL
 endif
 
-ifeq ($(BUILD_TARGET_PLATFORM),Darwin)
-CDEFS += -D_MACOS
-else
-LD_LIBS += -lrt
-endif
+#ifeq ($(BUILD_TARGET_PLATFORM),Darwin)
+#CDEFS += -D_MACOS
+#else
+#LD_LIBS += -lrt
+#endif
 
 
 CDEFS += $(EXTRA_DEFS)

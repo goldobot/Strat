@@ -1,7 +1,14 @@
+#ifdef WIN32
+#include <winsock2.h>
+#include <windows.h>
+#endif
+
 #include <errno.h>
 #include <fcntl.h> 
 #include <string.h>
+#ifndef WIN32
 #include <termios.h>
+#endif
 #include <unistd.h>
 #include <zmq.h>
 #include <math.h>
@@ -163,7 +170,11 @@ void CommZmq::taskFunction()
       }
     }
 
+#ifndef WIN32
     pthread_yield();
+#else
+    sched_yield();
+#endif
   }
 
   zmq_term(m_zmq_context);

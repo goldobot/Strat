@@ -1,8 +1,13 @@
 #pragma once
+#ifdef WIN32
+#include <windows.h>
+#endif
+
 #include <typeinfo>
 #include <cstdint>
 #include <cstddef>
 
+#include <sys/time.h>
 #include <errno.h>
 #include <fcntl.h> 
 #include <string.h>
@@ -49,9 +54,17 @@ namespace goldobot
 
         while(!my_obj->m_stop_task)
         {
-          usleep (1000);
+#ifndef WIN32
+          usleep(1000);
+#else
+          Sleep(1);
+#endif
 
+#ifndef WIN32
           pthread_yield();
+#else
+          sched_yield();
+#endif
         } /* while(!my_obj->m_stop_task) */
 
         my_obj->m_task_running = false;

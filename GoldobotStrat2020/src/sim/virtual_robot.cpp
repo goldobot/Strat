@@ -14,6 +14,10 @@
 
 using namespace goldobot;
 
+#ifndef M_PI
+#define M_PI 3.141592653589793
+#endif
+
 VirtualRobot VirtualRobot::s_myself;
 
 VirtualRobot& VirtualRobot::myself()

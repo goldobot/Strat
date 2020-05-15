@@ -1,16 +1,16 @@
 myself_sim_task:
   task_name: MyselfSimulationTask
   init_pos:
-    [   800.0, -1400.0]
+    [   650.0, -1400.0]
   init_point_to:
-    [   800.0,     0.0]
+    [   650.0,     0.0]
 
 partner_sim_task:
   task_name: PartnerSimulationTask
   init_pos:
-    [  1200.0, -1400.0]
+    [   950.0, -1400.0]
   init_point_to:
-    [  1200.0,     0.0]
+    [   950.0,     0.0]
   actions:
   - # action 0:
     min_duration_ms: 200
@@ -60,9 +60,9 @@ partner_sim_task:
 adversary1_sim_task:
   task_name: Adversary1SimulationTask
   init_pos:
-    [   800.0,  1400.0]
+    [   650.0,  1400.0]
   init_point_to:
-    [   800.0,     0.0]
+    [   650.0,     0.0]
   actions:
   - # action 0:
     min_duration_ms: 200
@@ -73,8 +73,8 @@ adversary1_sim_task:
       accel  : 0.200000
       deccel : 0.200000
       wp:
-        - [   800.0,  1400.0]
-        - [   800.0,   650.0]
+        - [   650.0,  1400.0]
+        - [   650.0,   650.0]
         - [   150.0,   650.0]
   - # action 1:
     min_duration_ms: 200
@@ -85,7 +85,7 @@ adversary1_sim_task:
       accel  : 0.300000
       deccel : 0.300000
       target:
-        [   800.0,   650.0]
+        [   650.0,   650.0]
   - # action 2:
     min_duration_ms: 200
     max_duration_ms: 20000
@@ -102,9 +102,9 @@ adversary1_sim_task:
 adversary2_sim_task:
   task_name: Adversary2SimulationTask
   init_pos:
-    [  1200.0,  1400.0]
+    [   950.0,  1400.0]
   init_point_to:
-    [  1200.0,     0.0]
+    [   950.0,     0.0]
   actions:
   - # action 0:
     min_duration_ms: 200

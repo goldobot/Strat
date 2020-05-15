@@ -20,6 +20,10 @@
  *
  */
 
+#ifdef WIN32
+#include <windows.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -28,8 +32,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#ifndef WIN32
 #include <sys/socket.h>
 #include <netinet/in.h>
+#endif
 #include <unistd.h>
 
 #include <pthread.h>
@@ -51,6 +57,9 @@
 
 using namespace goldobot;
 
+#ifndef M_PI
+#define M_PI 3.141592653589793
+#endif
 
 bool ctrl_c_pressed = false;
 void ctrlc(int);
@@ -246,9 +255,17 @@ int main(int argc, const char * argv[])
       break;
     }
 
-    usleep (1000);
+#ifndef WIN32
+    usleep(1000);
+#else
+    Sleep(1);
+#endif
 
+#ifndef WIN32
     pthread_yield();
+#else
+    sched_yield();
+#endif
   }
 
   /* wait for all threads to terminate .. */
@@ -267,9 +284,17 @@ int main(int argc, const char * argv[])
       break;
     }
 
-    usleep (1000);
+#ifndef WIN32
+    usleep(1000);
+#else
+    Sleep(1);
+#endif
 
+#ifndef WIN32
     pthread_yield();
+#else
+    sched_yield();
+#endif
   }
 
 

@@ -1,7 +1,14 @@
+#ifdef WIN32
+#include <winsock2.h>
+#include <windows.h>
+#endif
+
 #include <errno.h>
 #include <fcntl.h> 
 #include <string.h>
+#ifndef WIN32
 #include <termios.h>
+#endif
 #include <unistd.h>
 #include <zmq.h>
 #include <math.h>
@@ -14,6 +21,11 @@
 
 
 using namespace goldobot;
+
+#ifndef M_PI
+#define M_PI 3.141592653589793
+#endif
+
 
 DirectUartNucleo DirectUartNucleo::s_instance;
 
@@ -94,9 +106,17 @@ void DirectUartNucleo::taskFunction()
     RobotState::instance().release();
 #endif
 
+#ifndef WIN32
     usleep(10000);
+#else
+    Sleep(10);
+#endif
 
+#ifndef WIN32
     pthread_yield();
+#else
+    sched_yield();
+#endif
   }
 
   m_task_running = false;
@@ -129,7 +149,11 @@ void DirectUartNucleo::exit_thread(int err_code)
 {
   while (1) {
     m_stop_task = true;
+#ifndef WIN32
     pthread_yield();
+#else
+    sched_yield();
+#endif
   }
 }
 

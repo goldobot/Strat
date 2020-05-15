@@ -1,3 +1,8 @@
+#ifdef WIN32
+#include <winsock2.h>
+#include <windows.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -6,8 +11,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#ifndef WIN32
 #include <sys/socket.h>
 #include <netinet/in.h>
+#endif
 #include <unistd.h>
 
 #include "rplidar.h" //RPLIDAR standard sdk, all-in-one header
@@ -85,6 +92,7 @@ int CommRplidar::init(char* rplidar_dev, double theta_correction, int baudrate)
 
 int CommRplidar::init_viewer_sock(char *viewer_address_str)
 {
+#ifndef WIN32
   unsigned int ab0, ab1, ab2, ab3;
 
   strncpy(m_viewer_addr_str, viewer_address_str, sizeof(m_viewer_addr_str));
@@ -100,6 +108,9 @@ int CommRplidar::init_viewer_sock(char *viewer_address_str)
   m_viewer_saddr.sin_family= AF_INET;
   m_viewer_saddr.sin_port= htons(1413);
   m_viewer_saddr.sin_addr.s_addr= htonl((ab3<<24)|(ab2<<16)|(ab1<<8)|(ab0));
+#else
+  viewer_address_str = viewer_address_str;
+#endif
 
   return 0;
 }
@@ -122,6 +133,7 @@ void CommRplidar::stop_scan()
 
 int CommRplidar::send_to_viewer()
 {
+#ifndef WIN32
   unsigned int *cur_ptr_w = (unsigned int *)((void *)(&m_viewer_send_buf[0]));
   int bytes_to_send = 0;
   int l_odo_theta_deg_0_01 = 0;
@@ -174,6 +186,7 @@ int CommRplidar::send_to_viewer()
     printf ("sendto() failed\n");
     return -1;
   }
+#endif
 
   return 0;
 }
@@ -191,17 +204,33 @@ void CommRplidar::taskFunction()
   {
     if (!m_scanning)
     {
+#ifndef WIN32
       usleep(10000);
+#else
+      Sleep(10);
+#endif
 
+#ifndef WIN32
       pthread_yield();
+#else
+      sched_yield();
+#endif
       continue;
     }
 
     /* FIXME : TODO */
 
+#ifndef WIN32
     usleep(10000);
+#else
+    Sleep(10);
+#endif
 
+#ifndef WIN32
     pthread_yield();
+#else
+    sched_yield();
+#endif
   } /* while(!m_stop_task) */
 
 

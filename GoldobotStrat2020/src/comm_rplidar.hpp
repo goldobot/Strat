@@ -5,8 +5,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#ifndef WIN32
 #include <sys/socket.h>
 #include <netinet/in.h>
+#endif
 #include <unistd.h>
 
 #include "rplidar.h" //RPLIDAR standard sdk, all-in-one header

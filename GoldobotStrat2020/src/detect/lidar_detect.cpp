@@ -1,7 +1,11 @@
+#ifdef WIN32
+#include <winsock2.h>
+#include <windows.h>
+#endif
+
 #include <errno.h>
 #include <fcntl.h> 
 #include <string.h>
-#include <termios.h>
 #include <unistd.h>
 #include <zmq.h>
 #include <math.h>
@@ -14,6 +18,9 @@
 
 using namespace goldobot;
 
+#ifndef M_PI
+#define M_PI 3.141592653589793
+#endif
 
 LidarDetect LidarDetect::s_instance;
 
@@ -174,7 +181,11 @@ void LidarDetect::taskFunctionFunny()
       old_time_ms = curr_time_ms;
     }
 
+#ifndef WIN32
     pthread_yield();
+#else
+    sched_yield();
+#endif
   }
 
   //m_task_running = false;

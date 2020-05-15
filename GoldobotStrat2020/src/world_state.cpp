@@ -1,3 +1,7 @@
+#ifdef WIN32
+#include <windows.h>
+#endif
+
 #include <string.h>
 #include <unistd.h>
 #include <math.h>
@@ -51,9 +55,17 @@ void WorldState::taskFunction()
     time_ms = my_tp.tv_sec*1000 + my_tp.tv_nsec/1000000;
     m_s.local_ts_ms = time_ms;
 
-    usleep (10000);
+#ifndef WIN32
+    usleep(10000);
+#else
+    Sleep(10);
+#endif
 
+#ifndef WIN32
     pthread_yield();
+#else
+    sched_yield();
+#endif
   } /* while(!m_stop_task) */
 
   m_task_running = false;

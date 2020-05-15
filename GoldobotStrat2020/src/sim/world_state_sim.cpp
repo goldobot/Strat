@@ -1,3 +1,8 @@
+#ifdef WIN32
+#include <winsock2.h>
+#include <windows.h>
+#endif
+
 #include <string.h>
 #include <unistd.h>
 #include <math.h>
@@ -21,6 +26,9 @@
 
 using namespace goldobot;
 
+#ifndef M_PI
+#define M_PI 3.141592653589793
+#endif
 
 WorldState WorldState::s_instance;
 
@@ -263,9 +271,17 @@ void WorldState::taskFunction()
 
     /**  Iteration end in the main loop of the simulation  thread  ************/
 
-    usleep (10000);
+#ifndef WIN32
+    usleep(10000);
+#else
+    Sleep(10);
+#endif
 
+#ifndef WIN32
     pthread_yield();
+#else
+    sched_yield();
+#endif
   } /* while(!m_stop_task) */
 
   m_task_running = false;

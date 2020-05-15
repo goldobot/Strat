@@ -1,3 +1,7 @@
+#ifdef WIN32
+#include <windows.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -247,9 +251,17 @@ void CommRplidar::taskFunction()
   {
     if (!m_scanning)
     {
+#ifndef WIN32
       usleep(10000);
+#else
+      Sleep(10);
+#endif
 
+#ifndef WIN32
       pthread_yield();
+#else
+      sched_yield();
+#endif
       continue;
     }
 
@@ -343,7 +355,11 @@ void CommRplidar::taskFunction()
 
     } /* if (IS_OK(op_result = m_drv->grabScanData(nodes, count))) */
 
+#ifndef WIN32
     pthread_yield();
+#else
+    sched_yield();
+#endif
   } /* while(!m_stop_task) */
 
 //stop_device:

@@ -5,7 +5,9 @@
 #include <errno.h>
 #include <fcntl.h> 
 #include <string.h>
+#ifndef WIN32
 #include <termios.h>
+#endif
 #include <unistd.h>
 
 #include "goldo_thread.hpp"
@@ -70,7 +72,11 @@ namespace goldobot
     char m_devname[256];
     int m_uart_fd;
 
+#ifndef WIN32
     struct termios m_savetio_remote;
+#else
+    unsigned char m_savetio_remote[256];
+#endif
 
     unsigned char m_ibuf[512];
     unsigned char m_obuf[1024];

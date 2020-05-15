@@ -1,3 +1,7 @@
+#ifdef WIN32
+#include <windows.h>
+#endif
+
 #include <errno.h>
 #include <fcntl.h> 
 #include <string.h>
@@ -415,7 +419,11 @@ void DirectUartNucleo::taskFunction()
 
     } /* if (FD_ISSET(m_uart_fd, &infds)) */
 
+#ifdef WIN32
+    sched_yield();
+#else
     pthread_yield();
+#endif
   }
 
   m_task_running = false;
@@ -474,7 +482,11 @@ void DirectUartNucleo::exit_thread(int err_code)
 {
   while (1) {
     m_stop_task = true;
+#ifdef WIN32
+    sched_yield();
+#else
     pthread_yield();
+#endif
   }
 }
 

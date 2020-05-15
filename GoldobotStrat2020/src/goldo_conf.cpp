@@ -13,6 +13,13 @@
 
 using namespace goldobot;
 
+#ifdef WIN32
+static char   s_conf_viewer_addr_str_def[]     = "192.168.0.241";
+static char   s_conf_rplidar_dev_str_def[]     = "/dev/rplidar";
+static char   s_conf_nucleo_uart_dev_str_def[] = "/dev/odometry";
+static char   s_conf_strat_file_str_def[]      = "strat.yaml";
+static char   s_conf_simul_file_str_def[]      = "simul.yaml";
+#endif
 
 GoldoConf GoldoConf::s_instance;
 
@@ -32,6 +39,7 @@ GoldoConf::GoldoConf()
 
 void GoldoConf::set_default()
 {
+#ifndef WIN32
   strncpy(m_c.conf_viewer_addr_str, conf_viewer_addr_str_def, 
           sizeof (m_c.conf_viewer_addr_str));
   m_c.conf_theta_correction_deg = conf_theta_correction_deg_def;
@@ -46,6 +54,22 @@ void GoldoConf::set_default()
           sizeof (m_c.conf_strat_file_str));
   strncpy(m_c.conf_simul_file_str, conf_simul_file_str_def, 
           sizeof (m_c.conf_simul_file_str));
+#else
+  strncpy(m_c.conf_viewer_addr_str, s_conf_viewer_addr_str_def, 
+          sizeof (m_c.conf_viewer_addr_str));
+  m_c.conf_theta_correction_deg = conf_theta_correction_deg_def;
+  strncpy(m_c.conf_rplidar_dev_str, s_conf_rplidar_dev_str_def, 
+          sizeof (m_c.conf_rplidar_dev_str));
+  m_c.conf_rplidar_baudrate = conf_rplidar_baudrate_def;
+  strncpy(m_c.conf_nucleo_uart_dev_str, s_conf_nucleo_uart_dev_str_def, 
+          sizeof (m_c.conf_nucleo_uart_dev_str));
+  m_c.conf_nucleo_uart_baudrate = conf_nucleo_uart_baudrate_def;
+  m_c.conf_zmq_port = conf_zmq_port_def;
+  strncpy(m_c.conf_strat_file_str, s_conf_strat_file_str_def, 
+          sizeof (m_c.conf_strat_file_str));
+  strncpy(m_c.conf_simul_file_str, s_conf_simul_file_str_def, 
+          sizeof (m_c.conf_simul_file_str));
+#endif
 }
 
 int GoldoConf::init(const char *conf_fname)

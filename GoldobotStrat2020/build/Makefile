@@ -45,6 +45,7 @@ sim:
 include $(MAKE_TREE)/mak_common.inc
 
 clean: clean_app
+	rm -f *.ppm
 
 print_bidule:
 	@echo "MODULE_NAME = $(MODULE_NAME)"

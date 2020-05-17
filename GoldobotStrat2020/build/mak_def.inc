@@ -148,7 +148,7 @@ C_INCLUDES += -I$(HOME_TREE)/src
 C_INCLUDES += -I$(HOME_TREE)/import/rplidar_sdk2018/include -I$(HOME_TREE)/import/yaml/include
 # -I/opt/gumstix/include 
 # -I/usr/include/newlib -I/usr/include/newlib/c++/4.8 -I/usr/include/newlib/c++/4.8/arm-none-eabi 
-CXX_INCLUDES += $(C_INCLUDES) 
+CXX_INCLUDES += $(C_INCLUDES) $(EXTRA_CXXINC)
 
 # Compiler flag to set the C Standard level.
 # c89   - "ANSI" C
@@ -186,3 +186,6 @@ ALL_CFLAGS = $(CFLAGS)
 ALL_CXXFLAGS = $(CXXFLAGS)
 ALL_ASFLAGS = $(ASFLAGS)
 
+ifeq ($(BUILD_HOST_PLATFORM),CYGWIN_NT-6.1)
+CYGWIN_CC_DEFS = CC=i686-w64-mingw32-gcc CXX=i686-w64-mingw32-g++
+endif

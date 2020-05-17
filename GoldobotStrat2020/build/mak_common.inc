@@ -57,9 +57,12 @@ OBJ += $(patsubst %.c, $(TARGET_OBJ_ROOT)/%.o, $(_CSRC))
 OBJ += $(patsubst %.cpp, $(TARGET_OBJ_ROOT)/%.o, $(_CXXSRC))
 OBJ += $(patsubst %.S, $(TARGET_OBJ_ROOT)/%.o, $(_ASRC))
 
+EXTERNAL_SRC_ROOT := $(EXTERNAL_PRJ_PATH)
+EXTRA_OBJ := $(patsubst %.cpp, $(TARGET_OBJ_ROOT)/%.o, $(EXTRA_CXXSRC))
+
 GIT_REF := $(shell git describe --abbrev=8 --dirty --always)
 GIT_BRANCH := $(shell git describe --all)
-GOLDOFLAGS = -DGOLDO_GIT_VERSION="$(GIT_BRANCH) $(GIT_REF)"
+GOLDOFLAGS += $(EXTRA_FLAGS) -DGOLDO_GIT_VERSION="$(GIT_BRANCH) $(GIT_REF)"
 
 #build_sdk:  $(SDK_TARGET)
 
@@ -91,6 +94,12 @@ $(APP_TARGET): $(OBJ) $(EXTRA_OBJ)
 #
 # Compile: create object files from C++ source files.
 $(TARGET_OBJ_ROOT)/%.o: $(TARGET_SRC_ROOT)/%.cpp
+	@$(MKDIR) `dirname $@`
+	@echo " CXX  $<"
+	$(CMD_HIDE)$(CXX) -c $(ALL_CXXFLAGS) $(GOLDOFLAGS) $< -o $@ 
+
+# Rule(s) for imported C++.
+$(TARGET_OBJ_ROOT)/%.o: $(EXTERNAL_SRC_ROOT)/%.cpp
 	@$(MKDIR) `dirname $@`
 	@echo " CXX  $<"
 	$(CMD_HIDE)$(CXX) -c $(ALL_CXXFLAGS) $(GOLDOFLAGS) $< -o $@ 

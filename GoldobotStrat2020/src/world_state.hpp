@@ -45,6 +45,9 @@ namespace goldobot
     pthread_mutex_t m_lock;
 
     /* used in simulation */
+    bool m_match_started;
+
+    /* used in simulation */
     void sim_send_heartbeat(int time_ms);
     /* used in simulation */
     void sim_send_propulsion_telemetry();

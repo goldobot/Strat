@@ -47,25 +47,29 @@ WorldState::WorldState()
   m_task_running = false;
 
   pthread_mutex_init(&m_lock, NULL);
+
+  m_match_started = false;
 }
 
 int WorldState::init()
 {
+  m_match_started = false;
+
   memset (&m_s, 0, sizeof(m_s));
 
   pthread_mutex_init(&m_lock, NULL);
 
-  VirtualRobot::myself().set_enable(true);
-  VirtualRobot::myself().set_autom(false);
+  VirtualRobots::myself().set_enable(true);
+  VirtualRobots::myself().set_autom(false);
 
-  VirtualRobot::partner().set_enable(false);
-  VirtualRobot::partner().set_autom(true);
+  VirtualRobots::partner().set_enable(false);
+  VirtualRobots::partner().set_autom(true);
 
-  VirtualRobot::adversary1().set_enable(false);
-  VirtualRobot::adversary1().set_autom(true);
+  VirtualRobots::adversary1().set_enable(false);
+  VirtualRobots::adversary1().set_autom(true);
 
-  VirtualRobot::adversary2().set_enable(false);
-  VirtualRobot::adversary2().set_autom(true);
+  VirtualRobots::adversary2().set_enable(false);
+  VirtualRobots::adversary2().set_autom(true);
 
   const char *sim_fname = GoldoConf::instance().c().conf_simul_file_str;
   read_yaml_conf (sim_fname);
@@ -96,7 +100,7 @@ int WorldState::read_yaml_conf(const char *fname)
     printf ("ERROR : no 'myself_sim_task' section\n");
     return -1;
   }
-  if(VirtualRobot::myself().read_yaml_conf(myself_node)!=0) 
+  if(VirtualRobots::myself().read_yaml_conf(myself_node)!=0) 
   {
     printf ("ERROR : simul conf read failed\n");
     return -1;
@@ -106,10 +110,10 @@ int WorldState::read_yaml_conf(const char *fname)
   YAML::Node partner_node = yconf["partner_sim_task"];
   if (partner_node) 
   {
-    if(VirtualRobot::partner().read_yaml_conf(partner_node)==0) 
+    if(VirtualRobots::partner().read_yaml_conf(partner_node)==0) 
     {
       /* FIXME : TODO : define explicit 'enable' flag in conf */
-      VirtualRobot::partner().set_enable(true);
+      VirtualRobots::partner().set_enable(true);
     }
     else
     {
@@ -125,10 +129,10 @@ int WorldState::read_yaml_conf(const char *fname)
   YAML::Node adversary1_node = yconf["adversary1_sim_task"];
   if (adversary1_node) 
   {
-    if(VirtualRobot::adversary1().read_yaml_conf(adversary1_node)==0) 
+    if(VirtualRobots::adversary1().read_yaml_conf(adversary1_node)==0) 
     {
       /* FIXME : TODO : define explicit 'enable' flag in conf */
-      VirtualRobot::adversary1().set_enable(true);
+      VirtualRobots::adversary1().set_enable(true);
     }
     else
     {
@@ -144,10 +148,10 @@ int WorldState::read_yaml_conf(const char *fname)
   YAML::Node adversary2_node = yconf["adversary2_sim_task"];
   if (adversary2_node) 
   {
-    if(VirtualRobot::adversary2().read_yaml_conf(adversary2_node)==0) 
+    if(VirtualRobots::adversary2().read_yaml_conf(adversary2_node)==0) 
     {
       /* FIXME : TODO : define explicit 'enable' flag in conf */
-      VirtualRobot::adversary2().set_enable(true);
+      VirtualRobots::adversary2().set_enable(true);
     }
     else
     {
@@ -164,9 +168,11 @@ int WorldState::read_yaml_conf(const char *fname)
 
 void WorldState::start_signal()
 {
-  VirtualRobot::partner().create_me_list_from_strat();
-  VirtualRobot::adversary1().create_me_list_from_strat();
-  VirtualRobot::adversary2().create_me_list_from_strat();
+  VirtualRobots::partner().create_me_list_from_strat();
+  VirtualRobots::adversary1().create_me_list_from_strat();
+  VirtualRobots::adversary2().create_me_list_from_strat();
+
+  m_match_started = true;
 }
 
 void WorldState::taskFunction()
@@ -174,6 +180,8 @@ void WorldState::taskFunction()
   unsigned int time_ms = 0;
   unsigned int time_ms_old = 0;
   int delta_time_ms = 0;
+  int start_match_time_ms = 0;
+  int current_match_time_ms = 0;
   struct timespec my_tp;
 
   m_task_running = true;
@@ -189,70 +197,80 @@ void WorldState::taskFunction()
     m_s.local_ts_ms = time_ms;
     delta_time_ms = time_ms - time_ms_old;
 
+    /* FIXME : TODO : refactor : crap! */
+    if (m_match_started)
+    {
+      current_match_time_ms = time_ms - start_match_time_ms;
+    }
+    else
+    {
+      start_match_time_ms = time_ms;
+    }
+
     /**  Simulate the robots  *************************************************/
 
     for (int i=0; i<SIM_GRANULARITY; i++)
     {
       double delta_time_s = delta_time_ms/1000.0;
-      VirtualRobot::myself().sim_update(delta_time_s/SIM_GRANULARITY);
-      VirtualRobot::partner().sim_update(delta_time_s/SIM_GRANULARITY);
-      VirtualRobot::adversary1().sim_update(delta_time_s/SIM_GRANULARITY);
-      VirtualRobot::adversary2().sim_update(delta_time_s/SIM_GRANULARITY);
+      VirtualRobots::myself().sim_update(delta_time_s/SIM_GRANULARITY);
+      VirtualRobots::partner().sim_update(delta_time_s/SIM_GRANULARITY);
+      VirtualRobots::adversary1().sim_update(delta_time_s/SIM_GRANULARITY);
+      VirtualRobots::adversary2().sim_update(delta_time_s/SIM_GRANULARITY);
     }
 
     /**  Update the robot(s) state(s)  ****************************************/
 
     robot_state_info_t& my_s = RobotState::instance().s();
     RobotState::instance().lock();
-    my_s.x_mm          = VirtualRobot::myself().sv().p.x*1000.0;
-    my_s.y_mm          = VirtualRobot::myself().sv().p.y*1000.0;
-    my_s.theta_deg     = VirtualRobot::myself().sv().theta*180.0/M_PI;
-    my_s.robot_sensors = VirtualRobot::myself().gpio();
+    my_s.x_mm          = VirtualRobots::myself().sv().p.x*1000.0;
+    my_s.y_mm          = VirtualRobots::myself().sv().p.y*1000.0;
+    my_s.theta_deg     = VirtualRobots::myself().sv().theta*180.0/M_PI;
+    my_s.robot_sensors = VirtualRobots::myself().gpio();
     RobotState::instance().release();
 
     /* FIXME : TODO : refactor (not clean..) */
     lock();
     int r=0;
-    if (VirtualRobot::partner().enabled()) 
+    if (VirtualRobots::partner().enabled()) 
     {
       m_s.detected_robot[r].timestamp_ms = time_ms;
       m_s.detected_robot[r].id = 0;
-      m_s.detected_robot[r].x_mm = VirtualRobot::partner().sv().p.x*1000.0;
-      m_s.detected_robot[r].y_mm = VirtualRobot::partner().sv().p.y*1000.0;
+      m_s.detected_robot[r].x_mm = VirtualRobots::partner().sv().p.x*1000.0;
+      m_s.detected_robot[r].y_mm = VirtualRobots::partner().sv().p.y*1000.0;
       m_s.detected_robot[r].vx_mm_sec = 
-        VirtualRobot::partner().sv().v.x*1000.0;
+        VirtualRobots::partner().sv().v.x*1000.0;
       m_s.detected_robot[r].vy_mm_sec = 
-        VirtualRobot::partner().sv().v.y*1000.0;
+        VirtualRobots::partner().sv().v.y*1000.0;
       m_s.detected_robot[r].ax_mm_sec_2 = 0; /* FIXME : TODO */
       m_s.detected_robot[r].ay_mm_sec_2 = 0; /* FIXME : TODO */
       m_s.detected_robot[r].detect_quality = 40;
       r++;
     }
-    if (VirtualRobot::adversary1().enabled()) 
+    if (VirtualRobots::adversary1().enabled()) 
     {
       m_s.detected_robot[r].timestamp_ms = time_ms;
       m_s.detected_robot[r].id = 1;
-      m_s.detected_robot[r].x_mm = VirtualRobot::adversary1().sv().p.x*1000.0;
-      m_s.detected_robot[r].y_mm = VirtualRobot::adversary1().sv().p.y*1000.0;
+      m_s.detected_robot[r].x_mm = VirtualRobots::adversary1().sv().p.x*1000.0;
+      m_s.detected_robot[r].y_mm = VirtualRobots::adversary1().sv().p.y*1000.0;
       m_s.detected_robot[r].vx_mm_sec = 
-        VirtualRobot::adversary1().sv().v.x*1000.0;
+        VirtualRobots::adversary1().sv().v.x*1000.0;
       m_s.detected_robot[r].vy_mm_sec = 
-        VirtualRobot::adversary1().sv().v.y*1000.0;
+        VirtualRobots::adversary1().sv().v.y*1000.0;
       m_s.detected_robot[r].ax_mm_sec_2 = 0; /* FIXME : TODO */
       m_s.detected_robot[r].ay_mm_sec_2 = 0; /* FIXME : TODO */
       m_s.detected_robot[r].detect_quality = 30;
       r++;
     }
-    if (VirtualRobot::adversary2().enabled()) 
+    if (VirtualRobots::adversary2().enabled()) 
     {
       m_s.detected_robot[r].timestamp_ms = time_ms;
       m_s.detected_robot[r].id = 2;
-      m_s.detected_robot[r].x_mm = VirtualRobot::adversary2().sv().p.x*1000.0;
-      m_s.detected_robot[r].y_mm = VirtualRobot::adversary2().sv().p.y*1000.0;
+      m_s.detected_robot[r].x_mm = VirtualRobots::adversary2().sv().p.x*1000.0;
+      m_s.detected_robot[r].y_mm = VirtualRobots::adversary2().sv().p.y*1000.0;
       m_s.detected_robot[r].vx_mm_sec = 
-        VirtualRobot::adversary2().sv().v.x*1000.0;
+        VirtualRobots::adversary2().sv().v.x*1000.0;
       m_s.detected_robot[r].vy_mm_sec = 
-        VirtualRobot::adversary2().sv().v.y*1000.0;
+        VirtualRobots::adversary2().sv().v.y*1000.0;
       m_s.detected_robot[r].ax_mm_sec_2 = 0; /* FIXME : TODO */
       m_s.detected_robot[r].ay_mm_sec_2 = 0; /* FIXME : TODO */
       m_s.detected_robot[r].detect_quality = 20;
@@ -263,7 +281,8 @@ void WorldState::taskFunction()
 
     /**  Send the new state information to the HMI  ***************************/
 
-    sim_send_heartbeat(time_ms);
+    //sim_send_heartbeat(time_ms);
+    sim_send_heartbeat(current_match_time_ms);
 
     sim_send_propulsion_telemetry();
 
@@ -374,29 +393,29 @@ void WorldState::sim_send_propulsion_telemetry()
   msg_buf_len += field_len;
 
   /* x */
-  short msg_x = VirtualRobot::myself().sv().p.x * 4000.0;
+  short msg_x = VirtualRobots::myself().sv().p.x * 4000.0;
   field_len = sizeof(short);
   memcpy (_pc, (unsigned char *)&msg_x, field_len);
   _pc += field_len;
   msg_buf_len += field_len;
 
   /* y */
-  short msg_y = VirtualRobot::myself().sv().p.y * 4000.0;
+  short msg_y = VirtualRobots::myself().sv().p.y * 4000.0;
   field_len = sizeof(short);
   memcpy (_pc, (unsigned char *)&msg_y, field_len);
   _pc += field_len;
   msg_buf_len += field_len;
 
   /* yaw */
-  short msg_yaw = 32767.0 * VirtualRobot::myself().sv().theta / M_PI;
+  short msg_yaw = 32767.0 * VirtualRobots::myself().sv().theta / M_PI;
   field_len = sizeof(short);
   memcpy (_pc, (unsigned char *)&msg_yaw, field_len);
   _pc += field_len;
   msg_buf_len += field_len;
 
   /* speed */
-  double _v_x = VirtualRobot::myself().sv().v.x;
-  double _v_y = VirtualRobot::myself().sv().v.y;
+  double _v_x = VirtualRobots::myself().sv().v.x;
+  double _v_y = VirtualRobots::myself().sv().v.y;
   double _v_abs = sqrt(_v_x*_v_x+_v_y*_v_y);
   short msg_speed = _v_abs * 1000.0;
   field_len = sizeof(short);
@@ -405,7 +424,7 @@ void WorldState::sim_send_propulsion_telemetry()
   msg_buf_len += field_len;
 
   /* yaw_rate */
-  short msg_yaw_rate = fabs(VirtualRobot::myself().sv().v_theta) * 1000.0;
+  short msg_yaw_rate = fabs(VirtualRobots::myself().sv().v_theta) * 1000.0;
   field_len = sizeof(short);
   memcpy (_pc, (unsigned char *)&msg_yaw_rate, field_len);
   _pc += field_len;

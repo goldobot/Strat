@@ -10,6 +10,12 @@
 
 #include "sim/simul_types.hpp"
 
+#ifdef ROS
+#include "robot_simulator.hpp"
+#include "goldo/odometry/simple_odometry.hpp"
+#include "goldo/control/propulsion_controller.hpp"
+#endif
+
 #ifndef ROBOT_SIM
 #error "You must define ROBOT_SIM"
 #endif
@@ -19,11 +25,6 @@ namespace goldobot
 
   class VirtualRobot {
   public:
-    static VirtualRobot& myself();
-    static VirtualRobot& partner();
-    static VirtualRobot& adversary1();
-    static VirtualRobot& adversary2();
-
     VirtualRobot();
 
     void set_enable(bool enable_flag) {m_enabled = enable_flag;};
@@ -62,12 +63,12 @@ namespace goldobot
                                   double &t_a, double &t_i, double &t_d);
 
     /* FIXME : TODO */
-  private:
-    void on_cmd_execute_trajectory(unsigned char *msg_buf, size_t msg_len);
-    void on_cmd_execute_point_to(unsigned char *msg_buf, size_t msg_len);
-    void on_cmd_set_pose(unsigned char *msg_buf, size_t msg_len);
-    void on_cmd_start_sequence(unsigned char *msg_buf, size_t msg_len);
-    void on_cmd_propulsion_clear_error(unsigned char *msg_buf, size_t msg_len);
+  protected:
+    virtual void on_cmd_execute_trajectory(unsigned char *_buf, size_t _len);
+    virtual void on_cmd_execute_point_to(unsigned char *_buf, size_t _len);
+    virtual void on_cmd_set_pose(unsigned char *_buf, size_t _len);
+    virtual void on_cmd_start_sequence(unsigned char *_buf, size_t _len);
+    virtual void on_cmd_propulsion_clear_error(unsigned char *_buf,size_t _len);
 
     void create_rotation_me(sim_vec_2d_t &orig, double orig_theta, 
                             sim_vec_2d_t &target, 
@@ -99,10 +100,55 @@ namespace goldobot
     unsigned char m_recv_buf[256];
     static const int RECV_BUF_SZ = sizeof(m_recv_buf);
 
-    static VirtualRobot s_myself;
-    static VirtualRobot s_partner;
-    static VirtualRobot s_adversary1;
-    static VirtualRobot s_adversary2;
+  private:
+  };
+
+  class VirtualRobotROSImport : public VirtualRobot {
+  public:
+    VirtualRobotROSImport();
+
+    virtual void sim_update(double t_inc);
+
+    virtual int read_yaml_conf(YAML::Node &yconf);
+
+  protected:
+    virtual void on_cmd_execute_trajectory(unsigned char *_buf, size_t _len);
+    virtual void on_cmd_execute_point_to(unsigned char *_buf, size_t _len);
+    virtual void on_cmd_set_pose(unsigned char *_buf, size_t _len);
+    virtual void on_cmd_propulsion_clear_error(unsigned char *_buf,size_t _len);
+
+#ifdef ROS
+    static constexpr double ROS_PROPULSION_STEP_PERIOD = 0.001;
+    double m_ros_update_propulsion_time;
+
+    goldo::SimpleOdometry m_ros_odometry;
+    goldo::PropulsionController *m_ros_propulsion_controller;
+    goldo::RobotSimulator m_ros_robot_simulator;
+#endif
+
+    bool m_ros_emul;
+
+  private:
+  };
+
+  typedef class VirtualRobotROSImport MyselfVirtualRobotType;
+  //typedef class VirtualRobot MyselfVirtualRobotType;
+  typedef class VirtualRobot PartnerVirtualRobotType;
+  typedef class VirtualRobot Adversary1VirtualRobotType;
+  typedef class VirtualRobot Adversary2VirtualRobotType;
+
+  class VirtualRobots {
+  public:
+    static MyselfVirtualRobotType& myself() {return s_myself;}
+    static PartnerVirtualRobotType& partner() {return s_partner;}
+    static Adversary1VirtualRobotType& adversary1() {return s_adversary1;}
+    static Adversary2VirtualRobotType& adversary2() {return s_adversary2;}
+
+  private:
+    static MyselfVirtualRobotType s_myself;
+    static PartnerVirtualRobotType s_partner;
+    static Adversary1VirtualRobotType s_adversary1;
+    static Adversary2VirtualRobotType s_adversary2;
   };
 
 }

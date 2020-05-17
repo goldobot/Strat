@@ -30,17 +30,32 @@ include $(MAKE_TREE)/mak_def.inc
 
 ifeq ($(MODULE_NAME),GoldobotStrat2020_sim)
 CXXSRC += main.cpp goldo_conf.cpp comm_zmq.cpp sim/comm_rplidar_sim.cpp sim/comm_nucleo_sim.cpp sim/robot_state_sim.cpp sim/world_state_sim.cpp sim/virtual_robot.cpp detect/lidar_detect.cpp strat/robot_strat_base.cpp strat/robot_strat.cpp astar/astar.cpp
+ifeq ($(EXTRA_FLAGS),-DROS)
+EXTRA_CXXSRC := src/robot_simulator.cpp libs/goldo_robot/src/geometry/trajectory.cpp libs/goldo_robot/src/control/speed_controller.cpp libs/goldo_robot/src/control/trapezoidal_speed_profile.cpp libs/goldo_robot/src/control/propulsion_controller.cpp libs/goldo_robot/src/control/pid_controller.cpp libs/goldo_robot/src/control/propulsion_low_level_controller.cpp libs/goldo_robot/src/odometry/simple_odometry.cpp
+EXTRA_CXXINC := -I$(EXTERNAL_PRJ_PATH)/libs/goldo_robot/include -I$(EXTERNAL_PRJ_PATH)/src
+else 
+EXTRA_CXXSRC :=
+EXTRA_CXXINC :=
+endif
 else 
 CXXSRC += main.cpp goldo_conf.cpp comm_zmq.cpp comm_rplidar.cpp comm_nucleo.cpp robot_state.cpp world_state.cpp detect/lidar_detect.cpp strat/robot_strat_base.cpp strat/robot_strat.cpp astar/astar.cpp
+EXTRA_CXXSRC :=
+EXTRA_CXXINC :=
 endif
 
-EXTRA_OBJ := 
 LD_LIBS += -lstdc++ -lpthread -lm -lzmq 
 
 all: build_app
 
 sim:
-	make MODULE_NAME=GoldobotStrat2020_sim
+	@make MODULE_NAME=GoldobotStrat2020_sim $(CYGWIN_CC_DEFS)
+
+sim_ros:
+	@if [ -z $(EXTERNAL_PRJ_PATH) ]; then \
+		echo "You must define EXTERNAL_PRJ_PATH"; \
+	else \
+		make MODULE_NAME=GoldobotStrat2020_sim $(CYGWIN_CC_DEFS) EXTRA_FLAGS=-DROS;\
+	fi
 
 include $(MAKE_TREE)/mak_common.inc
 
@@ -53,3 +68,5 @@ print_bidule:
 	@echo "BUILD_HOST_PLATFORM = $(BUILD_HOST_PLATFORM)"
 	@echo "BUILD_HOST_HW_PLATFORM = $(BUILD_HOST_HW_PLATFORM)"
 	@echo "RPLIDAR_SDK_IMPORT = $(RPLIDAR_SDK_IMPORT)"
+	@echo 'CXXSRC = $(CXXSRC)'
+	@echo 'EXTRA_CXXSRC = $(EXTRA_CXXSRC)'

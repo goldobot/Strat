@@ -18,33 +18,14 @@ using namespace goldobot;
 #define M_PI 3.141592653589793
 #endif
 
-VirtualRobot VirtualRobot::s_myself;
+MyselfVirtualRobotType VirtualRobots::s_myself;
 
-VirtualRobot& VirtualRobot::myself()
-{
-  return s_myself;
-}
+PartnerVirtualRobotType VirtualRobots::s_partner;
 
-VirtualRobot VirtualRobot::s_partner;
+Adversary1VirtualRobotType VirtualRobots::s_adversary1;
 
-VirtualRobot& VirtualRobot::partner()
-{
-  return s_partner;
-}
+Adversary2VirtualRobotType VirtualRobots::s_adversary2;
 
-VirtualRobot VirtualRobot::s_adversary1;
-
-VirtualRobot& VirtualRobot::adversary1()
-{
-  return s_adversary1;
-}
-
-VirtualRobot VirtualRobot::s_adversary2;
-
-VirtualRobot& VirtualRobot::adversary2()
-{
-  return s_adversary2;
-}
 
 
 VirtualRobot::VirtualRobot()
@@ -816,3 +797,357 @@ void VirtualRobot::create_me_list_from_strat()
 
   m_me_idx = 0; /* execution enabled */
 }
+
+
+VirtualRobotROSImport::VirtualRobotROSImport()
+  : VirtualRobot()
+{
+#ifdef ROS
+  m_ros_emul = true;
+
+  goldo::RobotSimulatorConfig simulator_config;
+  simulator_config.speed_coeff = 1.7f;
+  simulator_config.wheels_spacing = 0.2f;
+  simulator_config.encoders_spacing = 0.3f;
+  simulator_config.encoders_counts_per_m = 1 / 1.5e-05f;
+  m_ros_robot_simulator.setConfig(simulator_config);
+
+  goldo::OdometryConfig odometry_config;
+  odometry_config.dist_per_count_left = 1.5e-05f;
+  odometry_config.dist_per_count_right = 1.5e-05f;
+  odometry_config.wheel_spacing = 0.3f;
+  odometry_config.update_period = 1e-3f;
+  odometry_config.speed_filter_period = 1e-3f;
+  odometry_config.encoder_period = 8192;
+  
+  m_ros_odometry.setConfig(odometry_config);
+
+  m_ros_propulsion_controller= new goldo::PropulsionController(&m_ros_odometry);
+
+  goldo::PropulsionControllerConfig propulsion_controller_config;
+  memset(&propulsion_controller_config,0,sizeof(propulsion_controller_config));
+
+  goldo::PropulsionLowLevelControllerConfig llc;
+  goldo::PIDConfig pid1;
+  goldo::PIDConfig pid2;
+
+  pid1.period=1e-3f;
+  pid1.kp=5;
+  pid1.ki=1;
+  pid1.kd=0;
+  pid1.feed_forward=0.5f;
+  pid1.lim_iterm=0.5;
+  pid1.lim_dterm=0;
+  pid1.min_output=-1.0f;
+  pid1.max_output=1.0f;
+
+  pid2.period=1e-3f;
+  pid2.kp=0.1;
+  pid2.ki=0;
+  pid2.kd=0;
+  pid2.feed_forward=0.01f;
+  pid2.lim_iterm=0.5;
+  pid2.lim_dterm=0;
+  pid2.min_output=-1.0f;
+  pid2.max_output=1.0f;
+
+  llc.speed_pid_config = pid1;
+  llc.longi_pid_config = pid1;
+  llc.yaw_rate_pid_config = pid2;
+  llc.yaw_pid_config = pid2;
+
+  propulsion_controller_config.low_level_config_static = llc;
+  propulsion_controller_config.low_level_config_cruise = llc;
+  propulsion_controller_config.low_level_config_rotate = llc;
+  
+  propulsion_controller_config.lookahead_distance = 0.1f;
+  propulsion_controller_config.lookahead_time = 0.1f;
+  propulsion_controller_config.static_pwm_limit = 1.0f;
+  propulsion_controller_config.cruise_pwm_limit = 1.0f;
+
+  m_ros_propulsion_controller->setConfig(propulsion_controller_config);
+
+  auto encoder_values = m_ros_robot_simulator.readEncoders();
+  m_ros_odometry.reset(std::get<0>(encoder_values),std::get<1>(encoder_values));
+  
+  m_ros_update_propulsion_time = 0.0;
+#else
+  m_ros_emul = true;
+#endif
+}
+
+int VirtualRobotROSImport::read_yaml_conf(YAML::Node &yconf)
+{
+  if(VirtualRobot::read_yaml_conf(yconf)!=0) {
+    return -1;
+  }
+
+#ifdef ROS
+  m_ros_propulsion_controller->resetPose(m_sv.p.x, m_sv.p.y, m_sv.theta);
+
+  /* execution enabled */
+  m_ros_robot_simulator.setMotorsEnable(true);
+  m_ros_propulsion_controller->setEnable(true);
+#endif
+
+  return 0;
+}
+
+void VirtualRobotROSImport::sim_update(double t_inc)
+{
+  if (m_ros_emul)
+  {
+#ifdef ROS
+    if ((m_ros_update_propulsion_time+t_inc)>ROS_PROPULSION_STEP_PERIOD)
+    {
+      m_ros_robot_simulator.doStep();
+      auto encoder_values = m_ros_robot_simulator.readEncoders();
+      m_ros_odometry.update(std::get<0>(encoder_values), 
+                            std::get<1>(encoder_values));
+      m_ros_propulsion_controller->update();
+      if(m_ros_propulsion_controller->state() != 
+         goldo::PropulsionController::State::Inactive)
+      {
+        m_ros_robot_simulator.setMotorsPwm(
+          m_ros_propulsion_controller->leftMotorPwm(), 
+          m_ros_propulsion_controller->rightMotorPwm());
+        switch(m_ros_propulsion_controller->state())
+        {
+        case goldo::PropulsionController::State::FollowTrajectory:
+        case goldo::PropulsionController::State::Rotate:
+        case goldo::PropulsionController::State::Reposition:
+          m_gpio = m_gpio|FLAG_PROPULSION_BUSY_MASK;
+          break;
+        case goldo::PropulsionController::State::ManualControl:
+        case goldo::PropulsionController::State::Stopped:
+        case goldo::PropulsionController::State::EmergencyStop:
+        case goldo::PropulsionController::State::Error:
+        default:
+          m_gpio = m_gpio&(~FLAG_PROPULSION_BUSY_MASK);
+          break;
+        }
+      }
+      else
+      {
+        m_gpio = m_gpio&(~FLAG_PROPULSION_BUSY_MASK);
+      }
+
+      m_ros_update_propulsion_time += t_inc - ROS_PROPULSION_STEP_PERIOD;
+    }
+    else
+    {
+      m_ros_update_propulsion_time += t_inc;
+    }
+
+	  auto odometry_pose = m_ros_odometry.pose();
+	  
+    m_sv.v.x     = odometry_pose.speed * cos(m_sv.theta);
+    m_sv.v.y     = odometry_pose.speed * sin(m_sv.theta);
+    m_sv.v_theta = odometry_pose.yaw_rate;
+
+    //m_sv.p.x     = odometry_pose.position.x;
+    //m_sv.p.y     = odometry_pose.position.y;
+    //m_sv.theta   = odometry_pose.yaw;
+#else
+    m_sv.v.x     = 0.0;
+    m_sv.v.y     = 0.0;
+    m_sv.v_theta = 0.0;
+#endif
+
+    m_sv.p.x     += m_sv.v.x*t_inc;
+    m_sv.p.y     += m_sv.v.y*t_inc;
+    m_sv.theta   += m_sv.v_theta*t_inc;
+  }
+  else
+  {
+    VirtualRobot::sim_update(t_inc);
+  }
+}
+
+void VirtualRobotROSImport::on_cmd_execute_trajectory(
+  unsigned char *msg_buf, size_t msg_len)
+{
+  //VirtualRobot::on_cmd_execute_trajectory(msg_buf, msg_len);
+
+  unsigned char *_pc = msg_buf;
+  int field_len = 0;
+  float speed;
+  float accel;
+  float deccel;
+  int nwp;
+  strat_way_point_t *wp;
+
+  field_len = sizeof(float);
+  memcpy ((unsigned char *)&speed, _pc, field_len);
+  _pc += field_len;
+  msg_len -= field_len;
+
+  field_len = sizeof(float);
+  memcpy ((unsigned char *)&accel, _pc, field_len);
+  _pc += field_len;
+  msg_len -= field_len;
+
+  field_len = sizeof(float);
+  memcpy ((unsigned char *)&deccel, _pc, field_len);
+  _pc += field_len;
+  msg_len -= field_len;
+
+  nwp = msg_len/(2*sizeof(float));
+
+  wp = new strat_way_point_t[nwp];
+
+  for (int i=0; i<nwp; i++) 
+  {
+    float my_x;
+    float my_y;
+
+    field_len = sizeof(float);
+    memcpy ((unsigned char *)&(my_x), _pc, field_len);
+    _pc += field_len;
+    msg_len -= field_len;
+
+    field_len = sizeof(float);
+    memcpy ((unsigned char *)&(my_y), _pc, field_len);
+    _pc += field_len;
+    msg_len -= field_len;
+
+    wp[i].x_mm = my_x*1000.0;
+    wp[i].y_mm = my_y*1000.0;
+  }
+
+  if (nwp<2)
+  {
+    delete wp;
+    return;
+  }
+
+#ifdef SIM_DEBUG
+  printf ("DEBUG : VirtualRobotROSImport::on_cmd_execute_trajectory():\n");
+  printf ("  speed = %f\n", speed);
+  printf ("  accel = %f\n", accel);
+  printf ("  deccel = %f\n", deccel);
+  printf ("  nwp = %d\n", nwp);
+  printf ("  wp:\n");
+  for (int i=0; i<nwp; i++) 
+  {
+    printf ("    [%f, %f]\n", wp[i].x*1000.0, wp[i].y*1000.0);
+  }
+  printf ("\n");
+#endif /* SIM_DEBUG */
+
+#ifdef ROS
+  std::vector<goldo::Vector2D> points;
+  for (int i=0; i<nwp; i++) 
+  {
+    points.push_back(goldo::Vector2D{wp[i].x_mm, wp[i].y_mm});
+    m_ros_propulsion_controller->executeTrajectory(
+      points.data(), points.size(), speed, accel, deccel);
+  }
+#endif /* SIM_DEBUG */
+
+  delete wp;
+}
+
+void VirtualRobotROSImport::on_cmd_execute_point_to(
+  unsigned char *msg_buf, size_t msg_len)
+{
+  unsigned char *_pc = msg_buf;
+  int field_len = 0;
+  float speed;
+  float accel;
+  float deccel;
+  strat_way_point_t wp;
+  float my_x;
+  float my_y;
+
+  field_len = sizeof(float);
+  memcpy ((unsigned char *)&(my_x), _pc, field_len);
+  _pc += field_len;
+  msg_len -= field_len;
+
+  field_len = sizeof(float);
+  memcpy ((unsigned char *)&(my_y), _pc, field_len);
+  _pc += field_len;
+  msg_len -= field_len;
+
+  wp.x_mm = my_x*1000.0;
+  wp.y_mm = my_y*1000.0;
+
+  field_len = sizeof(float);
+  memcpy ((unsigned char *)&speed, _pc, field_len);
+  _pc += field_len;
+  msg_len -= field_len;
+
+  field_len = sizeof(float);
+  memcpy ((unsigned char *)&accel, _pc, field_len);
+  _pc += field_len;
+  msg_len -= field_len;
+
+  field_len = sizeof(float);
+  memcpy ((unsigned char *)&deccel, _pc, field_len);
+  _pc += field_len;
+  msg_len -= field_len;
+
+#ifdef SIM_DEBUG
+  printf ("DEBUG : VirtualRobot::on_cmd_execute_point_to():\n");
+  printf ("  speed = %f\n", speed);
+  printf ("  accel = %f\n", accel);
+  printf ("  deccel = %f\n", deccel);
+  printf ("  target:\n");
+  printf ("    [%f, %f]\n", wp.x_mm, wp.y_mm);
+  printf ("\n");
+#endif /* SIM_DEBUG */
+
+  /* FIXME : TODO : is this necessary? */
+  sim_brutal_stop();
+
+  /* FIXME : TODO : is this necessary? */
+  speed = fabs(speed);
+  accel = fabs(accel);
+  deccel = fabs(deccel);
+
+  m_gpio = m_gpio|FLAG_PROPULSION_BUSY_MASK;
+
+  m_dbg_duration = 0.0;
+#ifdef SIM_DEBUG
+  printf ("DEBUG : VirtualRobot::on_cmd_execute_point_to() : "
+          "m_dbg_duration=%f\n", m_dbg_duration);
+#endif /* SIM_DEBUG */
+
+#ifdef ROS
+  float target_vec_x = wp.x_mm*0.001;
+  float target_vec_y = wp.y_mm*0.001;
+
+  double yaw_rate   = speed/m_prop_semi_axis;
+  double ang_accel  = accel/m_prop_semi_axis;
+  double ang_deccel = deccel/m_prop_semi_axis;
+
+  m_ros_propulsion_controller->executePointTo(
+    goldo::Vector2D{target_vec_x, target_vec_y}, 
+    yaw_rate, ang_accel, ang_deccel);
+#else
+  wp = wp;
+#endif
+}
+
+void VirtualRobotROSImport::on_cmd_set_pose(
+  unsigned char *msg_buf, size_t msg_len)
+{
+  VirtualRobot::on_cmd_set_pose(msg_buf, msg_len);
+
+#ifdef ROS
+  m_ros_propulsion_controller->resetPose(m_sv.p.x, m_sv.p.y, m_sv.theta);
+#endif
+}
+
+void VirtualRobotROSImport::on_cmd_propulsion_clear_error(
+  unsigned char *msg_buf, size_t msg_len)
+{
+  VirtualRobot::on_cmd_propulsion_clear_error(msg_buf, msg_len);
+
+#ifdef ROS
+  m_ros_propulsion_controller->clearError();
+#endif
+}
+
+

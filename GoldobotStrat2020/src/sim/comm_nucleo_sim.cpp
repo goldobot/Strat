@@ -132,7 +132,7 @@ int DirectUartNucleo::send(const unsigned char *msg_buf, size_t msg_len)
   }
 #endif
 
-  VirtualRobot::myself().sim_receive(msg_buf, msg_len);
+  VirtualRobots::myself().sim_receive(msg_buf, msg_len);
 
   return 0;
 }

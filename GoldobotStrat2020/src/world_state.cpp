@@ -30,6 +30,8 @@ WorldState::WorldState()
   m_task_running = false;
 
   pthread_mutex_init(&m_lock, NULL);
+
+  m_match_started = false;
 }
 
 int WorldState::init()

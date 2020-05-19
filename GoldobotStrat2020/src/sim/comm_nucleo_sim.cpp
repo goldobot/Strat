@@ -126,7 +126,8 @@ int DirectUartNucleo::send(const unsigned char *msg_buf, size_t msg_len)
 {
 #if 1 /* FIXME : DEBUG */
   {
-    printf("DEBUG: direct_uart_sim: sending %lu bytes:\n", msg_len);
+    printf("DEBUG: direct_uart_sim: sending %lu bytes:\n", 
+	   (long unsigned int) msg_len);
     for (unsigned int i=0; i<msg_len; i++) printf ("%.2x ",msg_buf[i]);
     printf ("\n");
   }

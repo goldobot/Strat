@@ -438,7 +438,7 @@ int VirtualRobot::decode_msg_execute_trajectory(
 
   nwp = msg_len/(2*sizeof(float));
 
-  if ((nwp<2) || (nwp>_countof(m_cache_wp)))
+  if ((nwp<2) || ((unsigned int)nwp>_countof(m_cache_wp)))
   {
     return -1;
   }

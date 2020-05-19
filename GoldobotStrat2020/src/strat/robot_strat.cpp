@@ -378,7 +378,7 @@ void RobotStrat::taskFunction()
                 m_path_find_pg.PATH_WP;
               x_wp_mm = x_wp*10;
               y_wp_mm = y_wp*10;
-              if (wp_idx<_countof(act_ast->wp))
+              if ((unsigned int)wp_idx<_countof(act_ast->wp))
               {
                 act_ast->wp[wp_idx].x_mm = x_wp_mm;
                 act_ast->wp[wp_idx].y_mm = y_wp_mm;

@@ -49,6 +49,9 @@ WorldState::WorldState()
   pthread_mutex_init(&m_lock, NULL);
 
   m_match_started = false;
+
+  m_hard_obstacles_cnt = 0;
+  memset (&m_hard_obstacles, 0, sizeof(m_hard_obstacles));
 }
 
 int WorldState::init()
@@ -74,6 +77,20 @@ int WorldState::init()
   const char *sim_fname = GoldoConf::instance().c().conf_simul_file_str;
   read_yaml_conf (sim_fname);
 
+  /* FIXME : TODO : put these in conf .. */
+  m_hard_obstacles_cnt = 7;
+  goldo_segm_2d_t _hard_obstacles[] = {
+    {{0.000, -1.500}, {2.000, -1.500}}, 
+    {{2.000, -1.500}, {2.000,  1.500}}, 
+    {{2.000,  1.500}, {0.000,  1.500}}, 
+    {{0.000,  1.500}, {0.000, -1.500}}, 
+    {{2.000,  0.000}, {1.700,  0.000}}, 
+    {{2.000, -0.610}, {1.850, -0.610}}, 
+    {{2.000,  0.610}, {1.850,  0.610}}, 
+  };
+  memcpy ((unsigned char *)m_hard_obstacles, (unsigned char *)_hard_obstacles, 
+          sizeof(_hard_obstacles));
+
   return 0;
 }
 
@@ -94,10 +111,10 @@ int WorldState::read_yaml_conf(const char *fname)
   }
 
   /* Load simul task for 'myself' */
-  YAML::Node myself_node = yconf["myself_sim_task"];
+  YAML::Node myself_node = yconf["myself"];
   if (!myself_node) 
   {
-    printf ("ERROR : no 'myself_sim_task' section\n");
+    printf ("ERROR : no 'myself' section\n");
     return -1;
   }
   if(VirtualRobots::myself().read_yaml_conf(myself_node)!=0) 
@@ -107,7 +124,7 @@ int WorldState::read_yaml_conf(const char *fname)
   }
 
   /* Load simul task for 'partner' */
-  YAML::Node partner_node = yconf["partner_sim_task"];
+  YAML::Node partner_node = yconf["partner"];
   if (partner_node) 
   {
     if(VirtualRobots::partner().read_yaml_conf(partner_node)==0) 
@@ -122,11 +139,11 @@ int WorldState::read_yaml_conf(const char *fname)
   }
   else
   {
-    printf ("WARNING : no 'partner_sim_task' section\n");
+    printf ("WARNING : no 'partner' section\n");
   }
 
   /* Load simul task for 'adversary1' */
-  YAML::Node adversary1_node = yconf["adversary1_sim_task"];
+  YAML::Node adversary1_node = yconf["adversary1"];
   if (adversary1_node) 
   {
     if(VirtualRobots::adversary1().read_yaml_conf(adversary1_node)==0) 
@@ -141,11 +158,11 @@ int WorldState::read_yaml_conf(const char *fname)
   }
   else
   {
-    printf ("WARNING : no 'adversary1_sim_task' section\n");
+    printf ("WARNING : no 'adversary1' section\n");
   }
 
   /* Load simul task for 'adversary2' */
-  YAML::Node adversary2_node = yconf["adversary2_sim_task"];
+  YAML::Node adversary2_node = yconf["adversary2"];
   if (adversary2_node) 
   {
     if(VirtualRobots::adversary2().read_yaml_conf(adversary2_node)==0) 
@@ -160,7 +177,7 @@ int WorldState::read_yaml_conf(const char *fname)
   }
   else
   {
-    printf ("WARNING : no 'adversary2_sim_task' section\n");
+    printf ("WARNING : no 'adversary2' section\n");
   }
 
   return 0;
@@ -177,8 +194,8 @@ void WorldState::start_signal()
 
 void WorldState::taskFunction()
 {
-  unsigned int time_ms = 0;
-  unsigned int time_ms_old = 0;
+  volatile unsigned int time_ms = 0;
+  volatile unsigned int time_ms_old = 0;
   int delta_time_ms = 0;
   int start_match_time_ms = 0;
   int current_match_time_ms = 0;
@@ -195,7 +212,14 @@ void WorldState::taskFunction()
     time_ms_old = time_ms;
     time_ms = my_tp.tv_sec*1000 + my_tp.tv_nsec/1000000;
     m_s.local_ts_ms = time_ms;
-    delta_time_ms = time_ms - time_ms_old;
+    if (time_ms_old==0) /* avoid annoying artefact.. */
+    {
+      delta_time_ms = 0;
+    }
+    else
+    {
+      delta_time_ms = time_ms - time_ms_old;
+    }
 
     /* FIXME : TODO : refactor : crap! */
     if (m_match_started)
@@ -211,20 +235,23 @@ void WorldState::taskFunction()
 
     for (int i=0; i<SIM_GRANULARITY; i++)
     {
-      double delta_time_s = delta_time_ms/1000.0;
+      double delta_time_s = (double)delta_time_ms/1000.0;
+
       VirtualRobots::myself().sim_update(delta_time_s/SIM_GRANULARITY);
       VirtualRobots::partner().sim_update(delta_time_s/SIM_GRANULARITY);
       VirtualRobots::adversary1().sim_update(delta_time_s/SIM_GRANULARITY);
       VirtualRobots::adversary2().sim_update(delta_time_s/SIM_GRANULARITY);
+
+      RobotState::instance().s().robot_sensors= VirtualRobots::myself().gpio();
     }
 
     /**  Update the robot(s) state(s)  ****************************************/
 
     robot_state_info_t& my_s = RobotState::instance().s();
     RobotState::instance().lock();
-    my_s.x_mm          = VirtualRobots::myself().sv().p.x*1000.0;
-    my_s.y_mm          = VirtualRobots::myself().sv().p.y*1000.0;
-    my_s.theta_deg     = VirtualRobots::myself().sv().theta*180.0/M_PI;
+    my_s.x_mm          = VirtualRobots::myself().odometry().p.x*1000.0;
+    my_s.y_mm          = VirtualRobots::myself().odometry().p.y*1000.0;
+    my_s.theta_deg     = VirtualRobots::myself().odometry().theta*180.0/M_PI;
     my_s.robot_sensors = VirtualRobots::myself().gpio();
     RobotState::instance().release();
 
@@ -278,6 +305,99 @@ void WorldState::taskFunction()
     }
     m_s.n_detected_robots = r;
     release();
+
+    /**  Simulate colisions  **************************************************/
+    /* FIXME : TODO : WIP */
+    {
+      goldo_vec_2d_t my_p = VirtualRobots::myself().sv().p;
+      goldo_vec_2d_t partner_p = VirtualRobots::partner().sv().p;
+      goldo_vec_2d_t adv1_p = VirtualRobots::adversary1().sv().p;
+      goldo_vec_2d_t adv2_p = VirtualRobots::adversary2().sv().p;
+
+      for (int i=0; i<m_hard_obstacles_cnt; i++)
+      {
+        if ((!VirtualRobots::myself().is_crashed()) && 
+            (goldo_segm_dist(my_p,m_hard_obstacles[i])<SIM_CRASH_DIST))
+        {
+          printf ("DEBUG : Our robot crashed!!\n");
+#if 0
+          printf ("  my_p = <%2.6f,%2.6f>\n", my_p.x, my_p.y);
+          printf ("  i = %d\n", i);
+          printf ("  obstacles[i].p1 = <%2.6f,%2.6f>\n", 
+                  m_hard_obstacles[i].p1.x, m_hard_obstacles[i].p1.y);
+          printf ("  obstacles[i].p2 = <%2.6f,%2.6f>\n", 
+                  m_hard_obstacles[i].p2.x, m_hard_obstacles[i].p2.y);
+#endif
+          VirtualRobots::myself().sim_crash_robot();
+        }
+        if ((!VirtualRobots::partner().is_crashed()) && 
+            (goldo_segm_dist(partner_p,m_hard_obstacles[i])<SIM_CRASH_DIST))
+        {
+          printf ("DEBUG : Partner robot crashed.\n");
+          VirtualRobots::partner().sim_crash_robot();
+        }
+        if ((!VirtualRobots::adversary1().is_crashed()) && 
+            (goldo_segm_dist(adv1_p,m_hard_obstacles[i])<SIM_CRASH_DIST))
+        {
+          printf ("DEBUG : Adversary1 robot crashed.\n");
+          VirtualRobots::adversary1().sim_crash_robot();
+        }
+        if ((!VirtualRobots::adversary2().is_crashed()) && 
+            (goldo_segm_dist(adv2_p,m_hard_obstacles[i])<SIM_CRASH_DIST))
+        {
+          printf ("DEBUG : Adversary2 robot crashed.\n");
+          VirtualRobots::adversary2().sim_crash_robot();
+        }
+      }
+
+      if ((!VirtualRobots::myself().is_crashed()))
+      {
+        if (goldo_dist(my_p,partner_p)<SIM_CRASH_DIST)
+        {
+          printf ("DEBUG : Collision with partner. Our robot crashed!!\n");
+          VirtualRobots::myself().sim_crash_robot();
+          VirtualRobots::partner().sim_crash_robot();
+        }
+        if (goldo_dist(my_p,adv1_p)<SIM_CRASH_DIST)
+        {
+          printf ("DEBUG : Collision with adversary1. Our robot crashed!!\n");
+          VirtualRobots::myself().sim_crash_robot();
+          VirtualRobots::adversary1().sim_crash_robot();
+        }
+        if (goldo_dist(my_p,adv2_p)<SIM_CRASH_DIST)
+        {
+          printf ("DEBUG : Collision with adversary2. Our robot crashed!!\n");
+          VirtualRobots::myself().sim_crash_robot();
+          VirtualRobots::adversary2().sim_crash_robot();
+        }
+      }
+
+      if ((!VirtualRobots::partner().is_crashed()))
+      {
+        if (goldo_dist(partner_p,adv1_p)<SIM_CRASH_DIST)
+        {
+          printf ("DEBUG : Collision between partner and adversary1\n");
+          VirtualRobots::partner().sim_crash_robot();
+          VirtualRobots::adversary1().sim_crash_robot();
+        }
+        if (goldo_dist(partner_p,adv2_p)<SIM_CRASH_DIST)
+        {
+          printf ("DEBUG : Collision between partner and adversary2\n");
+          VirtualRobots::partner().sim_crash_robot();
+          VirtualRobots::adversary2().sim_crash_robot();
+        }
+      }
+
+      if ((!VirtualRobots::adversary1().is_crashed()))
+      {
+        if (goldo_dist(adv1_p,adv2_p)<SIM_CRASH_DIST)
+        {
+          printf ("DEBUG : Collision between adversary1 and adversary2\n");
+          VirtualRobots::adversary1().sim_crash_robot();
+          VirtualRobots::adversary2().sim_crash_robot();
+        }
+      }
+    }
 
     /**  Send the new state information to the HMI  ***************************/
 

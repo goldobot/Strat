@@ -5,6 +5,8 @@
 #include "yaml-cpp/yaml.h"
 #include "yaml-cpp/eventhandler.h"
 
+#include "goldo_geometry.hpp"
+
 #include "strat/robot_strat_types.hpp"
 #include "strat/robot_strat_base.hpp"
 
@@ -39,6 +41,8 @@ namespace goldobot
 
     sim_motion_state_vector_t& sv() {return m_sv;};
 
+    virtual sim_motion_state_vector_t& odometry() {return m_sv;};
+
     /* FIXME : TODO : code duplication is bad! */
     static const unsigned int GPIO_GREEN_LED_MASK          = 0x00000001;
     static const unsigned int GPIO_START_MASK              = 0x00000002;
@@ -50,7 +54,7 @@ namespace goldobot
     static const unsigned int FLAG_PROPULSION_BUSY_MASK    = 0x00010000;
     static const unsigned int FLAG_PROPULSION_ERROR_MASK   = 0x00020000;
 
-    unsigned int& gpio() {return m_gpio;};
+    unsigned int gpio() {return m_gpio;};
 
     virtual void sim_update(double t_inc);
 
@@ -58,23 +62,33 @@ namespace goldobot
 
     virtual void sim_brutal_stop();
 
+    bool is_crashed() {return m_flag_robot_crash;};
+
+    void sim_crash_robot() {m_flag_robot_crash=true;};
+
     void sim_compute_motion_times(double L, double V, 
                                   double A, double D, 
                                   double &t_a, double &t_i, double &t_d);
 
     /* FIXME : TODO */
   protected:
+    template<typename T> void yaml_helper_read (
+      YAML::Node &conf_section, const std::string field_name, T &field);
+
     virtual void on_cmd_execute_trajectory(unsigned char *_buf, size_t _len);
     virtual void on_cmd_execute_point_to(unsigned char *_buf, size_t _len);
     virtual void on_cmd_set_pose(unsigned char *_buf, size_t _len);
     virtual void on_cmd_start_sequence(unsigned char *_buf, size_t _len);
     virtual void on_cmd_propulsion_clear_error(unsigned char *_buf,size_t _len);
 
-    void create_rotation_me(sim_vec_2d_t &orig, double orig_theta, 
-                            sim_vec_2d_t &target, 
+    int decode_msg_execute_trajectory(unsigned char *_buf, size_t _len);
+    int decode_msg_execute_point_to(unsigned char *_buf, size_t _len);
+
+    void create_rotation_me(goldo_vec_2d_t &orig, double orig_theta, 
+                            goldo_vec_2d_t &target, 
                             float speed, float accel, float deccel);
-    void create_translation_me(sim_vec_2d_t &orig, bool forward, 
-                               sim_vec_2d_t &target, 
+    void create_translation_me(goldo_vec_2d_t &orig, bool forward, 
+                               goldo_vec_2d_t &target, 
                                float speed, float accel, float deccel);
 
     bool m_enabled;
@@ -90,6 +104,10 @@ namespace goldobot
 
     unsigned int m_gpio;
 
+    bool m_flag_robot_crash;
+
+    static constexpr double SIM_EMERGENCY_DIST = 0.200;
+
     StratTask *m_default_strat;
 
     static const int MOTION_ELEM_LIST_SZ = 10000;
@@ -100,6 +118,12 @@ namespace goldobot
     unsigned char m_recv_buf[256];
     static const int RECV_BUF_SZ = sizeof(m_recv_buf);
 
+    goldo_vec_2d_t m_cache_target_vec;
+    int m_cache_nwp;
+    goldo_vec_2d_t m_cache_wp[256];
+    float m_cache_speed;
+    float m_cache_accel;
+    float m_cache_deccel;
   private:
   };
 
@@ -110,6 +134,21 @@ namespace goldobot
     virtual void sim_update(double t_inc);
 
     virtual int read_yaml_conf(YAML::Node &yconf);
+
+#ifdef ROS
+    virtual sim_motion_state_vector_t& odometry() {
+      auto odometry_pose = m_ros_odometry.pose();
+      m_ros_odometry_sv.p.x     = odometry_pose.position.x;
+      m_ros_odometry_sv.p.y     = odometry_pose.position.y;
+      m_ros_odometry_sv.theta   = odometry_pose.yaw;
+      m_ros_odometry_sv.v.x     = odometry_pose.speed * cos(odometry_pose.yaw);
+      m_ros_odometry_sv.v.y     = odometry_pose.speed * sin(odometry_pose.yaw);
+      m_ros_odometry_sv.v_theta = odometry_pose.yaw_rate;
+      return m_ros_odometry_sv;
+    }
+#else
+    virtual sim_motion_state_vector_t& odometry() {return m_sv;};
+#endif
 
   protected:
     virtual void on_cmd_execute_trajectory(unsigned char *_buf, size_t _len);
@@ -124,15 +163,22 @@ namespace goldobot
     goldo::SimpleOdometry m_ros_odometry;
     goldo::PropulsionController *m_ros_propulsion_controller;
     goldo::RobotSimulator m_ros_robot_simulator;
+
+    goldo::Vector2D m_ros_cache_wp[256];
 #endif
+
+    sim_motion_state_vector_t m_ros_odometry_sv;
 
     bool m_ros_emul;
 
   private:
   };
 
+#ifdef ROS
   typedef class VirtualRobotROSImport MyselfVirtualRobotType;
-  //typedef class VirtualRobot MyselfVirtualRobotType;
+#else
+  typedef class VirtualRobot MyselfVirtualRobotType;
+#endif
   typedef class VirtualRobot PartnerVirtualRobotType;
   typedef class VirtualRobot Adversary1VirtualRobotType;
   typedef class VirtualRobot Adversary2VirtualRobotType;

@@ -50,6 +50,11 @@ namespace goldobot
         return (m_s.robot_sensors&FLAG_PROPULSION_ERROR_MASK)!=0;
       }
 
+    bool emergency_stop() 
+      {
+        return (m_s.robot_sensors&GPIO_EMERGENCY_STOP_MASK)!=0;
+      }
+
     int lock(int timeout_ms = -1);
 
     void release();

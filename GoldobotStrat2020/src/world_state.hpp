@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <cstddef>
 
+#include "goldo_geometry.hpp"
 #include "goldo_thread.hpp"
 #include "detect/robot_detection_info.hpp"
 
@@ -46,6 +47,11 @@ namespace goldobot
 
     /* used in simulation */
     bool m_match_started;
+
+    /* used in simulation */
+    int m_hard_obstacles_cnt;
+    goldo_segm_2d_t m_hard_obstacles[64];
+    static constexpr double SIM_CRASH_DIST = 0.050;
 
     /* used in simulation */
     void sim_send_heartbeat(int time_ms);

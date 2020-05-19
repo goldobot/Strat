@@ -190,6 +190,14 @@ void RobotStrat::taskFunction()
     clock_gettime(1, &my_tp);
     my_time_ms = my_tp.tv_sec*1000 + my_tp.tv_nsec/1000000;
 
+    if (RobotState::instance().emergency_stop() && 
+        (m_strat_state!=STRAT_STATE_EMERGENCY_STOP))
+    {
+      printf ("EMERGENCY_STOP!\n");
+      m_strat_state = STRAT_STATE_EMERGENCY_STOP;
+      state_change_dbg = true;
+    }
+
     switch (m_strat_state) {
     case STRAT_STATE_INIT:
       if (state_change_dbg)

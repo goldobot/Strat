@@ -32,6 +32,9 @@ WorldState::WorldState()
   pthread_mutex_init(&m_lock, NULL);
 
   m_match_started = false;
+
+  m_hard_obstacles_cnt = 0;
+  memset (&m_hard_obstacles, 0, sizeof(m_hard_obstacles));
 }
 
 int WorldState::init()

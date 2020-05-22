@@ -42,24 +42,19 @@ namespace goldobot
 
     int parse_yaml_conf(const char * yaml_fname);
 
-    static constexpr char   conf_viewer_addr_str_def[]     = 
-      "192.168.0.241";
+    static char   conf_viewer_addr_str_def[];
     static constexpr double conf_theta_correction_deg_def  = 
       30.0f; /* PR 28/05/2019 */
-    static constexpr char   conf_rplidar_dev_str_def[]     = 
-      "/dev/rplidar";
+    static char   conf_rplidar_dev_str_def[];
     static constexpr _u32   conf_rplidar_baudrate_def      = 
       115200;
-    static constexpr char   conf_nucleo_uart_dev_str_def[] = 
-      "/dev/odometry";
+    static char   conf_nucleo_uart_dev_str_def[];
     static constexpr _u32   conf_nucleo_uart_baudrate_def  = 
       115200;
     static constexpr _u32   conf_zmq_port_def              = 
       3101;
-    static constexpr char   conf_strat_file_str_def[]      = 
-      "strat.yaml";
-    static constexpr char   conf_simul_file_str_def[]      = 
-      "simul.yaml";
+    static char   conf_strat_file_str_def[];
+    static char   conf_simul_file_str_def[]; 
 
     static GoldoConf s_instance;
   };

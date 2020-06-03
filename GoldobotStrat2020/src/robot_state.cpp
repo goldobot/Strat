@@ -67,8 +67,8 @@ void RobotState::taskFunction()
   unsigned int l_dbg_thread_time_ms_delta;
   unsigned int l_dbg_thread_time_ms_delta_max;
 
-  unsigned int l_uart_thread_time_ms_old;
-  unsigned int l_odo_time_ms_old;
+  int l_uart_thread_time_ms_old;
+  int l_odo_time_ms_old;
   int          l_odo_x_mm_old;
   int          l_odo_y_mm_old;
   double       l_odo_theta_deg_old;
@@ -122,14 +122,14 @@ void RobotState::taskFunction()
   {
 
     //if ((dbg_cnt%10)==0) 
-    if (m_s.local_ts_ms!=l_uart_thread_time_ms_old) 
+    if (m_s.local_ts_ms!= (unsigned int)l_uart_thread_time_ms_old) 
     {
       struct timespec my_tp;
       unsigned int dbg_thread_time_ms;
 
       lock();
-      volatile unsigned int my_uart_thread_time_ms = m_s.local_ts_ms;
-      volatile unsigned int my_odo_time_ms         = m_s.remote_ts_ms;
+      volatile int my_uart_thread_time_ms = m_s.local_ts_ms;
+      volatile int my_odo_time_ms         = m_s.remote_ts_ms;
       volatile int          my_odo_x_mm            = m_s.x_mm;
       volatile int          my_odo_y_mm            = m_s.y_mm;
       volatile double       my_odo_theta_deg       = m_s.theta_deg;

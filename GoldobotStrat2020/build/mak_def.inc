@@ -112,11 +112,13 @@ endif
 endif
 
 # yaml-cpp lib import
+ifeq ($(YAML),import)
 ifeq ($(BUILD_TARGET_ARCH),arm)
 YAML_IMPORT = $(HOME_TREE)/import/yaml/lib/$(BUILD_TARGET_HW_PLATFORM)/libyaml-cpp.a
 endif
 ifeq ($(BUILD_TARGET_ARCH),x86)
 YAML_IMPORT = $(HOME_TREE)/import/yaml/lib/x86/$(BUILD_HOST_PLATFORM)/libyaml-cpp.a
+endif
 endif
 
 APP_TARGET=$(BUILD_OUTPUT_ROOT)/$(MODULE_NAME)
@@ -145,7 +147,11 @@ CXXDEFS +=
 CXXDEFS += $(CDEFS) $(EXTRA_DEFS)
 
 C_INCLUDES += -I$(HOME_TREE)/src
-C_INCLUDES += -I$(HOME_TREE)/import/rplidar_sdk2018/include -I$(HOME_TREE)/import/yaml/include
+C_INCLUDES += -I$(HOME_TREE)/import/rplidar_sdk2018/include
+ifeq ($(YAML),import)
+C_INCLUDES += -I$(HOME_TREE)/import/yaml/include
+endif
+
 # -I/opt/gumstix/include 
 # -I/usr/include/newlib -I/usr/include/newlib/c++/4.8 -I/usr/include/newlib/c++/4.8/arm-none-eabi 
 CXX_INCLUDES += $(C_INCLUDES) $(EXTRA_CXXINC)

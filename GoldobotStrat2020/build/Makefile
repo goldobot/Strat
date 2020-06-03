@@ -44,6 +44,9 @@ EXTRA_CXXINC :=
 endif
 
 LD_LIBS += -lstdc++ -lpthread -lm -lzmq 
+ifneq ($(YAML),import)
+LD_LIBS += -lyaml-cpp
+endif
 
 all: build_app
 

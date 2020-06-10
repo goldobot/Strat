@@ -29,6 +29,7 @@ MODULE_NAME := GoldobotStrat2020
 include $(MAKE_TREE)/mak_def.inc
 
 ifeq ($(MODULE_NAME),GoldobotStrat2020_sim)
+
 CXXSRC += main.cpp goldo_conf.cpp comm_zmq.cpp sim/comm_rplidar_sim.cpp sim/comm_nucleo_sim.cpp sim/robot_state_sim.cpp sim/world_state_sim.cpp sim/virtual_robot.cpp detect/lidar_detect.cpp strat/robot_strat_base.cpp strat/robot_strat.cpp astar/astar.cpp
 ifeq ($(EXTRA_FLAGS),-DROS)
 EXTRA_CXXSRC := src/robot_simulator.cpp libs/goldo_robot/src/geometry/trajectory.cpp libs/goldo_robot/src/control/speed_controller.cpp libs/goldo_robot/src/control/trapezoidal_speed_profile.cpp libs/goldo_robot/src/control/propulsion_controller.cpp libs/goldo_robot/src/control/pid_controller.cpp libs/goldo_robot/src/control/propulsion_low_level_controller.cpp libs/goldo_robot/src/odometry/simple_odometry.cpp
@@ -37,10 +38,43 @@ else
 EXTRA_CXXSRC :=
 EXTRA_CXXINC :=
 endif
+
+else ifeq ($(MODULE_NAME),GoldobotStrat2020_sim_tuto0)
+
+CXXSRC += main.cpp goldo_conf.cpp comm_zmq.cpp sim/comm_rplidar_sim.cpp sim/comm_nucleo_sim.cpp sim/robot_state_sim.cpp sim/world_state_sim.cpp sim/virtual_robot.cpp detect/lidar_detect.cpp strat/robot_strat_base.cpp  astar/astar.cpp tuto/robot_strat_tuto0.cpp
+EXTRA_CXXSRC :=
+EXTRA_CXXINC :=
+
+else ifeq ($(MODULE_NAME),GoldobotStrat2020_sim_tuto1)
+
+CXXSRC += main.cpp goldo_conf.cpp comm_zmq.cpp sim/comm_rplidar_sim.cpp sim/comm_nucleo_sim.cpp sim/robot_state_sim.cpp sim/world_state_sim.cpp sim/virtual_robot.cpp detect/lidar_detect.cpp strat/robot_strat_base.cpp  astar/astar.cpp tuto/robot_strat_tuto1.cpp
+EXTRA_CXXSRC :=
+EXTRA_CXXINC :=
+
+else ifeq ($(MODULE_NAME),GoldobotStrat2020_sim_tuto2)
+
+CXXSRC += main.cpp goldo_conf.cpp comm_zmq.cpp sim/comm_rplidar_sim.cpp sim/comm_nucleo_sim.cpp sim/robot_state_sim.cpp sim/world_state_sim.cpp sim/virtual_robot.cpp detect/lidar_detect.cpp strat/robot_strat_base.cpp  astar/astar.cpp tuto/robot_strat_tuto2.cpp
+EXTRA_CXXSRC :=
+EXTRA_CXXINC :=
+
+else ifeq ($(MODULE_NAME),GoldobotStrat2020_sim_tuto3)
+
+CXXSRC += main.cpp goldo_conf.cpp comm_zmq.cpp sim/comm_rplidar_sim.cpp sim/comm_nucleo_sim.cpp sim/robot_state_sim.cpp sim/world_state_sim.cpp sim/virtual_robot.cpp detect/lidar_detect.cpp strat/robot_strat_base.cpp  astar/astar.cpp tuto/robot_strat_tuto3.cpp
+EXTRA_CXXSRC := src/robot_simulator.cpp libs/goldo_robot/src/geometry/trajectory.cpp libs/goldo_robot/src/control/speed_controller.cpp libs/goldo_robot/src/control/trapezoidal_speed_profile.cpp libs/goldo_robot/src/control/propulsion_controller.cpp libs/goldo_robot/src/control/pid_controller.cpp libs/goldo_robot/src/control/propulsion_low_level_controller.cpp libs/goldo_robot/src/odometry/simple_odometry.cpp
+EXTRA_CXXINC := -I$(EXTERNAL_PRJ_PATH)/libs/goldo_robot/include -I$(EXTERNAL_PRJ_PATH)/src
+
+else ifeq ($(MODULE_NAME),GoldobotStrat2020_sim_tuto4)
+
+CXXSRC += main.cpp goldo_conf.cpp comm_zmq.cpp sim/comm_rplidar_sim.cpp sim/comm_nucleo_sim.cpp sim/robot_state_sim.cpp sim/world_state_sim.cpp sim/virtual_robot.cpp detect/lidar_detect.cpp strat/robot_strat_base.cpp  astar/astar.cpp tuto/robot_strat_tuto4.cpp
+EXTRA_CXXSRC := src/robot_simulator.cpp libs/goldo_robot/src/geometry/trajectory.cpp libs/goldo_robot/src/control/speed_controller.cpp libs/goldo_robot/src/control/trapezoidal_speed_profile.cpp libs/goldo_robot/src/control/propulsion_controller.cpp libs/goldo_robot/src/control/pid_controller.cpp libs/goldo_robot/src/control/propulsion_low_level_controller.cpp libs/goldo_robot/src/odometry/simple_odometry.cpp
+EXTRA_CXXINC := -I$(EXTERNAL_PRJ_PATH)/libs/goldo_robot/include -I$(EXTERNAL_PRJ_PATH)/src
+
 else 
+
 CXXSRC += main.cpp goldo_conf.cpp comm_zmq.cpp comm_rplidar.cpp comm_nucleo.cpp robot_state.cpp world_state.cpp detect/lidar_detect.cpp strat/robot_strat_base.cpp strat/robot_strat.cpp astar/astar.cpp
 EXTRA_CXXSRC :=
 EXTRA_CXXINC :=
+
 endif
 
 LD_LIBS += -lstdc++ -lpthread -lm -lzmq 
@@ -59,6 +93,30 @@ sim_ros:
 	else \
 		make MODULE_NAME=GoldobotStrat2020_sim $(CYGWIN_CC_DEFS) EXTRA_FLAGS=-DROS;\
 	fi
+
+sim_tuto0:
+	@make MODULE_NAME=GoldobotStrat2020_sim_tuto0 $(CYGWIN_CC_DEFS)
+
+sim_tuto1:
+	@make MODULE_NAME=GoldobotStrat2020_sim_tuto1 $(CYGWIN_CC_DEFS)
+
+sim_tuto2:
+	@make MODULE_NAME=GoldobotStrat2020_sim_tuto2 $(CYGWIN_CC_DEFS)
+
+sim_tuto3:
+	@if [ -z $(EXTERNAL_PRJ_PATH) ]; then \
+		echo "You must define EXTERNAL_PRJ_PATH"; \
+	else \
+		make MODULE_NAME=GoldobotStrat2020_sim_tuto3 $(CYGWIN_CC_DEFS) EXTRA_FLAGS=-DROS;\
+	fi
+
+sim_tuto4:
+	@if [ -z $(EXTERNAL_PRJ_PATH) ]; then \
+		echo "You must define EXTERNAL_PRJ_PATH"; \
+	else \
+		make MODULE_NAME=GoldobotStrat2020_sim_tuto4 $(CYGWIN_CC_DEFS) EXTRA_FLAGS=-DROS;\
+	fi
+
 
 include $(MAKE_TREE)/mak_common.inc
 

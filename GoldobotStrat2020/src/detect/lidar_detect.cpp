@@ -13,6 +13,7 @@
 #include <iostream>
 
 #include "detect/lidar_detect.hpp"
+#include "goldo_conf.hpp"
 #include "comm_zmq.hpp"
 #include "world_state.hpp"
 

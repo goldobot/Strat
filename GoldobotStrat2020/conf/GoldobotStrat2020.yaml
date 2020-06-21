@@ -1,10 +1,12 @@
 environment:
-  conf_viewer_addr_str:      192.168.0.241
-  conf_theta_correction_deg: 30.0
-  conf_rplidar_dev_str:      /dev/rplidar
-  conf_rplidar_baudrate:     115200
-  conf_nucleo_uart_dev_str:  /dev/odometry
-  conf_nucleo_uart_baudrate: 115200
-  conf_zmq_port:             3101
-  conf_strat_file_str:       conf/strat.yaml
-  conf_simul_file_str:       conf/simul.yaml
+  conf_viewer_addr_str:          192.168.0.241
+  conf_theta_correction_deg:     30.0
+  conf_rho_correction_factor:    1.05
+  conf_rplidar_plot_lifetime_ms: 300
+  conf_rplidar_dev_str:          /dev/rplidar
+  conf_rplidar_baudrate:         115200
+  conf_nucleo_uart_dev_str:      /dev/odometry
+  conf_nucleo_uart_baudrate:     115200
+  conf_zmq_port:                 3101
+  conf_strat_file_str:           conf/strat.yaml
+  conf_simul_file_str:           conf/simul.yaml

@@ -11,6 +11,8 @@ namespace goldobot
   typedef struct _goldo_conf_info {
     char   conf_viewer_addr_str[128];
     double conf_theta_correction_deg;
+    double conf_rho_correction_factor;
+    _u32   conf_rplidar_plot_lifetime_ms;
     char   conf_rplidar_dev_str[128];
     _u32   conf_rplidar_baudrate;
     char   conf_nucleo_uart_dev_str[128];
@@ -43,15 +45,19 @@ namespace goldobot
     int parse_yaml_conf(const char * yaml_fname);
 
     static char   conf_viewer_addr_str_def[];
-    static constexpr double conf_theta_correction_deg_def  = 
+    static constexpr double conf_theta_correction_deg_def     = 
       30.0f; /* PR 28/05/2019 */
+    static constexpr double conf_rho_correction_factor_def    = 
+      1.05f;
+    static constexpr _u32   conf_rplidar_plot_lifetime_ms_def = 
+      300;
     static char   conf_rplidar_dev_str_def[];
-    static constexpr _u32   conf_rplidar_baudrate_def      = 
+    static constexpr _u32   conf_rplidar_baudrate_def         = 
       115200;
     static char   conf_nucleo_uart_dev_str_def[];
-    static constexpr _u32   conf_nucleo_uart_baudrate_def  = 
+    static constexpr _u32   conf_nucleo_uart_baudrate_def     = 
       115200;
-    static constexpr _u32   conf_zmq_port_def              = 
+    static constexpr _u32   conf_zmq_port_def                 = 
       3101;
     static char   conf_strat_file_str_def[];
     static char   conf_simul_file_str_def[]; 

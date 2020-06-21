@@ -29,7 +29,7 @@ namespace goldobot
 
     CommRplidar();
 
-    int init(char* rplidar_dev, double theta_correction, int baudrate);
+    int init(char* rplidar_dev, int baudrate);
 
     int init_viewer_sock(char *viewer_address_str);
 
@@ -47,8 +47,6 @@ namespace goldobot
     static const int M_NB_POINTS = 720;
 
     char m_rplidar_dev_str[80];
-
-    double m_theta_correction;
 
     int m_baudrate;
 

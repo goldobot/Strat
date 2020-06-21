@@ -20,6 +20,7 @@
 #include "rplidar.h" //RPLIDAR standard sdk, all-in-one header
 
 #include "comm_rplidar.hpp"
+#include "goldo_conf.hpp"
 #include "detect/lidar_detect.hpp"
 
 
@@ -47,8 +48,6 @@ CommRplidar::CommRplidar()
 
   memset (m_rplidar_dev_str, 0, sizeof(m_rplidar_dev_str));
 
-  m_theta_correction = 0.0;
-
   m_baudrate = 0;
 
   for (i=0; i<720; i++)
@@ -65,7 +64,7 @@ CommRplidar::CommRplidar()
   memset (m_viewer_send_buf, 0, sizeof(m_viewer_send_buf));
 }
 
-int CommRplidar::init(char* rplidar_dev, double theta_correction, int baudrate)
+int CommRplidar::init(char* rplidar_dev, int baudrate)
 {
   int i;
 
@@ -76,8 +75,6 @@ int CommRplidar::init(char* rplidar_dev, double theta_correction, int baudrate)
     m_x[i] = 0.0;
     m_y[i] = 0.0;
   }
-
-  m_theta_correction = theta_correction;
 
   m_baudrate = baudrate;
 

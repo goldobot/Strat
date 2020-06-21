@@ -43,6 +43,8 @@ void GoldoConf::set_default()
   strncpy(m_c.conf_viewer_addr_str, conf_viewer_addr_str_def, 
           sizeof (m_c.conf_viewer_addr_str));
   m_c.conf_theta_correction_deg = conf_theta_correction_deg_def;
+  m_c.conf_rho_correction_factor = conf_rho_correction_factor_def;
+  m_c.conf_rplidar_plot_lifetime_ms = conf_rplidar_plot_lifetime_ms_def;
   strncpy(m_c.conf_rplidar_dev_str, conf_rplidar_dev_str_def, 
           sizeof (m_c.conf_rplidar_dev_str));
   m_c.conf_rplidar_baudrate = conf_rplidar_baudrate_def;
@@ -91,6 +93,20 @@ int GoldoConf::parse_yaml_conf(const char * yaml_fname)
     {
       my_str = (const char *) conf_node.as<std::string>().c_str();
       m_c.conf_theta_correction_deg = strtod(my_str, NULL);
+    }
+
+    conf_node = yconf["environment"]["conf_rho_correction_factor"];
+    if (conf_node) 
+    {
+      my_str = (const char *) conf_node.as<std::string>().c_str();
+      m_c.conf_rho_correction_factor = strtod(my_str, NULL);
+    }
+
+    conf_node = yconf["environment"]["conf_rplidar_plot_lifetime_ms"];
+    if (conf_node) 
+    {
+      my_str = (const char *) conf_node.as<std::string>().c_str();
+      m_c.conf_rplidar_plot_lifetime_ms = strtoul(my_str, NULL, 10);
     }
 
     conf_node = yconf["environment"]["conf_rplidar_dev_str"];
@@ -159,23 +175,27 @@ int GoldoConf::parse_yaml_conf(const char * yaml_fname)
 
 void GoldoConf::display_conf()
 {
-  printf ("  conf_viewer_addr_str      = %s\n", 
+  printf ("  conf_viewer_addr_str          = %s\n", 
              m_c.conf_viewer_addr_str);
-  printf ("  conf_theta_correction_deg = %f\n", 
+  printf ("  conf_theta_correction_deg     = %f\n", 
              m_c.conf_theta_correction_deg);
-  printf ("  conf_rplidar_dev_str      = %s\n", 
+  printf ("  conf_rho_correction_factor    = %f\n", 
+             m_c.conf_rho_correction_factor);
+  printf ("  conf_rplidar_plot_lifetime_ms = %d\n", 
+             m_c.conf_rplidar_plot_lifetime_ms);
+  printf ("  conf_rplidar_dev_str          = %s\n", 
              m_c.conf_rplidar_dev_str);
-  printf ("  conf_rplidar_baudrate     = %d\n", 
+  printf ("  conf_rplidar_baudrate         = %d\n", 
              m_c.conf_rplidar_baudrate);
-  printf ("  conf_nucleo_uart_dev_str  = %s\n", 
+  printf ("  conf_nucleo_uart_dev_str      = %s\n", 
              m_c.conf_nucleo_uart_dev_str);
-  printf ("  conf_nucleo_uart_baudrate = %d\n", 
+  printf ("  conf_nucleo_uart_baudrate     = %d\n", 
              m_c.conf_nucleo_uart_baudrate);
-  printf ("  conf_zmq_port             = %d\n", 
+  printf ("  conf_zmq_port                 = %d\n", 
              m_c.conf_zmq_port);
-  printf ("  conf_strat_file_str       = %s\n", 
+  printf ("  conf_strat_file_str           = %s\n", 
              m_c.conf_strat_file_str);
-  printf ("  conf_simul_file_str       = %s\n", 
+  printf ("  conf_simul_file_str           = %s\n", 
              m_c.conf_simul_file_str);
 }
 

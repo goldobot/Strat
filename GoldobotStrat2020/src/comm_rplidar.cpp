@@ -17,6 +17,7 @@
 #include "rplidar.h" //RPLIDAR standard sdk, all-in-one header
 
 #include "comm_rplidar.hpp"
+#include "goldo_conf.hpp"
 #include "detect/lidar_detect.hpp"
 
 
@@ -49,8 +50,6 @@ CommRplidar::CommRplidar()
 
   memset (m_rplidar_dev_str, 0, sizeof(m_rplidar_dev_str));
 
-  m_theta_correction = 0.0;
-
   m_baudrate = 0;
 
   for (i=0; i<720; i++)
@@ -67,7 +66,7 @@ CommRplidar::CommRplidar()
   memset (m_viewer_send_buf, 0, sizeof(m_viewer_send_buf));
 }
 
-int CommRplidar::init(char* rplidar_dev, double theta_correction, int baudrate)
+int CommRplidar::init(char* rplidar_dev, int baudrate)
 {
   int i;
 
@@ -78,8 +77,6 @@ int CommRplidar::init(char* rplidar_dev, double theta_correction, int baudrate)
     m_x[i] = 0.0;
     m_y[i] = 0.0;
   }
-
-  m_theta_correction = theta_correction;
 
   m_baudrate = baudrate;
 
@@ -204,6 +201,9 @@ void CommRplidar::taskFunction()
 {
   u_result     op_result;
 
+  goldo_conf_info_t& ci = GoldoConf::instance().c();
+  double l_theta_correction = ci.conf_theta_correction_deg*M_PI/180.0f;
+  double l_rho_correction_factor = ci.conf_rho_correction_factor;
 
   // make connection...
   if (IS_FAIL(m_drv->connect(m_rplidar_dev_str, m_baudrate))) {
@@ -286,9 +286,9 @@ void CommRplidar::taskFunction()
 
       for (int pos = 0; pos < (int)count ; ++pos) 
       {
-        double my_theta = ((nodes[pos].angle_q6_checkbit >> RPLIDAR_RESP_MEASUREMENT_ANGLE_SHIFT)/64.0f)*(2.0f*M_PI/360.0f) + m_theta_correction;
+        double my_theta = ((nodes[pos].angle_q6_checkbit >> RPLIDAR_RESP_MEASUREMENT_ANGLE_SHIFT)/64.0f)*(2.0f*M_PI/360.0f) + l_theta_correction;
         my_theta = -my_theta; /* FIXME : TODO : explication? (WTF?!) */
-        double my_R = nodes[pos].distance_q2/4.0f;
+        double my_R = l_rho_correction_factor * nodes[pos].distance_q2/4.0f;
 
         RobotState::instance().lock();
         int l_odo_x_mm         = RobotState::instance().s().x_mm;

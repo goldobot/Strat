@@ -135,7 +135,7 @@ int main(int argc, const char * argv[])
     return -1;
   }
 
-  if ((!autotest_flag) && (CommRplidar::instance().init(ci.conf_rplidar_dev_str, ci.conf_theta_correction_deg*M_PI/180.0f, ci.conf_rplidar_baudrate)!=0))
+  if ((!autotest_flag) && (CommRplidar::instance().init(ci.conf_rplidar_dev_str, ci.conf_rplidar_baudrate)!=0))
   {
     fprintf(stderr, "ERROR : cannot init the rplidar interface.\n");
     return -1;

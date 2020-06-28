@@ -9,9 +9,11 @@
 namespace goldobot
 {
 
-#define MAX_NB_OF_DETECTION_SLOTS 400
-#define MAX_NB_OF_DETECTED_ROBOTS 3
-#define OBSTACLE_SIZE_MM 80.0 
+  typedef struct _lidar_sample {
+    unsigned int timestamp_ms;
+    double x_mm;
+    double y_mm;
+  } lidar_sample_t;
 
   typedef struct _current_detection_slot {
     int nb_rplidar_samples;
@@ -35,7 +37,7 @@ namespace goldobot
 
     void clearSlots();
 
-    void processNewLidarSample(unsigned int ts_ms, double x_mm, double y_mm);
+    void recordNewLidarSample(unsigned int ts_ms, double x_mm, double y_mm);
 
     void updateDetection();
 
@@ -44,7 +46,16 @@ namespace goldobot
     detected_robot_info_t& detected_robot(int _obst_idx);
 
   private:
+    static constexpr int MAX_NB_OF_DETECTION_SLOTS = 400;
+    static constexpr int MAX_NB_OF_DETECTED_ROBOTS = 3;
+    static constexpr double OBSTACLE_SIZE_MM = 80.0;
+    static constexpr int MAX_NB_OF_CACHED_SAMPLES = 10000;
+
     unsigned int m_cur_ts_ms = 0;
+
+    lidar_sample_t m_sample_cache[MAX_NB_OF_CACHED_SAMPLES];
+
+    int m_last_free_cache;
 
     current_detection_slot_t m_detect_slot[MAX_NB_OF_DETECTION_SLOTS];
 

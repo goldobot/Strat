@@ -78,6 +78,10 @@ int LidarDetect::init()
 
   memcpy (m_detect_export, m_detect_t_0, sizeof(m_detect_t_0));
 
+  memset (m_sample_cache, 0, sizeof(m_sample_cache));
+
+  m_last_free_cache = 0;
+
   return 0;
 }
 
@@ -205,29 +209,17 @@ void LidarDetect::clearSlots()
 }
 
 
-void LidarDetect::processNewLidarSample(unsigned int ts_ms, double x_mm, double y_mm)
+void LidarDetect::recordNewLidarSample(unsigned int ts_ms, double x_mm, double y_mm)
 {
-  //printf ("  new(%f,%f)\n", x_mm, y_mm);
   m_cur_ts_ms = ts_ms;
 
-  for (int i=0; i<MAX_NB_OF_DETECTION_SLOTS; i++)
+  for (int i=0; i<MAX_NB_OF_CACHED_SAMPLES; i++)
   {
-    if (m_detect_slot[i].nb_rplidar_samples == 0)
+    if (m_sample_cache[i].timestamp_ms == 0)
     {
-      m_detect_slot[i].nb_rplidar_samples = 1;
-      m_detect_slot[i].timestamp_ms = ts_ms;
-      m_detect_slot[i].x_mm = x_mm;
-      m_detect_slot[i].y_mm = y_mm;
-      return;
-    }
-
-    if (dist(m_detect_slot[i].x_mm, m_detect_slot[i].y_mm, x_mm, y_mm) < OBSTACLE_SIZE_MM)
-    {
-      int n = m_detect_slot[i].nb_rplidar_samples;
-      m_detect_slot[i].nb_rplidar_samples++;
-      if (m_detect_slot[i].timestamp_ms < ts_ms) m_detect_slot[i].timestamp_ms = ts_ms;
-      m_detect_slot[i].x_mm = (x_mm + n*m_detect_slot[i].x_mm)/(n+1);
-      m_detect_slot[i].y_mm = (y_mm + n*m_detect_slot[i].y_mm)/(n+1);
+      m_sample_cache[i].timestamp_ms = ts_ms;
+      m_sample_cache[i].x_mm = x_mm;
+      m_sample_cache[i].y_mm = y_mm;
       return;
     }
   }
@@ -242,6 +234,49 @@ void LidarDetect::updateDetection()
   int second_pos=0;
   int third_samples=0;
   int third_pos=0;
+
+
+  goldo_conf_info_t& ci = GoldoConf::instance().c();
+  unsigned int lifetime_ms = ci.conf_rplidar_plot_lifetime_ms;
+
+  for (int j=0; j<MAX_NB_OF_CACHED_SAMPLES; j++)
+  {
+    if ((m_cur_ts_ms - m_sample_cache[j].timestamp_ms) > lifetime_ms)
+    {
+      m_sample_cache[j].timestamp_ms = 0;
+      m_sample_cache[j].x_mm = 0.0;
+      m_sample_cache[j].y_mm = 0.0;
+    }
+    else
+    {
+      unsigned int ts_ms = m_sample_cache[j].timestamp_ms;
+      double x_mm = m_sample_cache[j].x_mm;
+      double y_mm = m_sample_cache[j].y_mm;
+
+      for (int i=0; i<MAX_NB_OF_DETECTION_SLOTS; i++)
+      {
+        if (m_detect_slot[i].nb_rplidar_samples == 0)
+        {
+          m_detect_slot[i].nb_rplidar_samples = 1;
+          m_detect_slot[i].timestamp_ms = ts_ms;
+          m_detect_slot[i].x_mm = x_mm;
+          m_detect_slot[i].y_mm = y_mm;
+        }
+        else if (dist(m_detect_slot[i].x_mm,m_detect_slot[i].y_mm,x_mm,y_mm) 
+                 < OBSTACLE_SIZE_MM)
+        {
+          int n = m_detect_slot[i].nb_rplidar_samples;
+          m_detect_slot[i].nb_rplidar_samples++;
+          if (m_detect_slot[i].timestamp_ms < ts_ms) 
+            m_detect_slot[i].timestamp_ms = ts_ms;
+          m_detect_slot[i].x_mm = (x_mm + n*m_detect_slot[i].x_mm)/(n+1);
+          m_detect_slot[i].y_mm = (y_mm + n*m_detect_slot[i].y_mm)/(n+1);
+        }
+      }
+    }
+
+  } /* for (int j=0; j<MAX_NB_OF_CACHED_SAMPLES; j++) */
+
 
   for (int i=0; i<MAX_NB_OF_DETECTION_SLOTS; i++)
   {

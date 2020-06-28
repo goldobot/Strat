@@ -339,7 +339,7 @@ void CommRplidar::taskFunction()
         if ((my_abs_x >   100.0) && (my_abs_x < 1900.0) && 
             (my_abs_y > -1400.0) && (my_abs_y < 1400.0) && 
             (my_R > 100.0) ) {
-          LidarDetect::instance().processNewLidarSample(my_thread_time_ms, my_abs_x, my_abs_y);
+          LidarDetect::instance().recordNewLidarSample(my_thread_time_ms, my_abs_x, my_abs_y);
         }
       } /* for (int pos = 0; pos < (int)count ; ++pos) */
 

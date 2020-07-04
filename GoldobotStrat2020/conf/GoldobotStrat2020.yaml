@@ -1,7 +1,7 @@
 environment:
   conf_viewer_addr_str:          192.168.0.241
   conf_theta_correction_deg:     30.0
-  conf_rho_correction_factor:    1.05
+  conf_rho_correction_factor:    1.03
   conf_rplidar_plot_lifetime_ms: 300
   conf_rplidar_dev_str:          /dev/rplidar
   conf_rplidar_baudrate:         115200

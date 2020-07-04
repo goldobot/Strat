@@ -261,6 +261,7 @@ void LidarDetect::updateDetection()
           m_detect_slot[i].timestamp_ms = ts_ms;
           m_detect_slot[i].x_mm = x_mm;
           m_detect_slot[i].y_mm = y_mm;
+          break;
         }
         else if (dist(m_detect_slot[i].x_mm,m_detect_slot[i].y_mm,x_mm,y_mm) 
                  < OBSTACLE_SIZE_MM)
@@ -271,6 +272,7 @@ void LidarDetect::updateDetection()
             m_detect_slot[i].timestamp_ms = ts_ms;
           m_detect_slot[i].x_mm = (x_mm + n*m_detect_slot[i].x_mm)/(n+1);
           m_detect_slot[i].y_mm = (y_mm + n*m_detect_slot[i].y_mm)/(n+1);
+          break;
         }
       }
     }

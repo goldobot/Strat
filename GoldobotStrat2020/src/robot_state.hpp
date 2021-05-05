@@ -15,6 +15,8 @@ namespace goldobot
     double       speed_abs;
     bool         forward_move;
     unsigned int robot_sensors;
+    bool         strat_stop;
+    int          obstacle_plot_cnt;
   } robot_state_info_t;
 
   class RobotState : public GoldoThread

@@ -38,6 +38,9 @@ RobotState::RobotState()
 
   m_s.robot_sensors = 0;
 
+  m_s.strat_stop = false;
+  m_s.obstacle_plot_cnt = 0;
+
   pthread_mutex_init(&m_lock, NULL);
 }
 
@@ -53,6 +56,9 @@ int RobotState::init()
   m_s.forward_move = true;
 
   m_s.robot_sensors = GPIO_START_MASK;
+
+  m_s.strat_stop = false;
+  m_s.obstacle_plot_cnt = 0;
 
   pthread_mutex_init(&m_lock, NULL);
 
@@ -91,6 +97,9 @@ void RobotState::taskFunction()
 
   m_s.speed_abs = 0.0;
   m_s.forward_move = true;
+
+  m_s.strat_stop = false;
+  m_s.obstacle_plot_cnt = 0;
 
   l_dbg_thread_time_ms_old = 0;
   l_dbg_thread_time_ms_delta = 0;

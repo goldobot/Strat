@@ -266,6 +266,7 @@ void CommRplidar::taskFunction()
     }
 
     bool obstacle_detect = false;
+    int obstacle_plot_cnt = 0;
 
     rplidar_response_measurement_node_t nodes[M_NB_POINTS];
     size_t count = _countof(nodes);
@@ -327,7 +328,10 @@ void CommRplidar::taskFunction()
           if ((my_abs_x >   100.0) && (my_abs_x < 1400.0) && 
               (my_abs_y > -1400.0) && (my_abs_y < 1400.0)) 
           {
-            obstacle_detect = true;
+            if ((l_odo_y_mm>-1300) && (l_odo_y_mm<1300))
+            {
+              obstacle_plot_cnt++;
+            }
           }
         }
 
@@ -342,6 +346,15 @@ void CommRplidar::taskFunction()
           LidarDetect::instance().recordNewLidarSample(my_thread_time_ms, my_abs_x, my_abs_y);
         }
       } /* for (int pos = 0; pos < (int)count ; ++pos) */
+
+      if (obstacle_plot_cnt>10)
+      {
+        obstacle_detect = true;
+      }
+
+      RobotState::instance().lock();
+      RobotState::instance().s().obstacle_plot_cnt = obstacle_plot_cnt;
+      RobotState::instance().release();
 
       LidarDetect::instance().updateDetection();
 
@@ -382,6 +395,9 @@ void set_obstacle_gpio(bool obstacle_detect)
   if (goldo_detect_fd<0) {
     printf ("error opening gpio\n");
     return;
+  }
+  if (RobotState::instance().s().strat_stop) {
+    obstacle_detect = true;
   }
   if (obstacle_detect)
     write_buf[0] = '1'; 

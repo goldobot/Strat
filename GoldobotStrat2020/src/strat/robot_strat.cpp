@@ -167,6 +167,8 @@ void RobotStrat::taskFunction()
   unsigned int soft_deadline_ms = 0;
   unsigned int hard_deadline_ms = 0;
   strat_action_t *my_action = NULL;
+  unsigned int match_start_ms = 0;
+  bool match_funny_done = false;
 
   m_task_running = true;
 
@@ -181,6 +183,11 @@ void RobotStrat::taskFunction()
   /* FIXME : DEBUG */
   //m_dbg_step_by_step = true;
 
+  int log_lidar_fd;
+  char log_lidar_write_buf[64];
+  /* FIXME : TODO : refactor */
+  log_lidar_fd = open ("/home/pi/goldo/strat2020/log/log_lidar.txt", O_RDWR);
+
   while(!m_stop_task)
   {
     struct timespec my_tp;
@@ -189,6 +196,26 @@ void RobotStrat::taskFunction()
 
     clock_gettime(1, &my_tp);
     my_time_ms = my_tp.tv_sec*1000 + my_tp.tv_nsec/1000000;
+
+    if (!m_dbg_step_by_step)
+    {
+      if ((!match_funny_done) && (match_start_ms!=0) && (my_time_ms>(match_start_ms+95000)))
+      {
+        cmd_nucleo_seq (9);
+        match_funny_done = true;
+      }
+
+      if ((match_start_ms!=0) && (my_time_ms>(match_start_ms+100000)))
+      {
+        RobotState::instance().s().strat_stop = true;
+      }
+    }
+
+    if ((match_start_ms!=0) && (my_time_ms<(match_start_ms+100000)))
+    {
+      sprintf (log_lidar_write_buf,"%d %d\n",my_time_ms-match_start_ms,RobotState::instance().s().obstacle_plot_cnt);
+      write (log_lidar_fd,log_lidar_write_buf,strlen(log_lidar_write_buf));
+    }
 
     if (RobotState::instance().emergency_stop() && 
         (m_strat_state!=STRAT_STATE_EMERGENCY_STOP))
@@ -215,6 +242,8 @@ void RobotStrat::taskFunction()
 
       if ((!RobotState::instance().tirette_present()) || m_start_match_sig)
       {
+	match_start_ms = my_time_ms;
+
         printf ("\n DEBUG : GO!..\n\n");
 
         /* FIXME : TODO : necessary? */
@@ -402,6 +431,13 @@ void RobotStrat::taskFunction()
           m_path_find_pg.create_playground_ppm();
           m_path_find_pg.dump_playground_ppm(m_dbg_fname);
           m_path_find_pg.send_playground_ppm();
+          if (action_ok)
+          {
+            soft_deadline_ms = my_time_ms + my_action->h.min_duration_ms;
+            hard_deadline_ms = my_time_ms + my_action->h.max_duration_ms;
+            /* FIXME : TODO : configuration for speed, acc and dec.. */
+            cmd_point_to (&(act_ast->wp[1]), 3.5, 10.0, 10.0);
+          }
         }
         break;
       default:
@@ -417,13 +453,62 @@ void RobotStrat::taskFunction()
         }
         else
         {
-          m_strat_state = STRAT_STATE_EXEC_ACTION_DBG;
+          m_strat_state = STRAT_STATE_WAIT_END_INIT_DBG;
         }
         state_change_dbg = true;
       }
       else
       {
         m_strat_state = STRAT_STATE_END_ACTION_DBG;
+        state_change_dbg = true;
+      }
+
+      break;
+
+    case STRAT_STATE_WAIT_END_INIT_DBG:
+      if (state_change_dbg)
+      {
+        printf ("\n");
+        printf ("****************************************\n");
+        printf ("* STRAT_STATE_WAIT_END_INIT_DBG ********\n");
+        printf ("****************************************\n");
+        printf ("\n");
+        state_change_dbg = false;
+      }
+
+      if (my_action->h.type!=STRAT_ACTION_TYPE_GOTO_ASTAR)
+      {
+        printf ("\n");
+        printf (" No prep action. SKIPPING init wait state.\n");
+        m_strat_state = STRAT_STATE_EXEC_ACTION_DBG;
+        state_change_dbg = true;
+      }
+
+      if (my_time_ms > soft_deadline_ms)
+      {
+        if (my_time_ms < (soft_deadline_ms+20)) printf (".");
+        /* FIXME : TODO : add completion test for actuators */
+        if (!RobotState::instance().propulsion_busy())
+        {
+          printf ("\n");
+          printf (" Init DONE\n");
+          m_strat_state = STRAT_STATE_EXEC_ACTION_DBG;
+          state_change_dbg = true;
+        }
+        /* FIXME : TODO : error management */
+        else if (RobotState::instance().propulsion_error())
+        {
+          printf ("\n");
+          printf (" Propulsion ERROR\n");
+          m_strat_state = STRAT_STATE_IDDLE;
+          state_change_dbg = true;
+        }
+      }
+
+      if (my_time_ms > hard_deadline_ms)
+      {
+        printf ("\n");
+        m_strat_state = STRAT_STATE_EXEC_ACTION_DBG;
         state_change_dbg = true;
       }
 
@@ -600,7 +685,7 @@ void RobotStrat::taskFunction()
       if (m_dbg_resume_match_sig)
       {
         m_dbg_resume_match_sig = false;
-        m_strat_state = STRAT_STATE_EXEC_ACTION_DBG;
+        m_strat_state = STRAT_STATE_WAIT_END_INIT_DBG;
         state_change_dbg = true;
       }
       break;
@@ -655,6 +740,8 @@ void RobotStrat::taskFunction()
     sched_yield();
 #endif
   } /* while(!m_stop_task) */
+
+  close (log_lidar_fd);
 
   m_task_running = false;
 }

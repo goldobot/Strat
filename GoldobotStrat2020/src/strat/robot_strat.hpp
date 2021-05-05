@@ -24,6 +24,8 @@ namespace goldobot
 
     int init(char *strat_file_name);
 
+    void set_debug(bool debug_flag);
+
     int read_yaml_conf (char *strat_file_name);
 
     virtual void taskFunction();

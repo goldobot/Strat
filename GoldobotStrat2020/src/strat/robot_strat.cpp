@@ -127,6 +127,11 @@ int RobotStrat::init(char *strat_file_name)
   return 0;
 }
 
+void RobotStrat::set_debug(bool debug_flag)
+{
+  m_dbg_step_by_step = debug_flag;
+}
+
 int RobotStrat::read_yaml_conf(char *fname)
 {
   std::ifstream fin;
@@ -382,6 +387,7 @@ void RobotStrat::taskFunction()
             }
           }
           int wp_idx = 0;
+          bool start_of_path = true;
           path = m_core_astar.getPath(AStarPathType::smooth);
           if(path.size() > 0)
           {
@@ -394,6 +400,7 @@ void RobotStrat::taskFunction()
               wp_idx++;
               act_ast->nwp = wp_idx;
               printf ("<%d,%d>\n",x_wp_mm,y_wp_mm);
+              start_of_path = false;
             }
             list<pair<UINT, UINT>>::iterator pathIt;
             for (pathIt = path.begin(); pathIt != path.end(); pathIt++)
@@ -407,6 +414,22 @@ void RobotStrat::taskFunction()
                 m_path_find_pg.PATH_WP;
               x_wp_mm = x_wp*10;
               y_wp_mm = y_wp*10;
+              if (start_of_path)
+              {
+                int x_start_mm = RobotState::instance().s().x_mm;
+                int y_start_mm = RobotState::instance().s().y_mm;
+
+                if (goldo_dist(x_start_mm, y_start_mm, x_wp_mm, y_wp_mm)>1.0)
+                {
+                  /* ASSERT(wp_idx==0) */
+                  act_ast->wp[wp_idx].x_mm = x_start_mm;
+                  act_ast->wp[wp_idx].y_mm = y_start_mm;
+                  wp_idx++;
+                  act_ast->nwp = wp_idx;
+                  printf ("<%d,%d>\n",x_start_mm,y_start_mm);
+                }
+              }
+              start_of_path = false;
               if ((unsigned int)wp_idx<_countof(act_ast->wp))
               {
                 act_ast->wp[wp_idx].x_mm = x_wp_mm;

@@ -19,15 +19,19 @@ namespace goldobot
     STRAT_ACTION_TYPE_TRAJ,
     STRAT_ACTION_TYPE_POINT_TO,
 
-    /* FIXME : TODO */
-
     STRAT_ACTION_TYPE_NUCLEO_SEQ = 16,
 
     STRAT_ACTION_TYPE_GOTO_ASTAR = 32,
+
+    STRAT_ACTION_TYPE_BRANCH = 64,
+
+    /* FIXME : TODO : add other types */
+
   } strat_action_type_t;
 
   typedef struct _strat_action_header {
     strat_action_type_t type;
+    char label[32];
     int min_duration_ms;
     int max_duration_ms;
   } strat_action_header_t;

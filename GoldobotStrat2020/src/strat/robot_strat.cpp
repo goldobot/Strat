@@ -21,6 +21,9 @@
 #include "strat/robot_strat_base.hpp"
 #include "strat/robot_strat.hpp"
 
+/* imported from Nucleo project (Carte_GR_SW4STM32) */
+#include "message_types.hpp"
+
 
 using namespace goldobot;
 
@@ -213,6 +216,9 @@ void RobotStrat::taskFunction()
       if ((match_start_ms!=0) && (my_time_ms>(match_start_ms+100000)))
       {
         RobotState::instance().s().strat_stop = true;
+        cmd_emergency_stop();
+        m_strat_state = STRAT_STATE_IDDLE;
+        state_change_dbg = true;
       }
     }
 
@@ -226,6 +232,7 @@ void RobotStrat::taskFunction()
         (m_strat_state!=STRAT_STATE_EMERGENCY_STOP))
     {
       printf ("EMERGENCY_STOP!\n");
+      hard_deadline_ms = my_time_ms + 100; /* FIXME : TODO : configuration.. */
       m_strat_state = STRAT_STATE_EMERGENCY_STOP;
       state_change_dbg = true;
     }
@@ -252,7 +259,7 @@ void RobotStrat::taskFunction()
 
       if ((!RobotState::instance().tirette_present()) || m_start_match_sig)
       {
-	match_start_ms = my_time_ms;
+        match_start_ms = my_time_ms;
 
         printf ("\n DEBUG : GO!..\n\n");
 
@@ -361,32 +368,8 @@ void RobotStrat::taskFunction()
 
       if (my_action->h.type==STRAT_ACTION_TYPE_GOTO_ASTAR)
       {
-        if (my_time_ms > soft_deadline_ms)
-        {
-          if (my_time_ms < (soft_deadline_ms+20)) printf (".");
-          /* FIXME : TODO : add completion test for actuators */
-          if (!RobotState::instance().propulsion_busy())
-          {
-            printf ("\n");
-            printf (" Init DONE\n");
-            m_strat_state = STRAT_STATE_EXEC_ACTION;
-            state_change_dbg = true;
-          }
-          /* FIXME : TODO : error management */
-          else if (RobotState::instance().propulsion_error())
-          {
-            printf ("\n");
-            printf (" Propulsion ERROR\n");
-            m_strat_state = STRAT_STATE_IDDLE;
-            state_change_dbg = true;
-          }
-        }
-        if (my_time_ms > hard_deadline_ms)
-        {
-          printf ("\n");
-          m_strat_state = STRAT_STATE_EXEC_ACTION;
-          state_change_dbg = true;
-        }
+        state_change_dbg = check_deadlines_and_change_state(
+          my_time_ms, soft_deadline_ms, hard_deadline_ms, STRAT_STATE_EXEC_ACTION);
       }
       else
       {
@@ -430,33 +413,8 @@ void RobotStrat::taskFunction()
         state_change_dbg = false;
       }
 
-      if (my_time_ms > soft_deadline_ms)
-      {
-        if (my_time_ms < (soft_deadline_ms+20)) printf (".");
-        /* FIXME : TODO : add completion test for actuators */
-        if (!RobotState::instance().propulsion_busy())
-        {
-          printf ("\n");
-          printf (" Action DONE\n");
-          m_strat_state = STRAT_STATE_END_ACTION;
-          state_change_dbg = true;
-        }
-        /* FIXME : TODO : error management */
-        else if (RobotState::instance().propulsion_error())
-        {
-          printf ("\n");
-          printf (" Propulsion ERROR\n");
-          m_strat_state = STRAT_STATE_IDDLE;
-          state_change_dbg = true;
-        }
-      }
-
-      if (my_time_ms > hard_deadline_ms)
-      {
-        printf ("\n");
-        m_strat_state = STRAT_STATE_END_ACTION;
-        state_change_dbg = true;
-      }
+      state_change_dbg = check_deadlines_and_change_state(
+        my_time_ms, soft_deadline_ms, hard_deadline_ms, STRAT_STATE_END_ACTION);
 
       break;
 
@@ -550,6 +508,7 @@ void RobotStrat::taskFunction()
       }
 
       /* FIXME : TODO */
+
       break;
 
     case STRAT_STATE_EMERGENCY_STOP:
@@ -563,7 +522,63 @@ void RobotStrat::taskFunction()
         state_change_dbg = false;
       }
 
-      /* FIXME : TODO */
+      if (my_time_ms > hard_deadline_ms)
+      {
+        printf ("\n");
+        cmd_clear_prop_err();
+        /* FIXME : TODO : is this necessary? */
+        RobotState::instance().set_obstacle_gpio(false);
+        auto move_away_action = prepare_STRAT_STATE_EMERGENCY_MOVE_AWAY();
+        do_STRAT_STATE_INIT_ACTION(move_away_action);
+        do_STRAT_STATE_EXEC_ACTION(move_away_action);
+        soft_deadline_ms = my_time_ms + move_away_action->h.min_duration_ms;
+        hard_deadline_ms = my_time_ms + move_away_action->h.max_duration_ms;
+        m_strat_state = STRAT_STATE_EMERGENCY_MOVE_AWAY;
+        state_change_dbg = true;
+      }
+
+      break;
+
+    case STRAT_STATE_EMERGENCY_MOVE_AWAY:
+      if (state_change_dbg)
+      {
+        printf ("\n");
+        printf ("****************************************\n");
+        printf ("* STRAT_STATE_EMERGENCY_MOVE_AWAY ******\n");
+        printf ("****************************************\n");
+        printf ("\n");
+        state_change_dbg = false;
+      }
+
+#if 0 /* FIXME : DEBUG */
+      state_change_dbg = check_deadlines_and_change_state(
+        my_time_ms, soft_deadline_ms, hard_deadline_ms, STRAT_STATE_EMERGENCY_ESCAPE);
+      if (state_change_dbg)
+      {
+        auto escape_action = prepare_STRAT_STATE_EMERGENCY_ESCAPE();
+        soft_deadline_ms = my_time_ms + escape_action->h.min_duration_ms;
+        hard_deadline_ms = my_time_ms + escape_action->h.max_duration_ms;
+      }
+#else
+      state_change_dbg = check_deadlines_and_change_state(
+        my_time_ms, soft_deadline_ms, hard_deadline_ms, STRAT_STATE_IDDLE);
+#endif
+
+      break;
+
+    case STRAT_STATE_EMERGENCY_ESCAPE:
+      if (state_change_dbg)
+      {
+        printf ("\n");
+        printf ("****************************************\n");
+        printf ("* STRAT_STATE_IDDLE ********************\n");
+        printf ("****************************************\n");
+        printf ("\n");
+        state_change_dbg = false;
+      }
+
+      state_change_dbg = check_deadlines_and_change_state(
+        my_time_ms, soft_deadline_ms, hard_deadline_ms, STRAT_STATE_END_ACTION);
 
       break;
 
@@ -595,6 +610,42 @@ void RobotStrat::taskFunction()
   m_task_running = false;
 }
 
+bool RobotStrat::check_deadlines_and_change_state(unsigned int my_time_ms,
+                                                  unsigned int soft_deadline_ms,
+                                                  unsigned int hard_deadline_ms,
+                                                  strat_state_t new_strat_state)
+{
+  bool state_changed = false;
+
+  if (my_time_ms > soft_deadline_ms)
+  {
+    if (my_time_ms < (soft_deadline_ms+20)) printf (".");
+    /* FIXME : TODO : add completion test for actuators */
+    if (!RobotState::instance().propulsion_busy())
+    {
+      printf ("\n");
+      printf (" Init DONE\n");
+      m_strat_state = new_strat_state;
+      state_changed = true;
+    }
+    /* FIXME : TODO : error management */
+    else if (RobotState::instance().propulsion_error())
+    {
+      printf ("\n");
+      printf (" Propulsion ERROR\n");
+      m_strat_state = STRAT_STATE_IDDLE;
+      state_changed = true;
+    }
+  }
+  if (my_time_ms > hard_deadline_ms)
+  {
+    printf ("\n");
+    m_strat_state = new_strat_state;
+    state_changed = true;
+  }
+
+  return state_changed;
+}
 
 bool RobotStrat::do_STRAT_STATE_INIT_ACTION(strat_action_t *my_action)
 {
@@ -794,6 +845,79 @@ void RobotStrat::do_STRAT_STATE_EXEC_ACTION(strat_action_t *my_action)
   } /* switch (my_action->h.type) */
 }
 
+strat_action_t * RobotStrat::prepare_STRAT_STATE_EMERGENCY_MOVE_AWAY()
+{
+  double my_x_mm = RobotState::instance().s().x_mm;
+  double my_y_mm = RobotState::instance().s().y_mm;
+  WorldState::instance().lock();
+  detected_robot_info_t& o0 = 
+    WorldState::instance().detected_robot(0);
+  detected_robot_info_t& o1 = 
+    WorldState::instance().detected_robot(1);
+  detected_robot_info_t& o2 = 
+    WorldState::instance().detected_robot(2);
+  WorldState::instance().release();
+  double d_obst = 3000.0;
+  double d0_mm = goldo_dist(my_x_mm, my_y_mm, o0.x_mm, o0.y_mm);
+  double d1_mm = goldo_dist(my_x_mm, my_y_mm, o1.x_mm, o1.y_mm);
+  double d2_mm = goldo_dist(my_x_mm, my_y_mm, o2.x_mm, o2.y_mm);
+
+  detected_robot_info_t* obst = NULL;
+  if (d0_mm<d_obst)
+  {
+    d_obst = d0_mm;
+    obst = &o0;
+  }
+  if (d1_mm<d_obst)
+  {
+    d_obst = d1_mm;
+    obst = &o1;
+  }
+  if (d2_mm<d_obst)
+  {
+    d_obst = d2_mm;
+    obst = &o2;
+  }
+
+  if (obst==NULL)
+  {
+    strat_action_wait_t *act_wait = (strat_action_wait_t *)m_task_dbg->m_emergency_action_buf;
+    memset (act_wait, 0, sizeof(strat_action_wait_t));
+    act_wait->h.type = STRAT_ACTION_TYPE_WAIT;
+    act_wait->h.min_duration_ms = 200;
+    act_wait->h.max_duration_ms = 1000;
+    return (strat_action_t *) act_wait;
+  }
+
+  double move_away_x_mm = my_x_mm + 200.0*(my_x_mm - obst->x_mm)/d_obst;
+  double move_away_y_mm = my_y_mm + 200.0*(my_y_mm - obst->y_mm)/d_obst;
+
+  printf ("Obstacle detected at <%f,%f>\n", obst->x_mm, obst->y_mm);
+  printf ("Moving away to <%f,%f>\n", move_away_x_mm, move_away_y_mm);
+
+  strat_action_traj_t *act_move_away = (strat_action_traj_t *)m_task_dbg->m_emergency_action_buf;
+  memset (act_move_away, 0, sizeof(strat_action_traj_t));
+  act_move_away->h.type = STRAT_ACTION_TYPE_TRAJ;
+  act_move_away->h.min_duration_ms = 200;
+  act_move_away->h.max_duration_ms = 4000;
+  act_move_away->speed = 0.4;
+  act_move_away->accel = 0.4;
+  act_move_away->deccel = 0.4;
+  act_move_away->nwp = 2;
+  act_move_away->wp[0].x_mm = my_x_mm;
+  act_move_away->wp[0].y_mm = my_y_mm;
+  act_move_away->wp[1].x_mm = move_away_x_mm;
+  act_move_away->wp[1].y_mm = move_away_y_mm;
+
+  return (strat_action_t *) act_move_away;
+}
+
+strat_action_t * RobotStrat::prepare_STRAT_STATE_EMERGENCY_ESCAPE()
+{
+  /* FIXME : TODO */
+  return NULL;
+}
+
 
 void RobotStrat::start_match()
 {
@@ -818,15 +942,14 @@ void RobotStrat::dbg_resume_match()
 
 int RobotStrat::cmd_traj(strat_way_point_t *_wp, int _nwp, float speed, float accel, float deccel)
 {
-  /* FIXME : TODO : use defines.. */
-  unsigned short int cmd_traj_code = 0x0055; /*DbgPropulsionExecuteTrajectory*/
+  unsigned short int cmd_code = (unsigned short int ) goldobot::CommMessageType::PropulsionExecuteTrajectory;
 
   unsigned char *_pc = m_nucleo_cmd_buf;
   int cmd_buf_len = 0;
   int field_len = 0;
 
   field_len = sizeof(unsigned short int);
-  memcpy (_pc, (unsigned char *)&cmd_traj_code, field_len);
+  memcpy (_pc, (unsigned char *)&cmd_code, field_len);
   _pc += field_len;
   cmd_buf_len += field_len;
 
@@ -868,8 +991,7 @@ int RobotStrat::cmd_traj(strat_way_point_t *_wp, int _nwp, float speed, float ac
 
 int RobotStrat::cmd_point_to(strat_way_point_t *_wp, float speed, float accel, float deccel)
 {
-  /* FIXME : TODO : use defines.. */
-  unsigned short int cmd_traj_code = 0x0058; /*DbgPropulsionExecutePointTo*/
+  unsigned short int cmd_code = (unsigned short int ) goldobot::CommMessageType::PropulsionExecutePointTo;
 
   unsigned char *_pc = m_nucleo_cmd_buf;
   int cmd_buf_len = 0;
@@ -879,7 +1001,7 @@ int RobotStrat::cmd_point_to(strat_way_point_t *_wp, float speed, float accel, f
   float my_y = _wp->y_mm*0.001;
 
   field_len = sizeof(unsigned short int);
-  memcpy (_pc, (unsigned char *)&cmd_traj_code, field_len);
+  memcpy (_pc, (unsigned char *)&cmd_code, field_len);
   _pc += field_len;
   cmd_buf_len += field_len;
 
@@ -915,8 +1037,7 @@ int RobotStrat::cmd_point_to(strat_way_point_t *_wp, float speed, float accel, f
 
 int RobotStrat::cmd_set_pose(float x_mm, float y_mm, float theta_deg)
 {
-  /* FIXME : TODO : use defines.. */
-  unsigned short int cmd_traj_code = 0x0053; /*DbgPropulsionSetPose*/
+  unsigned short int cmd_code = (unsigned short int ) goldobot::CommMessageType::PropulsionSetPose;
 
   unsigned char *_pc = m_nucleo_cmd_buf;
   int cmd_buf_len = 0;
@@ -927,7 +1048,7 @@ int RobotStrat::cmd_set_pose(float x_mm, float y_mm, float theta_deg)
   float my_theta = theta_deg*M_PI/180.0;
 
   field_len = sizeof(unsigned short int);
-  memcpy (_pc, (unsigned char *)&cmd_traj_code, field_len);
+  memcpy (_pc, (unsigned char *)&cmd_code, field_len);
   _pc += field_len;
   cmd_buf_len += field_len;
 
@@ -953,8 +1074,7 @@ int RobotStrat::cmd_set_pose(float x_mm, float y_mm, float theta_deg)
 
 int RobotStrat::cmd_nucleo_seq (unsigned int seq_id)
 {
-  /* FIXME : TODO : use defines.. */
-  unsigned short int cmd_traj_code = 0x002b; /*MainSequenceStartSequence*/
+  unsigned short int cmd_code = (unsigned short int ) goldobot::CommMessageType::MainSequenceStartSequence;
 
   unsigned char *_pc = m_nucleo_cmd_buf;
   int cmd_buf_len = 0;
@@ -962,7 +1082,7 @@ int RobotStrat::cmd_nucleo_seq (unsigned int seq_id)
   unsigned short seq_id_s = (unsigned short) seq_id;
 
   field_len = sizeof(unsigned short int);
-  memcpy (_pc, (unsigned char *)&cmd_traj_code, field_len);
+  memcpy (_pc, (unsigned char *)&cmd_code, field_len);
   _pc += field_len;
   cmd_buf_len += field_len;
 
@@ -978,15 +1098,32 @@ int RobotStrat::cmd_nucleo_seq (unsigned int seq_id)
 
 int RobotStrat::cmd_clear_prop_err()
 {
-  /* FIXME : TODO : use defines.. */
-  unsigned short int cmd_traj_code = 0x0063; /*PropulsionClearError*/
+  unsigned short int cmd_code = (unsigned short int ) goldobot::CommMessageType::PropulsionClearError;
 
   unsigned char *_pc = m_nucleo_cmd_buf;
   int cmd_buf_len = 0;
   int field_len = 0;
 
   field_len = sizeof(unsigned short int);
-  memcpy (_pc, (unsigned char *)&cmd_traj_code, field_len);
+  memcpy (_pc, (unsigned char *)&cmd_code, field_len);
+  _pc += field_len;
+  cmd_buf_len += field_len;
+
+  DirectUartNucleo::instance().send(m_nucleo_cmd_buf, cmd_buf_len);
+
+  return 0;
+}
+
+int RobotStrat::cmd_emergency_stop()
+{
+  unsigned short int cmd_code = (unsigned short int ) goldobot::CommMessageType::CmdEmergencyStop;
+
+  unsigned char *_pc = m_nucleo_cmd_buf;
+  int cmd_buf_len = 0;
+  int field_len = 0;
+
+  field_len = sizeof(unsigned short int);
+  memcpy (_pc, (unsigned char *)&cmd_code, field_len);
   _pc += field_len;
   cmd_buf_len += field_len;
 

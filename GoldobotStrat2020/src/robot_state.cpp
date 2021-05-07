@@ -281,3 +281,25 @@ void RobotState::release()
   pthread_mutex_unlock(&m_lock);
 }
 
+void RobotState::set_obstacle_gpio(bool obstacle_detect)
+{
+  int goldo_detect_fd;
+  char write_buf[8];
+  int res;
+  goldo_detect_fd = open ("/sys/class/gpio/gpio21/value", O_RDWR);
+  if (goldo_detect_fd<0) {
+    printf ("error opening gpio\n");
+    return;
+  }
+  if (obstacle_detect)
+    write_buf[0] = '1'; 
+  else 
+    write_buf[0] = '0';
+  write_buf[1] = '\0';
+  res = write (goldo_detect_fd,write_buf,1);
+  if (res<0) {
+    printf ("error writting gpio value\n");
+  }
+  close (goldo_detect_fd);
+}
+

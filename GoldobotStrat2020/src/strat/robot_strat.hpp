@@ -52,7 +52,6 @@ namespace goldobot
       /* global states */
       STRAT_STATE_INIT = 0,
       STRAT_STATE_IDDLE,
-      STRAT_STATE_EMERGENCY_STOP,
 
       /* task management (complex tasks) */
       /* FIXME : TODO */
@@ -67,6 +66,12 @@ namespace goldobot
       STRAT_STATE_WAIT_END_ACTION,
       STRAT_STATE_END_ACTION,
 
+      /* emergency states */
+      STRAT_STATE_EMERGENCY_STOP,
+      STRAT_STATE_EMERGENCY_MOVE_AWAY,
+      STRAT_STATE_EMERGENCY_RECOVER_ACTION,
+      STRAT_STATE_EMERGENCY_ESCAPE,
+
       /* debug states */
       STRAT_STATE_PAUSE_DBG = 128,
       STRAT_STATE_PAUSE2_DBG,
@@ -74,9 +79,18 @@ namespace goldobot
 
   private:
 
+    bool check_deadlines_and_change_state(unsigned int my_time_ms,
+                                          unsigned int soft_deadline_ms,
+                                          unsigned int hard_deadline_ms,
+                                          strat_state_t new_strat_state);
+
     bool do_STRAT_STATE_INIT_ACTION(strat_action_t *_act);
 
     void do_STRAT_STATE_EXEC_ACTION(strat_action_t *_act);
+
+    strat_action_t * prepare_STRAT_STATE_EMERGENCY_MOVE_AWAY();
+
+    strat_action_t * prepare_STRAT_STATE_EMERGENCY_ESCAPE();
 
     int cmd_traj (strat_way_point_t *_wp, int _nwp, float speed, float accel, float deccel);
 
@@ -88,7 +102,7 @@ namespace goldobot
 
     int cmd_clear_prop_err ();
 
-    /* FIXME : TODO */
+    int cmd_emergency_stop ();
 
     char m_strat_file_name[40];
 

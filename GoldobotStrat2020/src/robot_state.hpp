@@ -71,6 +71,9 @@ namespace goldobot
     static const unsigned int FLAG_PROPULSION_BUSY_MASK    = 0x00010000;
     static const unsigned int FLAG_PROPULSION_ERROR_MASK   = 0x00020000;
 
+#if 1 /* FIXME : TODO : where to move this? */ 
+    void set_obstacle_gpio(bool obstacle_detect);
+#endif
   private:
     robot_state_info_t m_s;
 

@@ -35,6 +35,7 @@ StratTask::StratTask()
   m_curr_act_idx = 0;
   memset (m_action_list, 0, sizeof(m_action_list));
   memset (m_action_buf, 0, sizeof(m_action_buf));
+  memset (m_emergency_action_buf, 0, sizeof(m_emergency_action_buf));
   m_priority = 0;
   m_started = false;
   m_completed = false;
@@ -105,6 +106,8 @@ int StratTask::read_yaml_conf(YAML::Node &yconf)
 
   memset (m_action_buf, 0, sizeof(m_action_buf));
 
+  memset (m_emergency_action_buf, 0, sizeof(m_emergency_action_buf));
+
   m_priority = 0;
 
   m_started = false;
@@ -118,6 +121,26 @@ int StratTask::read_yaml_conf(YAML::Node &yconf)
     YAML::Node act_node = yconf["actions"][i];
     const char *act_type_str = act_node["type"].as<std::string>().c_str();
     const char *my_str = NULL;
+
+    if (i==0)
+    {
+      strat_action_t *action = (strat_action_t *) curr_act_p;
+      strncpy(action->h.label, "START", sizeof (action->h.label)-1);
+    }
+    else
+    {
+      strat_action_t *action = (strat_action_t *) curr_act_p;
+      YAML::Node label_node = act_node["label"];
+      if (label_node) 
+      {
+        strncpy(action->h.label, label_node.as<std::string>().c_str(), 
+                sizeof (action->h.label)-1);
+      }
+      else
+      {
+        memset (action->h.label, 0, sizeof(action->h.label));
+      }
+    }
 
     if (strcmp(act_type_str,"WAIT")==0)
     {
@@ -542,6 +565,7 @@ void StratTask::dbg_dump_task()
   {
     strat_action_t *act = m_action_list[i];
     printf ("  - # action %d:\n", i);
+    printf ("    label: %s\n", act->h.label);
     printf ("    min_duration_ms: %d\n", act->h.min_duration_ms);
     printf ("    max_duration_ms: %d\n", act->h.max_duration_ms);
     switch (act->h.type) {

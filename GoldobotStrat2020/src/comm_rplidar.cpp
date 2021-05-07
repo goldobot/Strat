@@ -25,11 +25,6 @@ using namespace goldobot;
 
 using namespace rp::standalone::rplidar;
 
-bool checkRPLIDARHealth(RPlidarDriver * drv);
-#if 1 /* FIXME : DEBUG : HACK GOLDO : minimalist obstacle detection */ 
-void set_obstacle_gpio(bool obstacle_detect);
-#endif
-
 
 CommRplidar CommRplidar::s_instance;
 
@@ -362,11 +357,9 @@ void CommRplidar::taskFunction()
 
       send_to_viewer();
 
-#if 1 /* FIXME : DEBUG : HACK GOLDO : minimalist obstacle detection */ 
-      set_obstacle_gpio(obstacle_detect);
-#endif
-
     } /* if (IS_OK(op_result = m_drv->grabScanData(nodes, count))) */
+
+    RobotState::instance().set_obstacle_gpio(obstacle_detect);
 
 #ifndef WIN32
     pthread_yield();
@@ -384,36 +377,7 @@ on_finished:
   m_task_running = false;
 }
 
-
-#if 1 /* FIXME : DEBUG : HACK GOLDO : minimalist obstacle detection */ 
-void set_obstacle_gpio(bool obstacle_detect)
-{
-  int goldo_detect_fd;
-  char write_buf[8];
-  int res;
-  goldo_detect_fd = open ("/sys/class/gpio/gpio21/value", O_RDWR);
-  if (goldo_detect_fd<0) {
-    printf ("error opening gpio\n");
-    return;
-  }
-  if (RobotState::instance().s().strat_stop) {
-    obstacle_detect = true;
-  }
-  if (obstacle_detect)
-    write_buf[0] = '1'; 
-  else 
-    write_buf[0] = '0';
-  write_buf[1] = '\0';
-  res = write (goldo_detect_fd,write_buf,1);
-  if (res<0) {
-    printf ("error writting gpio value\n");
-  }
-  close (goldo_detect_fd);
-}
-#endif
-
-/* FIXME : TODO : horrible!.. */
-bool checkRPLIDARHealth(RPlidarDriver * drv)
+bool CommRplidar::checkRPLIDARHealth(RPlidarDriver * drv)
 {
   u_result     op_result;
   rplidar_response_device_health_t healthinfo;

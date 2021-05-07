@@ -90,6 +90,7 @@ namespace goldobot
     int m_n_actions;
     strat_action_t *m_action_list[128];
     unsigned char m_action_buf[16384];
+    unsigned char m_emergency_action_buf[4096];
     int m_priority;
     bool m_started;
     bool m_completed;

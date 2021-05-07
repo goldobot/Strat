@@ -42,6 +42,8 @@ namespace goldobot
     void stop_scan();
 
   private:
+    static bool checkRPLIDARHealth(RPlidarDriver * drv);
+
     bool m_scanning = false;
 
     static const int M_NB_POINTS = 720;

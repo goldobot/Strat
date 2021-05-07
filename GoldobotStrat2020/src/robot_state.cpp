@@ -41,6 +41,10 @@ RobotState::RobotState()
   m_s.strat_stop = false;
   m_s.obstacle_plot_cnt = 0;
 
+#if 1 /* FIXME : DEBUG : EXPERIMENTAL */
+  m_lidar_detection_enabled=true;
+#endif
+
   pthread_mutex_init(&m_lock, NULL);
 }
 
@@ -59,6 +63,10 @@ int RobotState::init()
 
   m_s.strat_stop = false;
   m_s.obstacle_plot_cnt = 0;
+
+#if 1 /* FIXME : DEBUG : EXPERIMENTAL */
+  m_lidar_detection_enabled=true;
+#endif
 
   pthread_mutex_init(&m_lock, NULL);
 
@@ -286,6 +294,11 @@ void RobotState::set_obstacle_gpio(bool obstacle_detect)
   int goldo_detect_fd;
   char write_buf[8];
   int res;
+
+#if 1 /* FIXME : DEBUG : EXPERIMENTAL */
+  if (!m_lidar_detection_enabled) obstacle_detect=false;
+#endif
+
   goldo_detect_fd = open ("/sys/class/gpio/gpio21/value", O_RDWR);
   if (goldo_detect_fd<0) {
     printf ("error opening gpio\n");

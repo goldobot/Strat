@@ -74,6 +74,11 @@ namespace goldobot
 #if 1 /* FIXME : TODO : where to move this? */ 
     void set_obstacle_gpio(bool obstacle_detect);
 #endif
+
+#if 1 /* FIXME : DEBUG : EXPERIMENTAL */
+    bool m_lidar_detection_enabled{true};
+#endif
+
   private:
     robot_state_info_t m_s;
 

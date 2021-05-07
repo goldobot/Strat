@@ -213,7 +213,7 @@ void RobotStrat::taskFunction()
         match_funny_done = true;
       }
 
-      if ((match_start_ms!=0) && (my_time_ms>(match_start_ms+100000)))
+      if ((match_start_ms!=0) && (my_time_ms>(match_start_ms+100000)) && (m_strat_state != STRAT_STATE_IDDLE))
       {
         RobotState::instance().s().strat_stop = true;
         cmd_emergency_stop();
@@ -527,6 +527,7 @@ void RobotStrat::taskFunction()
         printf ("\n");
         cmd_clear_prop_err();
         /* FIXME : TODO : is this necessary? */
+        RobotState::instance().m_lidar_detection_enabled = false;
         RobotState::instance().set_obstacle_gpio(false);
         auto move_away_action = prepare_STRAT_STATE_EMERGENCY_MOVE_AWAY();
         do_STRAT_STATE_INIT_ACTION(move_away_action);
@@ -556,6 +557,7 @@ void RobotStrat::taskFunction()
       if (state_change_dbg)
       {
         auto escape_action = prepare_STRAT_STATE_EMERGENCY_ESCAPE();
+        RobotState::instance().m_lidar_detection_enabled = true;
         soft_deadline_ms = my_time_ms + escape_action->h.min_duration_ms;
         hard_deadline_ms = my_time_ms + escape_action->h.max_duration_ms;
       }

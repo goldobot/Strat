@@ -41,26 +41,26 @@ GoldoConf::GoldoConf()
 void GoldoConf::set_default()
 {
   strncpy(m_c.conf_viewer_addr_str, conf_viewer_addr_str_def, 
-          sizeof (m_c.conf_viewer_addr_str));
+          sizeof(m_c.conf_viewer_addr_str)-1);
   m_c.conf_theta_correction_deg = conf_theta_correction_deg_def;
   m_c.conf_rho_correction_factor = conf_rho_correction_factor_def;
   m_c.conf_rplidar_plot_lifetime_ms = conf_rplidar_plot_lifetime_ms_def;
   strncpy(m_c.conf_rplidar_dev_str, conf_rplidar_dev_str_def, 
-          sizeof (m_c.conf_rplidar_dev_str));
+          sizeof(m_c.conf_rplidar_dev_str)-1);
   m_c.conf_rplidar_baudrate = conf_rplidar_baudrate_def;
   strncpy(m_c.conf_nucleo_uart_dev_str, conf_nucleo_uart_dev_str_def, 
-          sizeof (m_c.conf_nucleo_uart_dev_str));
+          sizeof(m_c.conf_nucleo_uart_dev_str)-1);
   m_c.conf_nucleo_uart_baudrate = conf_nucleo_uart_baudrate_def;
   m_c.conf_zmq_port = conf_zmq_port_def;
   strncpy(m_c.conf_strat_file_str, conf_strat_file_str_def, 
-          sizeof (m_c.conf_strat_file_str));
+          sizeof(m_c.conf_strat_file_str)-1);
   strncpy(m_c.conf_simul_file_str, conf_simul_file_str_def, 
-          sizeof (m_c.conf_simul_file_str));
+          sizeof(m_c.conf_simul_file_str)-1);
 }
 
 int GoldoConf::init(const char *conf_fname)
 {
-  strncpy(m_conf_file_name, conf_fname, sizeof(m_conf_file_name));
+  strncpy(m_conf_file_name, conf_fname, sizeof(m_conf_file_name)-1);
 
   parse_yaml_conf(conf_fname);
 
@@ -85,7 +85,7 @@ int GoldoConf::parse_yaml_conf(const char * yaml_fname)
     {
       my_str = (const char *) conf_node.as<std::string>().c_str();
       strncpy(m_c.conf_viewer_addr_str, my_str, 
-              sizeof (m_c.conf_viewer_addr_str));
+              sizeof(m_c.conf_viewer_addr_str)-1);
     }
 
     conf_node = yconf["environment"]["conf_theta_correction_deg"];
@@ -114,7 +114,7 @@ int GoldoConf::parse_yaml_conf(const char * yaml_fname)
     {
       my_str = (const char *) conf_node.as<std::string>().c_str();
       strncpy(m_c.conf_rplidar_dev_str, my_str, 
-              sizeof (m_c.conf_rplidar_dev_str));
+              sizeof(m_c.conf_rplidar_dev_str)-1);
     }
 
     conf_node = yconf["environment"]["conf_rplidar_baudrate"];
@@ -129,7 +129,7 @@ int GoldoConf::parse_yaml_conf(const char * yaml_fname)
     {
       my_str = (const char *) conf_node.as<std::string>().c_str();
       strncpy(m_c.conf_nucleo_uart_dev_str, my_str, 
-              sizeof (m_c.conf_nucleo_uart_dev_str));
+              sizeof(m_c.conf_nucleo_uart_dev_str)-1);
     }
 
     conf_node = yconf["environment"]["conf_nucleo_uart_baudrate"];
@@ -151,7 +151,7 @@ int GoldoConf::parse_yaml_conf(const char * yaml_fname)
     {
       my_str = (const char *) conf_node.as<std::string>().c_str();
       strncpy(m_c.conf_strat_file_str, my_str, 
-              sizeof (m_c.conf_strat_file_str));
+              sizeof(m_c.conf_strat_file_str)-1);
     }
 
     conf_node = yconf["environment"]["conf_simul_file_str"];
@@ -159,7 +159,7 @@ int GoldoConf::parse_yaml_conf(const char * yaml_fname)
     {
       my_str = (const char *) conf_node.as<std::string>().c_str();
       strncpy(m_c.conf_simul_file_str, my_str, 
-              sizeof (m_c.conf_simul_file_str));
+              sizeof(m_c.conf_simul_file_str)-1);
     }
 
     ret = 0;

@@ -60,11 +60,11 @@ int StratTask::read_yaml_conf(YAML::Node &yconf)
   if (name_node) 
   {
     strncpy(m_task_name, name_node.as<std::string>().c_str(), 
-            sizeof (m_task_name));
+            sizeof (m_task_name)-1);
   }
   else
   {
-    strncpy(m_task_name, "DebugTask", sizeof (m_task_name));
+    strncpy(m_task_name, "DebugTask", sizeof (m_task_name)-1);
   }
 
   YAML::Node init_pos_node = yconf["init_pos"];

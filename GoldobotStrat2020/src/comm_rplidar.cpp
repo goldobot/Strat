@@ -42,7 +42,7 @@ CommRplidar::CommRplidar()
 {
   int i;
 
-  strncpy(m_thread_name,"CommRplidar",sizeof(m_thread_name));
+  strncpy(m_thread_name,"CommRplidar",sizeof(m_thread_name)-1);
 
   m_stop_task = false;
   m_task_running = false;
@@ -70,7 +70,7 @@ int CommRplidar::init(char* rplidar_dev, int baudrate)
 {
   int i;
 
-  strncpy(m_rplidar_dev_str, rplidar_dev, sizeof(m_rplidar_dev_str));
+  strncpy(m_rplidar_dev_str, rplidar_dev, sizeof(m_rplidar_dev_str)-1);
 
   for (i=0; i<M_NB_POINTS; i++)
   {
@@ -99,7 +99,7 @@ int CommRplidar::init_viewer_sock(char *viewer_address_str)
 {
   unsigned int ab0, ab1, ab2, ab3;
 
-  strncpy(m_viewer_addr_str, viewer_address_str, sizeof(m_viewer_addr_str));
+  strncpy(m_viewer_addr_str, viewer_address_str, sizeof(m_viewer_addr_str)-1);
 
   if (sscanf (viewer_address_str, "%d.%d.%d.%d", 
               &ab3, &ab2, &ab1, &ab0) != 4) {

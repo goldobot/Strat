@@ -48,7 +48,7 @@ RobotStrat& RobotStrat::instance()
 
 RobotStrat::RobotStrat()
 {
-  strncpy(m_thread_name,"RobotStrat",sizeof(m_thread_name));
+  strncpy(m_thread_name,"RobotStrat",sizeof(m_thread_name)-1);
 
   memset (m_strat_file_name, 0, sizeof(m_strat_file_name));
 
@@ -88,7 +88,7 @@ RobotStrat::RobotStrat()
 
 int RobotStrat::init(char *strat_file_name)
 {
-  strncpy(m_strat_file_name, strat_file_name, sizeof(m_strat_file_name));
+  strncpy(m_strat_file_name, strat_file_name, sizeof(m_strat_file_name)-1);
 
   m_n_tasks = 0;
 
@@ -230,6 +230,11 @@ void RobotStrat::taskFunction()
       state_change_dbg = true;
     }
 
+    /*************************************/
+    /*************************************/
+    /** THE MAIN STRATEGY STATE MACHINE **/
+    /*************************************/
+    /*************************************/
     switch (m_strat_state) {
     case STRAT_STATE_INIT:
       if (state_change_dbg)
@@ -258,18 +263,18 @@ void RobotStrat::taskFunction()
         Sleep(100);
 #endif
 
-        m_strat_state = STRAT_STATE_GET_ACTION_DBG;
+        m_strat_state = STRAT_STATE_GET_ACTION;
         state_change_dbg = true;
       }
 
       break;
 
-    case STRAT_STATE_GET_ACTION_DBG:
+    case STRAT_STATE_GET_ACTION:
       if (state_change_dbg)
       {
         printf ("\n");
         printf ("****************************************\n");
-        printf ("* STRAT_STATE_GET_ACTION_DBG ***********\n");
+        printf ("* STRAT_STATE_GET_ACTION ***************\n");
         printf ("****************************************\n");
         printf ("\n");
         state_change_dbg = false;
@@ -283,14 +288,14 @@ void RobotStrat::taskFunction()
         {
           printf (" Warning : NULL action pointer!\n");
           printf ("\n");
-          m_strat_state = STRAT_STATE_END_ACTION_DBG;
+          m_strat_state = STRAT_STATE_END_ACTION;
           state_change_dbg = true;
         }
         else
         {
           printf (" Got action : %d.\n", my_action->h.type);
           printf ("\n");
-          m_strat_state = STRAT_STATE_INIT_ACTION_DBG;
+          m_strat_state = STRAT_STATE_INIT_ACTION;
           state_change_dbg = true;
         }
       }
@@ -302,171 +307,26 @@ void RobotStrat::taskFunction()
 
       break;
 
-    case STRAT_STATE_INIT_ACTION_DBG:
+    case STRAT_STATE_INIT_ACTION:
       action_ok = false;
 
       if (state_change_dbg)
       {
         printf ("\n");
         printf ("****************************************\n");
-        printf ("* STRAT_STATE_INIT_ACTION_DBG **********\n");
+        printf ("* STRAT_STATE_INIT_ACTION **************\n");
         printf ("****************************************\n");
         printf ("\n");
         state_change_dbg = false;
       }
 
-      switch (my_action->h.type) {
-      case STRAT_ACTION_TYPE_WAIT:
-        printf (" STRAT_ACTION_TYPE_WAIT\n");
-        action_ok = true;
-        break;
-      case STRAT_ACTION_TYPE_TRAJ:
-        printf (" STRAT_ACTION_TYPE_TRAJ\n");
-        action_ok = true;
-        break;
-      case STRAT_ACTION_TYPE_POINT_TO:
-        printf (" STRAT_ACTION_TYPE_POINT_TO\n");
-        action_ok = true;
-        break;
-      case STRAT_ACTION_TYPE_NUCLEO_SEQ:
-        printf (" STRAT_ACTION_TYPE_NUCLEO_SEQ\n");
-        action_ok = true;
-        break;
-      case STRAT_ACTION_TYPE_GOTO_ASTAR:
-        {
-          strat_action_goto_astar_t *act_ast= 
-            (strat_action_goto_astar_t *) my_action;
-          printf (" STRAT_ACTION_TYPE_GOTO_ASTAR\n");
-          action_ok = true;
-          /* clear playground */
-          m_path_find_pg.erase_mob_obst();
-          /* put mobile obstacles */
-          WorldState::instance().lock();
-          detected_robot_info_t& o0 = 
-            WorldState::instance().detected_robot(0);
-          detected_robot_info_t& o1 = 
-            WorldState::instance().detected_robot(1);
-          detected_robot_info_t& o2 = 
-            WorldState::instance().detected_robot(2);
-          WorldState::instance().release();
-          if (o0.detect_quality>2)
-            m_path_find_pg.put_mob_point_obst(o0.x_mm, o0.y_mm);
-          if (o1.detect_quality>2)
-            m_path_find_pg.put_mob_point_obst(o1.x_mm, o1.y_mm);
-          if (o2.detect_quality>2)
-            m_path_find_pg.put_mob_point_obst(o2.x_mm, o2.y_mm);
-          /* apply A* */
-          m_core_astar.setMatrix(m_path_find_pg.X_SZ_CM,m_path_find_pg.Y_SZ_CM);
-          m_path_find_pg.feed_astar(m_core_astar);
-          int x_start_cm = RobotState::instance().s().x_mm/10;
-          int y_start_cm = RobotState::instance().s().y_mm/10;
-          int x_end_cm   = act_ast->target.x_mm/10;
-          int y_end_cm   = act_ast->target.y_mm/10;
-          int Y_OFF_CM   = m_path_find_pg.Y_OFFSET_CM;
-          int X_SZ_CM    = m_path_find_pg.X_SZ_CM;
-          printf ("START(cm) : <%d,%d>\n", x_start_cm, y_start_cm);
-          printf ("END(cm) : <%d,%d>\n", x_end_cm, y_end_cm);
-          m_core_astar.setWay(x_start_cm, y_start_cm+Y_OFF_CM, 1);
-          m_core_astar.setWay(x_end_cm,   y_end_cm+Y_OFF_CM,   1);
-          m_core_astar.setStart(x_start_cm, y_start_cm+Y_OFF_CM);
-          m_core_astar.setEnd(x_end_cm, y_end_cm+Y_OFF_CM);
-          m_core_astar.search();
-          int x_wp = 0;
-          int y_wp = 0;
-          list<pair<UINT,UINT>> path = m_core_astar.getPath(AStarPathType::raw);
-          if(path.size() > 0)
-          {
-            list<pair<UINT, UINT>>::iterator pathIt;
-            for (pathIt = path.begin(); pathIt != path.end(); pathIt++)
-            {
-              x_wp = pathIt->first;
-              y_wp = pathIt->second;
-              y_wp -= Y_OFF_CM;
-              m_path_find_pg.m_playground[(y_wp+Y_OFF_CM)*(X_SZ_CM) + x_wp] = 
-                m_path_find_pg.PATH;
-            }
-          }
-          int wp_idx = 0;
-          bool start_of_path = true;
-          path = m_core_astar.getPath(AStarPathType::smooth);
-          if(path.size() > 0)
-          {
-            if(path.size() == 1) /* FIXME : TODO : workaround Nucleo bug */
-            {
-              int x_wp_mm = RobotState::instance().s().x_mm;
-              int y_wp_mm = RobotState::instance().s().y_mm;
-              act_ast->wp[wp_idx].x_mm = x_wp_mm;
-              act_ast->wp[wp_idx].y_mm = y_wp_mm;
-              wp_idx++;
-              act_ast->nwp = wp_idx;
-              printf ("<%d,%d>\n",x_wp_mm,y_wp_mm);
-              start_of_path = false;
-            }
-            list<pair<UINT, UINT>>::iterator pathIt;
-            for (pathIt = path.begin(); pathIt != path.end(); pathIt++)
-            {
-              int x_wp_mm;
-              int y_wp_mm;
-              x_wp = pathIt->first;
-              y_wp = pathIt->second;
-              y_wp -= Y_OFF_CM;
-              m_path_find_pg.m_playground[(y_wp+Y_OFF_CM)*(X_SZ_CM) + x_wp] = 
-                m_path_find_pg.PATH_WP;
-              x_wp_mm = x_wp*10;
-              y_wp_mm = y_wp*10;
-              if (start_of_path)
-              {
-                int x_start_mm = RobotState::instance().s().x_mm;
-                int y_start_mm = RobotState::instance().s().y_mm;
+      action_ok = do_STRAT_STATE_INIT_ACTION(my_action);
 
-                if (goldo_dist(x_start_mm, y_start_mm, x_wp_mm, y_wp_mm)>1.0)
-                {
-                  /* ASSERT(wp_idx==0) */
-                  act_ast->wp[wp_idx].x_mm = x_start_mm;
-                  act_ast->wp[wp_idx].y_mm = y_start_mm;
-                  wp_idx++;
-                  act_ast->nwp = wp_idx;
-                  printf ("<%d,%d>\n",x_start_mm,y_start_mm);
-                }
-              }
-              start_of_path = false;
-              if ((unsigned int)wp_idx<_countof(act_ast->wp))
-              {
-                act_ast->wp[wp_idx].x_mm = x_wp_mm;
-                act_ast->wp[wp_idx].y_mm = y_wp_mm;
-                wp_idx++;
-                act_ast->nwp = wp_idx;
-              }
-              else 
-              {
-                /* FIXME : TODO : what to do? */
-              }
-              printf ("<%d,%d>\n",x_wp_mm,y_wp_mm);
-            }
-          }
-          else
-          {
-            printf (" Cannot generate path!\n");
-            action_ok = false;
-          }
-          /* dump result for debug */
-          sprintf(m_dbg_fname,"dump_astar_act%d.ppm",m_task_dbg->m_curr_act_idx);
-          m_path_find_pg.create_playground_ppm();
-          m_path_find_pg.dump_playground_ppm(m_dbg_fname);
-          m_path_find_pg.send_playground_ppm();
-          if (action_ok)
-          {
-            soft_deadline_ms = my_time_ms + my_action->h.min_duration_ms;
-            hard_deadline_ms = my_time_ms + my_action->h.max_duration_ms;
-            /* FIXME : TODO : configuration for speed, acc and dec.. */
-            cmd_point_to (&(act_ast->wp[1]), 3.5, 10.0, 10.0);
-          }
-        }
-        break;
-      default:
-        printf (" Warning : Unknown action type!\n");
-        action_ok = false;
-      } /* switch (my_action->h.type) */
+      if (my_action->h.type==STRAT_ACTION_TYPE_GOTO_ASTAR)
+      {
+        soft_deadline_ms = my_time_ms + my_action->h.min_duration_ms;
+        hard_deadline_ms = my_time_ms + my_action->h.max_duration_ms;
+      }
 
       if (action_ok)
       {
@@ -476,73 +336,74 @@ void RobotStrat::taskFunction()
         }
         else
         {
-          m_strat_state = STRAT_STATE_WAIT_END_INIT_DBG;
+          m_strat_state = STRAT_STATE_WAIT_END_INIT;
         }
         state_change_dbg = true;
       }
       else
       {
-        m_strat_state = STRAT_STATE_END_ACTION_DBG;
+        m_strat_state = STRAT_STATE_END_ACTION;
         state_change_dbg = true;
       }
 
       break;
 
-    case STRAT_STATE_WAIT_END_INIT_DBG:
+    case STRAT_STATE_WAIT_END_INIT:
       if (state_change_dbg)
       {
         printf ("\n");
         printf ("****************************************\n");
-        printf ("* STRAT_STATE_WAIT_END_INIT_DBG ********\n");
+        printf ("* STRAT_STATE_WAIT_END_INIT ************\n");
         printf ("****************************************\n");
         printf ("\n");
         state_change_dbg = false;
       }
 
-      if (my_action->h.type!=STRAT_ACTION_TYPE_GOTO_ASTAR)
+      if (my_action->h.type==STRAT_ACTION_TYPE_GOTO_ASTAR)
+      {
+        if (my_time_ms > soft_deadline_ms)
+        {
+          if (my_time_ms < (soft_deadline_ms+20)) printf (".");
+          /* FIXME : TODO : add completion test for actuators */
+          if (!RobotState::instance().propulsion_busy())
+          {
+            printf ("\n");
+            printf (" Init DONE\n");
+            m_strat_state = STRAT_STATE_EXEC_ACTION;
+            state_change_dbg = true;
+          }
+          /* FIXME : TODO : error management */
+          else if (RobotState::instance().propulsion_error())
+          {
+            printf ("\n");
+            printf (" Propulsion ERROR\n");
+            m_strat_state = STRAT_STATE_IDDLE;
+            state_change_dbg = true;
+          }
+        }
+        if (my_time_ms > hard_deadline_ms)
+        {
+          printf ("\n");
+          m_strat_state = STRAT_STATE_EXEC_ACTION;
+          state_change_dbg = true;
+        }
+      }
+      else
       {
         printf ("\n");
         printf (" No prep action. SKIPPING init wait state.\n");
-        m_strat_state = STRAT_STATE_EXEC_ACTION_DBG;
-        state_change_dbg = true;
-      }
-
-      if (my_time_ms > soft_deadline_ms)
-      {
-        if (my_time_ms < (soft_deadline_ms+20)) printf (".");
-        /* FIXME : TODO : add completion test for actuators */
-        if (!RobotState::instance().propulsion_busy())
-        {
-          printf ("\n");
-          printf (" Init DONE\n");
-          m_strat_state = STRAT_STATE_EXEC_ACTION_DBG;
-          state_change_dbg = true;
-        }
-        /* FIXME : TODO : error management */
-        else if (RobotState::instance().propulsion_error())
-        {
-          printf ("\n");
-          printf (" Propulsion ERROR\n");
-          m_strat_state = STRAT_STATE_IDDLE;
-          state_change_dbg = true;
-        }
-      }
-
-      if (my_time_ms > hard_deadline_ms)
-      {
-        printf ("\n");
-        m_strat_state = STRAT_STATE_EXEC_ACTION_DBG;
+        m_strat_state = STRAT_STATE_EXEC_ACTION;
         state_change_dbg = true;
       }
 
       break;
 
-    case STRAT_STATE_EXEC_ACTION_DBG:
+    case STRAT_STATE_EXEC_ACTION:
       if (state_change_dbg)
       {
         printf ("\n");
         printf ("****************************************\n");
-        printf ("* STRAT_STATE_EXEC_ACTION_DBG **********\n");
+        printf ("* STRAT_STATE_EXEC_ACTION **************\n");
         printf ("****************************************\n");
         printf ("\n");
         state_change_dbg = false;
@@ -551,55 +412,19 @@ void RobotStrat::taskFunction()
       soft_deadline_ms = my_time_ms + my_action->h.min_duration_ms;
       hard_deadline_ms = my_time_ms + my_action->h.max_duration_ms;
 
-      switch (my_action->h.type) {
-      case STRAT_ACTION_TYPE_WAIT:
-        break;
-      case STRAT_ACTION_TYPE_TRAJ:
-        {
-          strat_action_traj_t *act_traj= (strat_action_traj_t *) my_action;
-          cmd_traj (act_traj->wp, act_traj->nwp, 
-                    act_traj->speed, act_traj->accel, act_traj->deccel);
-        }
-        break;
-      case STRAT_ACTION_TYPE_POINT_TO:
-        {
-          strat_action_point_to_t *act_pt= 
-            (strat_action_point_to_t *) my_action;
-          cmd_point_to (&(act_pt->target), 
-                        act_pt->speed, act_pt->accel, act_pt->deccel);
-        }
-        break;
-      case STRAT_ACTION_TYPE_NUCLEO_SEQ:
-        {
-          strat_action_nucleo_seq_t *act_nucleo_seq= 
-            (strat_action_nucleo_seq_t *) my_action;
-          cmd_nucleo_seq (act_nucleo_seq->nucleo_seq_id);
-        }
-        break;
-      case STRAT_ACTION_TYPE_GOTO_ASTAR:
-        {
-          strat_action_goto_astar_t *act_ast= 
-            (strat_action_goto_astar_t *) my_action;
-          /* execute action! */
-          cmd_traj (act_ast->wp, act_ast->nwp, 
-                    act_ast->speed, act_ast->accel, act_ast->deccel);
-        }
-        break;
-      default:
-        printf (" Warning : Unknown action type!\n");
-      } /* switch (my_action->h.type) */
+      do_STRAT_STATE_EXEC_ACTION(my_action);
 
-      m_strat_state = STRAT_STATE_WAIT_END_ACTION_DBG;
+      m_strat_state = STRAT_STATE_WAIT_END_ACTION;
       state_change_dbg = true;
 
       break;
 
-    case STRAT_STATE_WAIT_END_ACTION_DBG:
+    case STRAT_STATE_WAIT_END_ACTION:
       if (state_change_dbg)
       {
         printf ("\n");
         printf ("****************************************\n");
-        printf ("* STRAT_STATE_WAIT_END_ACTION_DBG ******\n");
+        printf ("* STRAT_STATE_WAIT_END_ACTION **********\n");
         printf ("****************************************\n");
         printf ("\n");
         state_change_dbg = false;
@@ -613,7 +438,7 @@ void RobotStrat::taskFunction()
         {
           printf ("\n");
           printf (" Action DONE\n");
-          m_strat_state = STRAT_STATE_END_ACTION_DBG;
+          m_strat_state = STRAT_STATE_END_ACTION;
           state_change_dbg = true;
         }
         /* FIXME : TODO : error management */
@@ -629,18 +454,18 @@ void RobotStrat::taskFunction()
       if (my_time_ms > hard_deadline_ms)
       {
         printf ("\n");
-        m_strat_state = STRAT_STATE_END_ACTION_DBG;
+        m_strat_state = STRAT_STATE_END_ACTION;
         state_change_dbg = true;
       }
 
       break;
 
-    case STRAT_STATE_END_ACTION_DBG:
+    case STRAT_STATE_END_ACTION:
       if (state_change_dbg)
       {
         printf ("\n");
         printf ("****************************************\n");
-        printf ("* STRAT_STATE_END_ACTION_DBG ***********\n");
+        printf ("* STRAT_STATE_END_ACTION ***************\n");
         printf ("****************************************\n");
         printf ("\n");
         state_change_dbg = false;
@@ -661,7 +486,7 @@ void RobotStrat::taskFunction()
         }
         else
         {
-          m_strat_state = STRAT_STATE_GET_ACTION_DBG;
+          m_strat_state = STRAT_STATE_GET_ACTION;
         }
         state_change_dbg = true;
       }
@@ -688,7 +513,7 @@ void RobotStrat::taskFunction()
       if (m_dbg_resume_match_sig)
       {
         m_dbg_resume_match_sig = false;
-        m_strat_state = STRAT_STATE_GET_ACTION_DBG;
+        m_strat_state = STRAT_STATE_GET_ACTION;
         state_change_dbg = true;
       }
       break;
@@ -708,7 +533,7 @@ void RobotStrat::taskFunction()
       if (m_dbg_resume_match_sig)
       {
         m_dbg_resume_match_sig = false;
-        m_strat_state = STRAT_STATE_WAIT_END_INIT_DBG;
+        m_strat_state = STRAT_STATE_WAIT_END_INIT;
         state_change_dbg = true;
       }
       break;
@@ -731,21 +556,22 @@ void RobotStrat::taskFunction()
       if (state_change_dbg)
       {
         printf ("\n");
-        printf ("****************************************\n");
-        printf ("* STRAT_STATE_EMERGENCY_STOP ***********\n");
-        printf ("****************************************\n");
+        printf ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+        printf ("! STRAT_STATE_EMERGENCY_STOP !!!!!!!!!!!\n");
+        printf ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
         printf ("\n");
         state_change_dbg = false;
       }
 
       /* FIXME : TODO */
+
       break;
 
     default:
       printf ("\n");
-      printf ("****************************************\n");
-      printf ("* Warning : unknown STRAT state! (%d)\n",m_strat_state);
-      printf ("****************************************\n");
+      printf ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+      printf ("! Warning : unknown STRAT state! (%d)\n",m_strat_state);
+      printf ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
       printf ("\n");
       m_strat_state = STRAT_STATE_IDDLE;
       state_change_dbg = true;
@@ -768,6 +594,206 @@ void RobotStrat::taskFunction()
 
   m_task_running = false;
 }
+
+
+bool RobotStrat::do_STRAT_STATE_INIT_ACTION(strat_action_t *my_action)
+{
+  bool action_ok = false;
+
+  switch (my_action->h.type) {
+  case STRAT_ACTION_TYPE_WAIT:
+    printf (" STRAT_ACTION_TYPE_WAIT\n");
+    action_ok = true;
+    break;
+  case STRAT_ACTION_TYPE_TRAJ:
+    printf (" STRAT_ACTION_TYPE_TRAJ\n");
+    action_ok = true;
+    break;
+  case STRAT_ACTION_TYPE_POINT_TO:
+    printf (" STRAT_ACTION_TYPE_POINT_TO\n");
+    action_ok = true;
+    break;
+  case STRAT_ACTION_TYPE_NUCLEO_SEQ:
+    printf (" STRAT_ACTION_TYPE_NUCLEO_SEQ\n");
+    action_ok = true;
+    break;
+  case STRAT_ACTION_TYPE_GOTO_ASTAR:
+  {
+    strat_action_goto_astar_t *act_ast= 
+      (strat_action_goto_astar_t *) my_action;
+    printf (" STRAT_ACTION_TYPE_GOTO_ASTAR\n");
+    action_ok = true;
+    /* clear playground */
+    m_path_find_pg.erase_mob_obst();
+    /* put mobile obstacles */
+    WorldState::instance().lock();
+    detected_robot_info_t& o0 = 
+      WorldState::instance().detected_robot(0);
+    detected_robot_info_t& o1 = 
+      WorldState::instance().detected_robot(1);
+    detected_robot_info_t& o2 = 
+      WorldState::instance().detected_robot(2);
+    WorldState::instance().release();
+    if (o0.detect_quality>2)
+      m_path_find_pg.put_mob_point_obst(o0.x_mm, o0.y_mm);
+    if (o1.detect_quality>2)
+      m_path_find_pg.put_mob_point_obst(o1.x_mm, o1.y_mm);
+    if (o2.detect_quality>2)
+      m_path_find_pg.put_mob_point_obst(o2.x_mm, o2.y_mm);
+    /* apply A* */
+    m_core_astar.setMatrix(m_path_find_pg.X_SZ_CM,m_path_find_pg.Y_SZ_CM);
+    m_path_find_pg.feed_astar(m_core_astar);
+    int x_start_cm = RobotState::instance().s().x_mm/10;
+    int y_start_cm = RobotState::instance().s().y_mm/10;
+    int x_end_cm   = act_ast->target.x_mm/10;
+    int y_end_cm   = act_ast->target.y_mm/10;
+    int Y_OFF_CM   = m_path_find_pg.Y_OFFSET_CM;
+    int X_SZ_CM    = m_path_find_pg.X_SZ_CM;
+    printf ("START(cm) : <%d,%d>\n", x_start_cm, y_start_cm);
+    printf ("END(cm) : <%d,%d>\n", x_end_cm, y_end_cm);
+    m_core_astar.setWay(x_start_cm, y_start_cm+Y_OFF_CM, 1);
+    m_core_astar.setWay(x_end_cm,   y_end_cm+Y_OFF_CM,   1);
+    m_core_astar.setStart(x_start_cm, y_start_cm+Y_OFF_CM);
+    m_core_astar.setEnd(x_end_cm, y_end_cm+Y_OFF_CM);
+    m_core_astar.search();
+    int x_wp = 0;
+    int y_wp = 0;
+    list<pair<UINT,UINT>> path = m_core_astar.getPath(AStarPathType::raw);
+    if(path.size() > 0)
+    {
+      list<pair<UINT, UINT>>::iterator pathIt;
+      for (pathIt = path.begin(); pathIt != path.end(); pathIt++)
+      {
+        x_wp = pathIt->first;
+        y_wp = pathIt->second;
+        y_wp -= Y_OFF_CM;
+        m_path_find_pg.m_playground[(y_wp+Y_OFF_CM)*(X_SZ_CM) + x_wp] = 
+          m_path_find_pg.PATH;
+      }
+    }
+    int wp_idx = 0;
+    bool start_of_path = true;
+    path = m_core_astar.getPath(AStarPathType::smooth);
+    if(path.size() > 0)
+    {
+      if(path.size() == 1) /* FIXME : TODO : workaround Nucleo bug */
+      {
+        int x_wp_mm = RobotState::instance().s().x_mm;
+        int y_wp_mm = RobotState::instance().s().y_mm;
+        act_ast->wp[wp_idx].x_mm = x_wp_mm;
+        act_ast->wp[wp_idx].y_mm = y_wp_mm;
+        wp_idx++;
+        act_ast->nwp = wp_idx;
+        printf ("<%d,%d>\n",x_wp_mm,y_wp_mm);
+        start_of_path = false;
+      }
+      list<pair<UINT, UINT>>::iterator pathIt;
+      for (pathIt = path.begin(); pathIt != path.end(); pathIt++)
+      {
+        int x_wp_mm;
+        int y_wp_mm;
+        x_wp = pathIt->first;
+        y_wp = pathIt->second;
+        y_wp -= Y_OFF_CM;
+        m_path_find_pg.m_playground[(y_wp+Y_OFF_CM)*(X_SZ_CM) + x_wp] = 
+          m_path_find_pg.PATH_WP;
+        x_wp_mm = x_wp*10;
+        y_wp_mm = y_wp*10;
+        if (start_of_path)
+        {
+          int x_start_mm = RobotState::instance().s().x_mm;
+          int y_start_mm = RobotState::instance().s().y_mm;
+
+          if (goldo_dist(x_start_mm, y_start_mm, x_wp_mm, y_wp_mm)>1.0)
+          {
+            /* ASSERT(wp_idx==0) */
+            act_ast->wp[wp_idx].x_mm = x_start_mm;
+            act_ast->wp[wp_idx].y_mm = y_start_mm;
+            wp_idx++;
+            act_ast->nwp = wp_idx;
+            printf ("<%d,%d>\n",x_start_mm,y_start_mm);
+          }
+        }
+        start_of_path = false;
+        if ((unsigned int)wp_idx<_countof(act_ast->wp))
+        {
+          act_ast->wp[wp_idx].x_mm = x_wp_mm;
+          act_ast->wp[wp_idx].y_mm = y_wp_mm;
+          wp_idx++;
+          act_ast->nwp = wp_idx;
+        }
+        else 
+        {
+          /* FIXME : TODO : what to do? */
+        }
+        printf ("<%d,%d>\n",x_wp_mm,y_wp_mm);
+      }
+    }
+    else
+    {
+      printf (" Cannot generate path!\n");
+      action_ok = false;
+    }
+    /* dump result for debug */
+    sprintf(m_dbg_fname,"dump_astar_act%d.ppm",m_task_dbg->m_curr_act_idx);
+    m_path_find_pg.create_playground_ppm();
+    m_path_find_pg.dump_playground_ppm(m_dbg_fname);
+    m_path_find_pg.send_playground_ppm();
+    if (action_ok)
+    {
+      /* FIXME : TODO : configuration for speed, acc and dec.. */
+      cmd_point_to (&(act_ast->wp[1]), 3.5, 10.0, 10.0);
+    }
+  }
+  break;
+  default:
+    printf (" Warning : Unknown action type!\n");
+    action_ok = false;
+  } /* switch (my_action->h.type) */
+
+  return action_ok;
+}
+
+void RobotStrat::do_STRAT_STATE_EXEC_ACTION(strat_action_t *my_action)
+{
+  switch (my_action->h.type) {
+  case STRAT_ACTION_TYPE_WAIT:
+    break;
+  case STRAT_ACTION_TYPE_TRAJ:
+  {
+    strat_action_traj_t *act_traj= (strat_action_traj_t *) my_action;
+    cmd_traj (act_traj->wp, act_traj->nwp, 
+              act_traj->speed, act_traj->accel, act_traj->deccel);
+  }
+  break;
+  case STRAT_ACTION_TYPE_POINT_TO:
+  {
+    strat_action_point_to_t *act_pt= 
+      (strat_action_point_to_t *) my_action;
+    cmd_point_to (&(act_pt->target), 
+                  act_pt->speed, act_pt->accel, act_pt->deccel);
+  }
+  break;
+  case STRAT_ACTION_TYPE_NUCLEO_SEQ:
+  {
+    strat_action_nucleo_seq_t *act_nucleo_seq= 
+      (strat_action_nucleo_seq_t *) my_action;
+    cmd_nucleo_seq (act_nucleo_seq->nucleo_seq_id);
+  }
+  break;
+  case STRAT_ACTION_TYPE_GOTO_ASTAR:
+  {
+    strat_action_goto_astar_t *act_ast= 
+      (strat_action_goto_astar_t *) my_action;
+    cmd_traj (act_ast->wp, act_ast->nwp, 
+              act_ast->speed, act_ast->accel, act_ast->deccel);
+  }
+  break;
+  default:
+    printf (" Warning : Unknown action type!\n");
+  } /* switch (my_action->h.type) */
+}
+
 
 void RobotStrat::start_match()
 {

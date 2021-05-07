@@ -49,31 +49,35 @@ namespace goldobot
 
     /**  Strat SM states  **/
     enum strat_state_t {
+      /* global states */
       STRAT_STATE_INIT = 0,
-      STRAT_STATE_SCHEDULE_TASK,
-      STRAT_STATE_ENTER_TASK, /* include path computing */
-      STRAT_STATE_GOTO_INIT_POS_TASK,
-      STRAT_STATE_INIT_ACTION_TASK,
-      STRAT_STATE_EXEC_ACTION_TASK,
-      STRAT_STATE_WAIT_END_ACTION,
-      STRAT_STATE_END_ACTION,
-      STRAT_STATE_EXIT_TASK,
       STRAT_STATE_IDDLE,
       STRAT_STATE_EMERGENCY_STOP,
 
+      /* task management (complex tasks) */
       /* FIXME : TODO */
+      STRAT_STATE_SCHEDULE_TASK = 16,
+      STRAT_WAIT_FOR_TASK,
 
+      /* elementary actions (simple actions) */
+      STRAT_STATE_GET_ACTION = 32,
+      STRAT_STATE_INIT_ACTION,
+      STRAT_STATE_WAIT_END_INIT,
+      STRAT_STATE_EXEC_ACTION,
+      STRAT_STATE_WAIT_END_ACTION,
+      STRAT_STATE_END_ACTION,
+
+      /* debug states */
       STRAT_STATE_PAUSE_DBG = 128,
       STRAT_STATE_PAUSE2_DBG,
-      STRAT_STATE_GET_ACTION_DBG,
-      STRAT_STATE_INIT_ACTION_DBG,
-      STRAT_STATE_WAIT_END_INIT_DBG,
-      STRAT_STATE_EXEC_ACTION_DBG,
-      STRAT_STATE_WAIT_END_ACTION_DBG,
-      STRAT_STATE_END_ACTION_DBG,
     };
 
   private:
+
+    bool do_STRAT_STATE_INIT_ACTION(strat_action_t *_act);
+
+    void do_STRAT_STATE_EXEC_ACTION(strat_action_t *_act);
+
     int cmd_traj (strat_way_point_t *_wp, int _nwp, float speed, float accel, float deccel);
 
     int cmd_point_to (strat_way_point_t *_wp, float speed, float accel, float deccel);

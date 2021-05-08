@@ -584,7 +584,7 @@ void RobotStrat::taskFunction()
         soft_deadline_ms = my_time_ms + my_escape_action->h.min_duration_ms;
         hard_deadline_ms = my_time_ms + my_escape_action->h.max_duration_ms;
         action_ok = do_STRAT_STATE_INIT_ACTION(my_escape_action);
-        if (!action_ok)
+        if (action_ok)
         {
           m_strat_state = STRAT_STATE_EMERGENCY_ESCAPE_INIT;
         }

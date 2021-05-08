@@ -50,7 +50,8 @@ namespace goldobot
     /**  Strat SM states  **/
     enum strat_state_t {
       /* global states */
-      STRAT_STATE_INIT = 0,
+      STRAT_STATE_NULL = 0,
+      STRAT_STATE_INIT = 1,
       STRAT_STATE_IDDLE,
 
       /* task management (complex tasks) */
@@ -67,9 +68,11 @@ namespace goldobot
       STRAT_STATE_END_ACTION,
 
       /* emergency states */
-      STRAT_STATE_EMERGENCY_STOP,
+      STRAT_STATE_EMERGENCY_STOP = 96,
+      STRAT_STATE_EMERGENCY_WAIT,
       STRAT_STATE_EMERGENCY_MOVE_AWAY,
       STRAT_STATE_EMERGENCY_RECOVER_ACTION,
+      STRAT_STATE_EMERGENCY_ESCAPE_INIT,
       STRAT_STATE_EMERGENCY_ESCAPE,
 
       /* debug states */
@@ -82,7 +85,8 @@ namespace goldobot
     bool check_deadlines_and_change_state(unsigned int my_time_ms,
                                           unsigned int soft_deadline_ms,
                                           unsigned int hard_deadline_ms,
-                                          strat_state_t new_strat_state);
+                                          strat_state_t new_strat_state,
+                                          const char *done_log);
 
     bool do_STRAT_STATE_INIT_ACTION(strat_action_t *_act);
 
@@ -117,8 +121,6 @@ namespace goldobot
     unsigned char m_nucleo_cmd_buf[1024];
 
     strat_state_t m_strat_state;
-
-    strat_state_t m_emerg_int_state;
 
     int m_current_task_idx;
 

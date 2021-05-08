@@ -67,8 +67,6 @@ RobotStrat::RobotStrat()
 
   m_strat_state = STRAT_STATE_INIT;
 
-  m_emerg_int_state = STRAT_STATE_INIT;
-
   m_current_task_idx = 0;
 
   m_start_match_sig = false;
@@ -104,8 +102,6 @@ int RobotStrat::init(char *strat_file_name)
   memset (m_res_grabbed, 0, sizeof(m_res_grabbed));
 
   m_strat_state = STRAT_STATE_INIT;
-
-  m_emerg_int_state = STRAT_STATE_INIT;
 
   m_current_task_idx = 0;
 
@@ -175,6 +171,7 @@ void RobotStrat::taskFunction()
   unsigned int soft_deadline_ms = 0;
   unsigned int hard_deadline_ms = 0;
   strat_action_t *my_action = NULL;
+  strat_action_t *my_escape_action = NULL;
   unsigned int match_start_ms = 0;
   bool match_funny_done = false;
 
@@ -209,7 +206,13 @@ void RobotStrat::taskFunction()
     {
       if ((!match_funny_done) && (match_start_ms!=0) && (my_time_ms>(match_start_ms+95000)))
       {
-        cmd_nucleo_seq (9);
+        /* FIXME : TODO */
+        //cmd_nucleo_seq (9);
+        printf ("\n");
+        printf ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+        printf ("! DON'T FORGET THE FUNNY ACTION !!!!!!!!\n");
+        printf ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+        printf ("\n");
         match_funny_done = true;
       }
 
@@ -233,7 +236,11 @@ void RobotStrat::taskFunction()
         (m_strat_state!=STRAT_STATE_EMERGENCY_MOVE_AWAY) )
     {
       printf ("EMERGENCY_STOP!\n");
-      hard_deadline_ms = my_time_ms + 100; /* FIXME : TODO : configuration.. */
+      cmd_clear_prop_err();
+      /* FIXME : TODO : is this necessary? */
+      RobotState::instance().m_lidar_detection_enabled = false;
+      RobotState::instance().set_obstacle_gpio(false);
+      hard_deadline_ms = my_time_ms + 500; /* FIXME : TODO : configuration.. */
       m_strat_state = STRAT_STATE_EMERGENCY_STOP;
       state_change_dbg = true;
     }
@@ -296,12 +303,32 @@ void RobotStrat::taskFunction()
         {
           printf (" Warning : NULL action pointer!\n");
           printf ("\n");
-          m_strat_state = STRAT_STATE_END_ACTION;
+          m_strat_state = STRAT_STATE_IDDLE;
           state_change_dbg = true;
         }
         else
         {
+          if (my_action->h.type==STRAT_ACTION_TYPE_GOTO_ASTAR)
+          {
+            strat_action_goto_astar_t *act_ast= 
+              (strat_action_goto_astar_t *) my_action;
+            m_task_dbg->m_current_action_final_wp = act_ast->target;
+          }
+          else if (my_action->h.type==STRAT_ACTION_TYPE_TRAJ)
+          {
+            strat_action_traj_t *act_traj= 
+              (strat_action_traj_t *) my_action;
+            m_task_dbg->m_current_action_final_wp = act_traj->wp[act_traj->nwp-1];
+          }
+          else
+          {
+            m_task_dbg->m_current_action_final_wp.x_mm = 1000.0;
+            m_task_dbg->m_current_action_final_wp.y_mm = 0.0;
+          }
           printf (" Got action : %d.\n", my_action->h.type);
+          printf (" Final wp : <%f,%f>\n",
+                  m_task_dbg->m_current_action_final_wp.x_mm,
+                  m_task_dbg->m_current_action_final_wp.y_mm);
           printf ("\n");
           m_strat_state = STRAT_STATE_INIT_ACTION;
           state_change_dbg = true;
@@ -370,7 +397,7 @@ void RobotStrat::taskFunction()
       if (my_action->h.type==STRAT_ACTION_TYPE_GOTO_ASTAR)
       {
         state_change_dbg = check_deadlines_and_change_state(
-          my_time_ms, soft_deadline_ms, hard_deadline_ms, STRAT_STATE_EXEC_ACTION);
+          my_time_ms, soft_deadline_ms, hard_deadline_ms, STRAT_STATE_EXEC_ACTION, "INIT DONE");
       }
       else
       {
@@ -415,7 +442,7 @@ void RobotStrat::taskFunction()
       }
 
       state_change_dbg = check_deadlines_and_change_state(
-        my_time_ms, soft_deadline_ms, hard_deadline_ms, STRAT_STATE_END_ACTION);
+        my_time_ms, soft_deadline_ms, hard_deadline_ms, STRAT_STATE_END_ACTION, "EXEC DONE");
 
       break;
 
@@ -526,10 +553,6 @@ void RobotStrat::taskFunction()
       if (my_time_ms > hard_deadline_ms)
       {
         printf ("\n");
-        cmd_clear_prop_err();
-        /* FIXME : TODO : is this necessary? */
-        RobotState::instance().m_lidar_detection_enabled = false;
-        RobotState::instance().set_obstacle_gpio(false);
         auto move_away_action = prepare_STRAT_STATE_EMERGENCY_MOVE_AWAY();
         do_STRAT_STATE_INIT_ACTION(move_away_action);
         do_STRAT_STATE_EXEC_ACTION(move_away_action);
@@ -552,20 +575,50 @@ void RobotStrat::taskFunction()
         state_change_dbg = false;
       }
 
-#if 0 /* FIXME : DEBUG */
       state_change_dbg = check_deadlines_and_change_state(
-        my_time_ms, soft_deadline_ms, hard_deadline_ms, STRAT_STATE_EMERGENCY_ESCAPE);
+        my_time_ms, soft_deadline_ms, hard_deadline_ms, STRAT_STATE_NULL, "MOVE_AWAY DONE");
       if (state_change_dbg)
       {
-        auto escape_action = prepare_STRAT_STATE_EMERGENCY_ESCAPE();
         RobotState::instance().m_lidar_detection_enabled = true;
-        soft_deadline_ms = my_time_ms + escape_action->h.min_duration_ms;
-        hard_deadline_ms = my_time_ms + escape_action->h.max_duration_ms;
-      }
-#else
-      state_change_dbg = check_deadlines_and_change_state(
-        my_time_ms, soft_deadline_ms, hard_deadline_ms, STRAT_STATE_IDDLE);
+        my_escape_action = prepare_STRAT_STATE_EMERGENCY_ESCAPE();
+        soft_deadline_ms = my_time_ms + my_escape_action->h.min_duration_ms;
+        hard_deadline_ms = my_time_ms + my_escape_action->h.max_duration_ms;
+        action_ok = do_STRAT_STATE_INIT_ACTION(my_escape_action);
+        if (!action_ok)
+        {
+          m_strat_state = STRAT_STATE_EMERGENCY_ESCAPE_INIT;
+        }
+        else
+        {
+          printf ("Failed to init EMERGENCY_ESCAPE!\n");
+#if 1 /* FIXME : TODO : what to do next?!.. */
+          m_strat_state = STRAT_STATE_IDDLE;
+          state_change_dbg = true;
 #endif
+        }
+      }
+
+      break;
+
+    case STRAT_STATE_EMERGENCY_ESCAPE_INIT:
+      if (state_change_dbg)
+      {
+        printf ("\n");
+        printf ("****************************************\n");
+        printf ("* STRAT_STATE_EMERGENCY_ESCAPE_INIT ****\n");
+        printf ("****************************************\n");
+        printf ("\n");
+        state_change_dbg = false;
+      }
+
+      state_change_dbg = check_deadlines_and_change_state(
+        my_time_ms, soft_deadline_ms, hard_deadline_ms, STRAT_STATE_EMERGENCY_ESCAPE, "ESCAPE INIT DONE");
+      if (state_change_dbg)
+      {
+        soft_deadline_ms = my_time_ms + my_escape_action->h.min_duration_ms;
+        hard_deadline_ms = my_time_ms + my_escape_action->h.max_duration_ms;
+        do_STRAT_STATE_EXEC_ACTION(my_escape_action);
+      }
 
       break;
 
@@ -574,14 +627,14 @@ void RobotStrat::taskFunction()
       {
         printf ("\n");
         printf ("****************************************\n");
-        printf ("* STRAT_STATE_IDDLE ********************\n");
+        printf ("* STRAT_STATE_EMERGENCY_ESCAPE *********\n");
         printf ("****************************************\n");
         printf ("\n");
         state_change_dbg = false;
       }
 
       state_change_dbg = check_deadlines_and_change_state(
-        my_time_ms, soft_deadline_ms, hard_deadline_ms, STRAT_STATE_END_ACTION);
+        my_time_ms, soft_deadline_ms, hard_deadline_ms, STRAT_STATE_END_ACTION, "ESCAPE DONE");
 
       break;
 
@@ -616,7 +669,8 @@ void RobotStrat::taskFunction()
 bool RobotStrat::check_deadlines_and_change_state(unsigned int my_time_ms,
                                                   unsigned int soft_deadline_ms,
                                                   unsigned int hard_deadline_ms,
-                                                  strat_state_t new_strat_state)
+                                                  strat_state_t new_strat_state,
+                                                  const char *done_log)
 {
   bool state_changed = false;
 
@@ -627,8 +681,9 @@ bool RobotStrat::check_deadlines_and_change_state(unsigned int my_time_ms,
     if (!RobotState::instance().propulsion_busy())
     {
       printf ("\n");
-      printf (" Init DONE\n");
-      m_strat_state = new_strat_state;
+      printf (" %s\n", done_log);
+      if (new_strat_state!=STRAT_STATE_NULL)
+        m_strat_state = new_strat_state;
       state_changed = true;
     }
     /* FIXME : TODO : error management */
@@ -643,7 +698,8 @@ bool RobotStrat::check_deadlines_and_change_state(unsigned int my_time_ms,
   if (my_time_ms > hard_deadline_ms)
   {
     printf ("\n");
-    m_strat_state = new_strat_state;
+    if (new_strat_state!=STRAT_STATE_NULL)
+      m_strat_state = new_strat_state;
     state_changed = true;
   }
 
@@ -917,8 +973,17 @@ strat_action_t * RobotStrat::prepare_STRAT_STATE_EMERGENCY_MOVE_AWAY()
 
 strat_action_t * RobotStrat::prepare_STRAT_STATE_EMERGENCY_ESCAPE()
 {
-  /* FIXME : TODO */
-  return NULL;
+  strat_action_goto_astar_t *act_escape = (strat_action_goto_astar_t *)m_task_dbg->m_emergency_action_buf;
+  memset (act_escape, 0, sizeof(strat_action_goto_astar_t));
+  act_escape->h.type = STRAT_ACTION_TYPE_GOTO_ASTAR;
+  act_escape->h.min_duration_ms = 200;
+  act_escape->h.max_duration_ms = 20000;
+  act_escape->speed = 0.4;
+  act_escape->accel = 0.4;
+  act_escape->deccel = 0.4;
+  act_escape->target = m_task_dbg->m_current_action_final_wp;
+
+  return (strat_action_t *) act_escape;
 }
 
 

@@ -41,6 +41,8 @@ StratTask::StratTask()
   m_completed = false;
   memset (&m_init_pos_wp, 0, sizeof(m_init_pos_wp));
   memset (&m_init_point_to_wp, 0, sizeof(m_init_point_to_wp));
+  m_current_action_final_wp.x_mm = 1000.0;
+  m_current_action_final_wp.y_mm = 0.0;
   m_min_init_goto_duration_ms = 100.0;
   m_max_init_goto_duration_ms = 20000.0; /* FIXME : TODO : heuristics.. */
   m_required_pos_accuracy_mm = 50.0;

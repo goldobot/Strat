@@ -229,7 +229,8 @@ void RobotStrat::taskFunction()
     }
 
     if (RobotState::instance().emergency_stop() && 
-        (m_strat_state!=STRAT_STATE_EMERGENCY_STOP))
+        (m_strat_state!=STRAT_STATE_EMERGENCY_STOP) &&
+        (m_strat_state!=STRAT_STATE_EMERGENCY_MOVE_AWAY) )
     {
       printf ("EMERGENCY_STOP!\n");
       hard_deadline_ms = my_time_ms + 100; /* FIXME : TODO : configuration.. */

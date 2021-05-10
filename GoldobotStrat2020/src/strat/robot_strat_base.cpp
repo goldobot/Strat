@@ -251,9 +251,9 @@ int StratTask::read_yaml_conf(YAML::Node &yconf)
       action->h.type = STRAT_ACTION_TYPE_BRANCH;
       action->h.min_duration_ms = 0;
       action->h.max_duration_ms = 0;
-      my_str = act_node["param_goto_branch"]["condition"].as<std::string>().c_str();
+      my_str = act_node["param_branch"]["condition"].as<std::string>().c_str();
       strncpy(action->condition, my_str, sizeof (action->condition)-1);
-      my_str = act_node["param_goto_branch"]["target_if_true"].as<std::string>().c_str();
+      my_str = act_node["param_branch"]["target_if_true"].as<std::string>().c_str();
       strncpy(action->target_if_true, my_str, sizeof (action->target_if_true)-1);
       m_action_list[i] = (strat_action_t *) action;
       curr_act_p += sizeof(*action);

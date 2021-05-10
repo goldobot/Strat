@@ -299,6 +299,41 @@ void RobotStrat::taskFunction()
       {
         my_action = m_task_dbg->m_action_list[m_task_dbg->m_curr_act_idx];
 
+        if ((my_action!=NULL) && (my_action->h.type==STRAT_ACTION_TYPE_BRANCH))
+        {
+          strat_action_branch_t *act_branch = (strat_action_branch_t *)my_action;
+          bool condition = false;
+          printf ("\n");
+          printf ("@@@@@@@@@@\n");
+          printf ("@ BRANCH @\n");
+          printf ("@@@@@@@@@@\n");
+          printf ("\n");
+          printf (" Got conditional BRANCH with target: %s\n", act_branch->target_if_true);
+          /* FIXME : TODO : really parse condition string */
+          condition = WorldState::instance().get_observable_value(act_branch->condition);
+          printf (" Condition '%s' is %s\n", act_branch->condition, condition?"TRUE":"FALSE");
+          if (condition)
+          {
+            int target_idx = m_task_dbg->get_action_idx_with_label(act_branch->target_if_true);
+            if (target_idx<0)
+            {
+              printf (" Warning : Cannot find action with label '%s' !\n", act_branch->target_if_true);
+              /* FIXME : TODO : what to do?.. */
+              my_action = NULL;
+            }
+            else
+            {
+              m_task_dbg->m_curr_act_idx = target_idx;
+              my_action = m_task_dbg->m_action_list[m_task_dbg->m_curr_act_idx];
+            }
+          }
+          else
+          {
+            m_task_dbg->m_curr_act_idx++;
+            my_action = m_task_dbg->m_action_list[m_task_dbg->m_curr_act_idx];
+          }
+        }
+
         if (my_action==NULL)
         {
           printf (" Warning : NULL action pointer!\n");
@@ -377,7 +412,9 @@ void RobotStrat::taskFunction()
       }
       else
       {
-        m_strat_state = STRAT_STATE_END_ACTION;
+        /* FIXME : TODO : is this OK? */
+        //m_strat_state = STRAT_STATE_END_ACTION;
+        m_strat_state = STRAT_STATE_IDDLE;
         state_change_dbg = true;
       }
 
@@ -715,6 +752,12 @@ bool RobotStrat::do_STRAT_STATE_INIT_ACTION(strat_action_t *my_action)
     printf (" STRAT_ACTION_TYPE_WAIT\n");
     action_ok = true;
     break;
+  case STRAT_ACTION_TYPE_STOP:
+    printf (" STRAT_ACTION_TYPE_STOP\n");
+    /* FIXME : TODO */
+    printf (" Forcing IDDLE state!\n");
+    action_ok = false;
+    break;
   case STRAT_ACTION_TYPE_TRAJ:
     printf (" STRAT_ACTION_TYPE_TRAJ\n");
     action_ok = true;
@@ -856,6 +899,10 @@ bool RobotStrat::do_STRAT_STATE_INIT_ACTION(strat_action_t *my_action)
     }
   }
   break;
+  case STRAT_ACTION_TYPE_BRANCH:
+    printf (" STRAT_ACTION_TYPE_BRANCH\n");
+    action_ok = true;
+    break;
   default:
     printf (" Warning : Unknown action type!\n");
     action_ok = false;
@@ -868,6 +915,8 @@ void RobotStrat::do_STRAT_STATE_EXEC_ACTION(strat_action_t *my_action)
 {
   switch (my_action->h.type) {
   case STRAT_ACTION_TYPE_WAIT:
+    break;
+  case STRAT_ACTION_TYPE_STOP:
     break;
   case STRAT_ACTION_TYPE_TRAJ:
   {
@@ -899,6 +948,8 @@ void RobotStrat::do_STRAT_STATE_EXEC_ACTION(strat_action_t *my_action)
               act_ast->speed, act_ast->accel, act_ast->deccel);
   }
   break;
+  case STRAT_ACTION_TYPE_BRANCH:
+    break;
   default:
     printf (" Warning : Unknown action type!\n");
   } /* switch (my_action->h.type) */

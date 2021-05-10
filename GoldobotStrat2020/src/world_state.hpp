@@ -8,10 +8,17 @@
 
 namespace goldobot
 {
+  typedef struct _environment_observable_simple {
+    char name[64];
+    bool value;
+  } environment_observable_simple_t;
+
   typedef struct _world_state_info {
-    unsigned int          local_ts_ms;
-    int                   n_detected_robots;
-    detected_robot_info_t detected_robot[3];
+    unsigned int                    local_ts_ms;
+    int                             n_detected_robots;
+    detected_robot_info_t           detected_robot[3];
+    int                             n_observ;
+    environment_observable_simple_t observable[4];
   } world_state_info_t;
 
   class WorldState : public GoldoThread
@@ -31,6 +38,8 @@ namespace goldobot
     world_state_info_t& s() {return m_s;}
 
     detected_robot_info_t& detected_robot(int _obst_idx);
+
+    bool get_observable_value(char *observable_name);
 
     int lock(int timeout_ms = -1);
 

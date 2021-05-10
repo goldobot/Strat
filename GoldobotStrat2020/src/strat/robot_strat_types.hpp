@@ -16,6 +16,7 @@ namespace goldobot
   typedef enum _strat_action_type {
     STRAT_ACTION_TYPE_NONE = 0,
     STRAT_ACTION_TYPE_WAIT,
+    STRAT_ACTION_TYPE_STOP,
     STRAT_ACTION_TYPE_TRAJ,
     STRAT_ACTION_TYPE_POINT_TO,
 
@@ -43,6 +44,10 @@ namespace goldobot
   typedef struct _strat_action_wait {
     strat_action_header_t h;
   } strat_action_wait_t;
+
+  typedef struct _strat_action_stop {
+    strat_action_header_t h;
+  } strat_action_stop_t;
 
   typedef struct _strat_action_traj {
     strat_action_header_t h;
@@ -75,6 +80,12 @@ namespace goldobot
     int nwp;
     strat_way_point_t wp[32];
   } strat_action_goto_astar_t;
+
+  typedef struct _strat_action_branch {
+    strat_action_header_t h;
+    char condition[64];
+    char target_if_true[32];
+  } strat_action_branch_t;
 
 
 /**  Strat resources  *********************************************************/

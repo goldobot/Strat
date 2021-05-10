@@ -83,6 +83,8 @@ namespace goldobot
 
     void dbg_dump_task();
 
+    int get_action_idx_with_label(char *label);
+
     /* FIXME : TODO */
 
     char m_task_name[64];

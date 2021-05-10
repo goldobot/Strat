@@ -155,6 +155,15 @@ int StratTask::read_yaml_conf(YAML::Node &yconf)
       m_action_list[i] = (strat_action_t *) action;
       curr_act_p += sizeof(*action);
     }
+    if (strcmp(act_type_str,"STOP")==0)
+    {
+      strat_action_stop_t *action = (strat_action_stop_t *) curr_act_p;
+      action->h.type = STRAT_ACTION_TYPE_STOP;
+      action->h.min_duration_ms = 0;
+      action->h.max_duration_ms = 0;
+      m_action_list[i] = (strat_action_t *) action;
+      curr_act_p += sizeof(*action);
+    }
     else if (strcmp(act_type_str,"TRAJ")==0)
     {
       strat_action_traj_t *action = (strat_action_traj_t *) curr_act_p;
@@ -236,6 +245,19 @@ int StratTask::read_yaml_conf(YAML::Node &yconf)
       m_action_list[i] = (strat_action_t *) action;
       curr_act_p += sizeof(*action);
     }
+    else if (strcmp(act_type_str,"BRANCH")==0)
+    {
+      strat_action_branch_t *action = (strat_action_branch_t *) curr_act_p;
+      action->h.type = STRAT_ACTION_TYPE_BRANCH;
+      action->h.min_duration_ms = 0;
+      action->h.max_duration_ms = 0;
+      my_str = act_node["param_goto_branch"]["condition"].as<std::string>().c_str();
+      strncpy(action->condition, my_str, sizeof (action->condition)-1);
+      my_str = act_node["param_goto_branch"]["target_if_true"].as<std::string>().c_str();
+      strncpy(action->target_if_true, my_str, sizeof (action->target_if_true)-1);
+      m_action_list[i] = (strat_action_t *) action;
+      curr_act_p += sizeof(*action);
+    }
     else
     {
       printf ("  ERROR : unknown action\n");
@@ -246,6 +268,22 @@ int StratTask::read_yaml_conf(YAML::Node &yconf)
   return 0;
 }
 
+int StratTask::get_action_idx_with_label(char *label)
+{
+  int idx = -1;
+
+  for (int i=0; i<m_n_actions; i++)
+  {
+    strat_action_t *action = m_action_list[i];
+    if (strcmp(label,action->h.label)==0)
+    {
+      idx = i;
+      break;
+    }
+  }
+
+  return idx;
+}
 
 /******************************************************************************/
 /**  Playground  **************************************************************/
@@ -546,10 +584,11 @@ void StratPlayground::send_playground_ppm()
 void StratTask::dbg_dump_task()
 {
   int i,j;
-  strat_action_traj_t *act_traj = NULL;
-  strat_action_point_to_t *act_point = NULL;
-  strat_action_nucleo_seq_t *act_nuc = NULL;
-  strat_action_goto_astar_t *act_astar = NULL;
+  strat_action_traj_t       *act_traj   = NULL;
+  strat_action_point_to_t   *act_point  = NULL;
+  strat_action_nucleo_seq_t *act_nuc    = NULL;
+  strat_action_goto_astar_t *act_astar  = NULL;
+  strat_action_branch_t     *act_branch = NULL;
 
   printf ("\n");
   printf ("dbg_task:\n");
@@ -576,6 +615,9 @@ void StratTask::dbg_dump_task()
       break;
     case STRAT_ACTION_TYPE_WAIT:
       printf ("    type: WAIT\n");
+      break;
+    case STRAT_ACTION_TYPE_STOP:
+      printf ("    type: STOP\n");
       break;
     case STRAT_ACTION_TYPE_TRAJ:
       act_traj = (strat_action_traj_t *)act;
@@ -619,6 +661,13 @@ void StratTask::dbg_dump_task()
       printf ("      target:\n");
       printf ("        [%8.1f,%8.1f]\n", 
               act_astar->target.x_mm, act_astar->target.y_mm);
+      break;
+    case STRAT_ACTION_TYPE_BRANCH:
+      act_branch = (strat_action_branch_t *)act;
+      printf ("    type: BRANCH\n");
+      printf ("    param_branch:\n");
+      printf ("      condition       : %s\n", act_branch->condition);
+      printf ("      target_if_true  : %s\n", act_branch->target_if_true);
       break;
     default:
       printf ("    UNKNOWN type!(%d)\n", act->h.type);

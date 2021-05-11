@@ -155,7 +155,7 @@ int StratTask::read_yaml_conf(YAML::Node &yconf)
       m_action_list[i] = (strat_action_t *) action;
       curr_act_p += sizeof(*action);
     }
-    if (strcmp(act_type_str,"STOP")==0)
+    else if (strcmp(act_type_str,"STOP")==0)
     {
       strat_action_stop_t *action = (strat_action_stop_t *) curr_act_p;
       action->h.type = STRAT_ACTION_TYPE_STOP;
@@ -260,7 +260,7 @@ int StratTask::read_yaml_conf(YAML::Node &yconf)
     }
     else
     {
-      printf ("  ERROR : unknown action\n");
+      printf ("  ERROR : unknown action (index=%d, act_type_str=%s)\n", i, act_type_str);
     }
 
   } /* for (int i=0; i<m_n_actions; i++) */

@@ -213,6 +213,8 @@ void RobotStrat::taskFunction()
         printf ("! DON'T FORGET THE FUNNY ACTION !!!!!!!!\n");
         printf ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
         printf ("\n");
+        printf ("match_time = %8.3f\n", 0.001*(my_time_ms-match_start_ms));
+        printf ("\n");
         match_funny_done = true;
       }
 
@@ -221,6 +223,9 @@ void RobotStrat::taskFunction()
         RobotState::instance().s().strat_stop = true;
         cmd_emergency_stop();
         m_strat_state = STRAT_STATE_IDDLE;
+        printf ("\n");
+        printf ("match_time = %8.3f\n", 0.001*(my_time_ms-match_start_ms));
+        printf ("\n");
         state_change_dbg = true;
       }
     }
@@ -262,13 +267,16 @@ void RobotStrat::taskFunction()
         state_change_dbg = false;
       }
 
-      /* FIXME : DEBUG */
+      /* FIXME : TODO : define random entry point for strategy? */
       m_task_dbg->m_curr_act_idx = 0;
 
       if ((!RobotState::instance().tirette_present()) || m_start_match_sig)
       {
         match_start_ms = my_time_ms;
 
+        printf ("\n");
+        printf ("match_time = 0\n");
+        printf ("\n");
         printf ("\n DEBUG : GO!..\n\n");
 
         /* FIXME : TODO : necessary? */
@@ -490,6 +498,8 @@ void RobotStrat::taskFunction()
         printf ("****************************************\n");
         printf ("* STRAT_STATE_END_ACTION ***************\n");
         printf ("****************************************\n");
+        printf ("\n");
+        printf ("match_time = %8.3f\n", 0.001*(my_time_ms-match_start_ms));
         printf ("\n");
         state_change_dbg = false;
       }

@@ -18,6 +18,8 @@ char GoldoConf::conf_viewer_addr_str_def[]     = "192.168.0.241";
 char GoldoConf::conf_rplidar_dev_str_def[]     = "/dev/rplidar";
 char GoldoConf::conf_nucleo_uart_dev_str_def[] = "/dev/odometry";
 char GoldoConf::conf_strat_file_str_def[]      = "strat.yaml";
+char GoldoConf::conf_strat_file_pos_str_def[]  = "";
+char GoldoConf::conf_strat_file_neg_str_def[]  = "";
 char GoldoConf::conf_simul_file_str_def[]      = "simul.yaml";
 
 
@@ -54,6 +56,10 @@ void GoldoConf::set_default()
   m_c.conf_zmq_port = conf_zmq_port_def;
   strncpy(m_c.conf_strat_file_str, conf_strat_file_str_def, 
           sizeof(m_c.conf_strat_file_str)-1);
+  strncpy(m_c.conf_strat_file_pos_str, conf_strat_file_pos_str_def, 
+          sizeof(m_c.conf_strat_file_pos_str)-1);
+  strncpy(m_c.conf_strat_file_neg_str, conf_strat_file_neg_str_def, 
+          sizeof(m_c.conf_strat_file_neg_str)-1);
   strncpy(m_c.conf_simul_file_str, conf_simul_file_str_def, 
           sizeof(m_c.conf_simul_file_str)-1);
 }
@@ -154,6 +160,22 @@ int GoldoConf::parse_yaml_conf(const char * yaml_fname)
               sizeof(m_c.conf_strat_file_str)-1);
     }
 
+    conf_node = yconf["environment"]["conf_strat_file_pos_str"];
+    if (conf_node) 
+    {
+      my_str = (const char *) conf_node.as<std::string>().c_str();
+      strncpy(m_c.conf_strat_file_pos_str, my_str, 
+              sizeof(m_c.conf_strat_file_pos_str)-1);
+    }
+
+    conf_node = yconf["environment"]["conf_strat_file_neg_str"];
+    if (conf_node) 
+    {
+      my_str = (const char *) conf_node.as<std::string>().c_str();
+      strncpy(m_c.conf_strat_file_neg_str, my_str, 
+              sizeof(m_c.conf_strat_file_neg_str)-1);
+    }
+
     conf_node = yconf["environment"]["conf_simul_file_str"];
     if (conf_node) 
     {
@@ -195,6 +217,10 @@ void GoldoConf::display_conf()
              m_c.conf_zmq_port);
   printf ("  conf_strat_file_str           = %s\n", 
              m_c.conf_strat_file_str);
+  printf ("  conf_strat_file_pos_str       = %s\n", 
+             m_c.conf_strat_file_pos_str);
+  printf ("  conf_strat_file_neg_str       = %s\n", 
+             m_c.conf_strat_file_neg_str);
   printf ("  conf_simul_file_str           = %s\n", 
              m_c.conf_simul_file_str);
 }

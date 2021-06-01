@@ -19,6 +19,8 @@ namespace goldobot
     _u32   conf_nucleo_uart_baudrate;
     _u32   conf_zmq_port;
     char   conf_strat_file_str[128];
+    char   conf_strat_file_pos_str[128];
+    char   conf_strat_file_neg_str[128];
     char   conf_simul_file_str[128];
   } goldo_conf_info_t;
 
@@ -60,6 +62,8 @@ namespace goldobot
     static constexpr _u32   conf_zmq_port_def                 = 
       3101;
     static char   conf_strat_file_str_def[];
+    static char   conf_strat_file_pos_str_def[];
+    static char   conf_strat_file_neg_str_def[];
     static char   conf_simul_file_str_def[]; 
 
     static GoldoConf s_instance;

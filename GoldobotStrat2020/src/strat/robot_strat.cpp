@@ -11,6 +11,7 @@
 #include <fstream>
 #include <iostream>
 
+#include "goldo_conf.hpp"
 #include "comm_rplidar.hpp"
 #include "comm_zmq.hpp"
 #include "comm_nucleo.hpp"
@@ -111,7 +112,9 @@ int RobotStrat::init(char *strat_file_name)
 
   m_core_astar.setMatrix(m_path_find_pg.X_SZ_CM, m_path_find_pg.Y_SZ_CM);
 
+#if 0/* FIXME : DEBUG : EXPERIMENTAL */
   read_yaml_conf (m_strat_file_name);
+#endif
 
 
   /* DEBUG */
@@ -192,6 +195,37 @@ void RobotStrat::taskFunction()
   char log_lidar_write_buf[64];
   /* FIXME : TODO : refactor */
   log_lidar_fd = open ("/home/pi/goldo/strat2020/log/log_lidar.txt", O_RDWR);
+
+
+#if 1 /* FIXME : DEBUG : EXPERIMENTAL */
+  goldo_conf_info_t& ci = GoldoConf::instance().c();
+  bool is_neg = ((RobotState::instance().s().robot_sensors&RobotState::GPIO_SIDE_SELECT_MASK) == 0);
+  if (is_neg) /* Y - */
+  {
+    if (ci.conf_strat_file_neg_str[0]==0x00)
+    {
+      read_yaml_conf (m_strat_file_name);
+    }
+    else
+    {
+      read_yaml_conf (ci.conf_strat_file_neg_str);
+    }
+  }
+  else /* Y + */
+  {
+    if (ci.conf_strat_file_pos_str[0]==0x00)
+    {
+      read_yaml_conf (m_strat_file_name);
+    }
+    else
+    {
+      read_yaml_conf (ci.conf_strat_file_pos_str);
+    }
+  }
+  printf (" DEBUG: color: %s\n", is_neg?"BLUE":"YELLOW");
+  printf (" DEBUG: task_name: %s\n", m_task_dbg->m_task_name);
+#endif
+
 
   while(!m_stop_task)
   {

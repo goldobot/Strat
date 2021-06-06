@@ -240,15 +240,14 @@ void RobotStrat::taskFunction()
     {
       if ((!match_funny_done) && (match_start_ms!=0) && (my_time_ms>(match_start_ms+95000)))
       {
-        /* FIXME : TODO */
-        //cmd_nucleo_seq (9);
         printf ("\n");
         printf ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-        printf ("! DON'T FORGET THE FUNNY ACTION !!!!!!!!\n");
+        printf ("!!!!!!!!!!!!  FUNNY ACTION  !!!!!!!!!!!!\n");
         printf ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
         printf ("\n");
         printf ("match_time = %8.3f\n", 0.001*(my_time_ms-match_start_ms));
         printf ("\n");
+        cmd_nucleo_seq (9);
         match_funny_done = true;
       }
 

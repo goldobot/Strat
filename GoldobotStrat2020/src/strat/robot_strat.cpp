@@ -247,6 +247,10 @@ void RobotStrat::taskFunction()
         printf ("\n");
         printf ("match_time = %8.3f\n", 0.001*(my_time_ms-match_start_ms));
         printf ("\n");
+#if 1 /* FIXME : DEBUG : EXPERIMENTAL */
+        RobotState::instance().m_lidar_detection_enabled = false;
+        RobotState::instance().set_obstacle_gpio(false);
+#endif
         cmd_nucleo_seq (9);
         match_funny_done = true;
       }
@@ -278,7 +282,8 @@ void RobotStrat::taskFunction()
       /* FIXME : TODO : is this necessary? */
       RobotState::instance().m_lidar_detection_enabled = false;
       RobotState::instance().set_obstacle_gpio(false);
-      hard_deadline_ms = my_time_ms + 500; /* FIXME : TODO : configuration.. */
+      soft_deadline_ms = my_time_ms + 500;
+      hard_deadline_ms = my_time_ms + m_task_dbg->m_obstacle_freeze_timeout_ms;
       m_strat_state = STRAT_STATE_EMERGENCY_STOP;
       state_change_dbg = true;
     }
@@ -628,6 +633,11 @@ void RobotStrat::taskFunction()
         printf ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
         printf ("\n");
         state_change_dbg = false;
+      }
+
+      if (my_time_ms > soft_deadline_ms)
+      {
+        /* FIXME : TODO */
       }
 
       if (my_time_ms > hard_deadline_ms)
@@ -1042,8 +1052,8 @@ strat_action_t * RobotStrat::prepare_STRAT_STATE_EMERGENCY_MOVE_AWAY()
     return (strat_action_t *) act_wait;
   }
 
-  double move_away_x_mm = my_x_mm + 200.0*(my_x_mm - obst->x_mm)/d_obst;
-  double move_away_y_mm = my_y_mm + 200.0*(my_y_mm - obst->y_mm)/d_obst;
+  double move_away_x_mm = my_x_mm + m_task_dbg->m_move_away_dist_mm*(my_x_mm - obst->x_mm)/d_obst;
+  double move_away_y_mm = my_y_mm + m_task_dbg->m_move_away_dist_mm*(my_y_mm - obst->y_mm)/d_obst;
 
   printf ("Obstacle detected at <%f,%f>\n", obst->x_mm, obst->y_mm);
   printf ("Moving away to <%f,%f>\n", move_away_x_mm, move_away_y_mm);

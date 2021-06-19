@@ -41,6 +41,8 @@ StratTask::StratTask()
   m_completed = false;
   memset (&m_init_pos_wp, 0, sizeof(m_init_pos_wp));
   memset (&m_init_point_to_wp, 0, sizeof(m_init_point_to_wp));
+  m_obstacle_freeze_timeout_ms = 4000;
+  m_move_away_dist_mm = 50.0;
   m_current_action_final_wp.x_mm = 1000.0;
   m_current_action_final_wp.y_mm = 0.0;
   m_min_init_goto_duration_ms = 100.0;
@@ -98,6 +100,30 @@ int StratTask::read_yaml_conf(YAML::Node &yconf)
   {
     m_init_point_to_wp.x_mm = 1.0;
     m_init_point_to_wp.y_mm = 0.0;
+  }
+
+  YAML::Node obstacle_freeze_timeout_node = yconf["obstacle_freeze_timeout"];
+  if (obstacle_freeze_timeout_node) 
+  {
+    const char *my_str = NULL;
+    my_str = obstacle_freeze_timeout_node[0].as<std::string>().c_str();
+    m_obstacle_freeze_timeout_ms = strtoul(my_str, NULL, 10);
+  }
+  else
+  {
+    m_obstacle_freeze_timeout_ms = 4000;
+  }
+
+  YAML::Node move_away_dist_node = yconf["move_away_dist"];
+  if (move_away_dist_node) 
+  {
+    const char *my_str = NULL;
+    my_str = move_away_dist_node[0].as<std::string>().c_str();
+    m_move_away_dist_mm = strtof(my_str, NULL);
+  }
+  else
+  {
+    m_move_away_dist_mm = 50.0;
   }
 
   m_n_actions = yconf["actions"].size();
@@ -599,6 +625,8 @@ void StratTask::dbg_dump_task()
   printf ("  init_point_to:\n");
   printf ("    [%8.1f,%8.1f]\n", 
           m_init_point_to_wp.x_mm, m_init_point_to_wp.y_mm);
+  printf ("  obstacle_freeze_timeout: %d\n", m_obstacle_freeze_timeout_ms);
+  printf ("  move_away_dist: %8.1f\n", m_move_away_dist_mm);
   printf ("  curr_act_idx: %d\n", m_curr_act_idx);
   printf ("  n_actions: %d\n", m_n_actions);
   printf ("  actions:\n");

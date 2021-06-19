@@ -98,6 +98,8 @@ namespace goldobot
     bool m_completed;
     strat_way_point_t m_init_pos_wp;
     strat_way_point_t m_init_point_to_wp;
+    unsigned int m_obstacle_freeze_timeout_ms;
+    float m_move_away_dist_mm;
     strat_way_point_t m_current_action_final_wp;
     int m_min_init_goto_duration_ms;
     int m_max_init_goto_duration_ms;

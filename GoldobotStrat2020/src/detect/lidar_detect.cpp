@@ -34,12 +34,20 @@ LidarDetect::LidarDetect()
 {
   m_cur_ts_ms = 0;
 
+  m_quality_threshold = 1;
+
+  m_nb_of_send_detect = MAX_NB_OF_DETECTED_ROBOTS;
+
   m_detect_lock = false;
 }
 
 int LidarDetect::init()
 {
   m_cur_ts_ms = 0;
+
+  m_quality_threshold = 1;
+
+  m_nb_of_send_detect = MAX_NB_OF_DETECTED_ROBOTS;
 
   for (int i=0; i<MAX_NB_OF_DETECTED_ROBOTS; i++)
   {
@@ -424,7 +432,11 @@ void LidarDetect::updateDetection()
   memcpy (m_detect_export, m_detect_t_0, sizeof(m_detect_t_0));
   m_detect_lock = false;
 
-  /* FIXME : TODO : refactor */
+  /* FIXME : TODO : refactor (quick hack) */
+  if (m_nb_of_send_detect<3)
+    m_detect_t_0[2].detect_quality = 0;
+  if (m_nb_of_send_detect<2)
+    m_detect_t_0[1].detect_quality = 0;
   WorldState::instance().lock();
   WorldState::instance().detected_robot(0) = m_detect_export[0];
   WorldState::instance().detected_robot(1) = m_detect_export[1];
@@ -442,7 +454,7 @@ void LidarDetect::sendDetected()
 
   for (int i=0; i<MAX_NB_OF_DETECTED_ROBOTS; i++)
   {
-    if (m_detect_t_0[1].detect_quality>0)
+    if (m_detect_t_0[i].detect_quality>m_quality_threshold)
     {
       my_message.timestamp_ms   = m_detect_t_0[i].timestamp_ms;
       my_message.id             = m_detect_t_0[i].id;

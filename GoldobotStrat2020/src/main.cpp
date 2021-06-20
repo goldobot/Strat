@@ -153,6 +153,9 @@ int main(int argc, const char * argv[])
     fprintf(stderr, "ERROR : cannot init adversary tracker.\n");
     return -1;
   }
+#if 1 /* FIXME : DEBUG */
+  LidarDetect::instance().set_nb_of_send_detect(ci.conf_n_obstacles);
+#endif
 
   if (RobotStrat::instance().init(ci.conf_strat_file_str)!=0)
   {

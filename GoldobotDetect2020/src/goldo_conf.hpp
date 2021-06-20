@@ -25,6 +25,7 @@ namespace goldobot
     _u32   conf_zmq_port_comm_uart;
     _u32   conf_zmq_port;
     bool   conf_direct_uart_nucleo_enabled;
+    _u32   conf_n_obstacles;
     bool   conf_dbg_log_enabled;
     _u32   conf_calib_lidar_nsamples;
     goldo_conf_calib_lidar_sample_t conf_calib_lidar_sample[30];
@@ -73,6 +74,8 @@ namespace goldobot
       false;
     static constexpr bool   conf_dbg_log_enabled_def          = 
       false;
+    static constexpr _u32   conf_n_obstacles_def              = 
+      3;
 
     static GoldoConf s_instance;
   };

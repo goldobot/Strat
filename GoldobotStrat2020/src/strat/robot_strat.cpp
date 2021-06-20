@@ -1021,9 +1021,22 @@ strat_action_t * RobotStrat::prepare_STRAT_STATE_EMERGENCY_MOVE_AWAY()
     WorldState::instance().detected_robot(2);
   WorldState::instance().release();
   double d_obst = 3000.0;
-  double d0_mm = goldo_dist(my_x_mm, my_y_mm, o0.x_mm, o0.y_mm);
-  double d1_mm = goldo_dist(my_x_mm, my_y_mm, o1.x_mm, o1.y_mm);
-  double d2_mm = goldo_dist(my_x_mm, my_y_mm, o2.x_mm, o2.y_mm);
+  double d0_mm = 3000.0;
+  double d1_mm = 3000.0;
+  double d2_mm = 3000.0;
+
+  if (o0.detect_quality>2)
+  {
+    d0_mm = goldo_dist(my_x_mm, my_y_mm, o0.x_mm, o0.y_mm);
+  }
+  if (o1.detect_quality>2)
+  {
+    d1_mm = goldo_dist(my_x_mm, my_y_mm, o1.x_mm, o1.y_mm);
+  }
+  if (o2.detect_quality>2)
+  {
+    d2_mm = goldo_dist(my_x_mm, my_y_mm, o2.x_mm, o2.y_mm);
+  }
 
   detected_robot_info_t* obst = NULL;
   if (d0_mm<d_obst)

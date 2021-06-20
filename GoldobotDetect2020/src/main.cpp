@@ -141,6 +141,9 @@ int main(int argc, const char * argv[])
     fprintf(stderr, "ERROR : cannot init adversary tracker.\n");
     return -1;
   }
+#if 1 /* FIXME : DEBUG */
+  LidarDetect::instance().set_nb_of_send_detect(ci.conf_n_obstacles);
+#endif
 
   printf(" Initialising software components DONE\n");
 

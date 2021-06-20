@@ -52,6 +52,7 @@ void GoldoConf::set_default()
   m_c.conf_zmq_port_comm_uart = conf_zmq_port_comm_uart_def;
   m_c.conf_zmq_port = conf_zmq_port_def;
   m_c.conf_direct_uart_nucleo_enabled = conf_direct_uart_nucleo_enabled_def;
+  m_c.conf_n_obstacles = conf_n_obstacles_def;
   m_c.conf_dbg_log_enabled = conf_dbg_log_enabled_def;
   m_c.conf_calib_lidar_nsamples = 2;
   m_c.conf_calib_lidar_sample[0] = {0.0, 0.0};
@@ -163,6 +164,13 @@ int GoldoConf::parse_yaml_conf(const char * yaml_fname)
       }
     }
 
+    conf_node = yconf["environment"]["conf_n_obstacles"];
+    if (conf_node) 
+    {
+      my_str = (const char *) conf_node.as<std::string>().c_str();
+      m_c.conf_n_obstacles = strtoul(my_str, NULL, 10);
+    }
+
     conf_node = yconf["environment"]["conf_dbg_log"];
     if (conf_node) 
     {
@@ -221,6 +229,8 @@ void GoldoConf::display_conf()
              m_c.conf_zmq_port);
   printf ("  conf_direct_uart_nucleo       = %s\n", 
              m_c.conf_direct_uart_nucleo_enabled?"enabled":"disabled");
+  printf ("  conf_n_obstacles              = %d\n", 
+             m_c.conf_n_obstacles);
   printf ("  conf_dbg_log                  = %s\n", 
              m_c.conf_dbg_log_enabled?"enabled":"disabled");
   printf ("  conf_calib_lidar:\n");

@@ -43,6 +43,10 @@ namespace goldobot
 
     void sendDetected();
 
+    void set_nb_of_send_detect(int _v) {if (_v<=MAX_NB_OF_DETECTED_ROBOTS) m_nb_of_send_detect=_v;};
+
+    void set_quality_threshold(unsigned int _v) {m_quality_threshold=_v;};
+
     detected_robot_info_t& detected_robot(int _obst_idx);
 
   private:
@@ -50,6 +54,10 @@ namespace goldobot
     static constexpr int MAX_NB_OF_DETECTED_ROBOTS = 3;
     static constexpr double OBSTACLE_SIZE_MM = 80.0;
     static constexpr int MAX_NB_OF_CACHED_SAMPLES = 10000;
+
+    unsigned int m_quality_threshold = 1;
+
+    int m_nb_of_send_detect = MAX_NB_OF_DETECTED_ROBOTS;
 
     unsigned int m_cur_ts_ms = 0;
 

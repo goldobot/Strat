@@ -54,6 +54,7 @@ void GoldoConf::set_default()
           sizeof(m_c.conf_nucleo_uart_dev_str)-1);
   m_c.conf_nucleo_uart_baudrate = conf_nucleo_uart_baudrate_def;
   m_c.conf_zmq_port = conf_zmq_port_def;
+  m_c.conf_n_obstacles = conf_n_obstacles_def;
   strncpy(m_c.conf_strat_file_str, conf_strat_file_str_def, 
           sizeof(m_c.conf_strat_file_str)-1);
   strncpy(m_c.conf_strat_file_pos_str, conf_strat_file_pos_str_def, 
@@ -152,6 +153,13 @@ int GoldoConf::parse_yaml_conf(const char * yaml_fname)
       m_c.conf_zmq_port = strtoul(my_str, NULL, 10);
     }
 
+    conf_node = yconf["environment"]["conf_n_obstacles"];
+    if (conf_node) 
+    {
+      my_str = (const char *) conf_node.as<std::string>().c_str();
+      m_c.conf_n_obstacles = strtoul(my_str, NULL, 10);
+    }
+
     conf_node = yconf["environment"]["conf_strat_file_str"];
     if (conf_node) 
     {
@@ -215,6 +223,8 @@ void GoldoConf::display_conf()
              m_c.conf_nucleo_uart_baudrate);
   printf ("  conf_zmq_port                 = %d\n", 
              m_c.conf_zmq_port);
+  printf ("  conf_n_obstacles              = %d\n", 
+             m_c.conf_n_obstacles);
   printf ("  conf_strat_file_str           = %s\n", 
              m_c.conf_strat_file_str);
   printf ("  conf_strat_file_pos_str       = %s\n", 

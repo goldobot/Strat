@@ -428,15 +428,16 @@ void LidarDetect::updateDetection()
 
 #endif
 
-  m_detect_lock = true;
-  memcpy (m_detect_export, m_detect_t_0, sizeof(m_detect_t_0));
-  m_detect_lock = false;
-
-  /* FIXME : TODO : refactor (quick hack) */
+  /* FIXME : TODO : improve (quick hack) */
   if (m_nb_of_send_detect<3)
     m_detect_t_0[2].detect_quality = 0;
   if (m_nb_of_send_detect<2)
     m_detect_t_0[1].detect_quality = 0;
+
+  m_detect_lock = true;
+  memcpy (m_detect_export, m_detect_t_0, sizeof(m_detect_t_0));
+  m_detect_lock = false;
+
   WorldState::instance().lock();
   WorldState::instance().detected_robot(0) = m_detect_export[0];
   WorldState::instance().detected_robot(1) = m_detect_export[1];

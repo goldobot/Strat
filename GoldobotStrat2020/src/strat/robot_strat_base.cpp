@@ -106,7 +106,7 @@ int StratTask::read_yaml_conf(YAML::Node &yconf)
   if (obstacle_freeze_timeout_node) 
   {
     const char *my_str = NULL;
-    my_str = obstacle_freeze_timeout_node[0].as<std::string>().c_str();
+    my_str = obstacle_freeze_timeout_node.as<std::string>().c_str();
     m_obstacle_freeze_timeout_ms = strtoul(my_str, NULL, 10);
   }
   else
@@ -118,7 +118,7 @@ int StratTask::read_yaml_conf(YAML::Node &yconf)
   if (move_away_dist_node) 
   {
     const char *my_str = NULL;
-    my_str = move_away_dist_node[0].as<std::string>().c_str();
+    my_str = move_away_dist_node.as<std::string>().c_str();
     m_move_away_dist_mm = strtof(my_str, NULL);
   }
   else

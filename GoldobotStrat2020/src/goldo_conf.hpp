@@ -8,6 +8,11 @@ typedef unsigned int _u32;
 
 namespace goldobot
 {
+  typedef struct _goldo_conf_calib_lidar_sample {
+    double real_d;
+    double meas_d;
+  } goldo_conf_calib_lidar_sample_t;
+
   typedef struct _goldo_conf_info {
     char   conf_viewer_addr_str[128];
     double conf_theta_correction_deg;
@@ -23,6 +28,9 @@ namespace goldobot
     char   conf_strat_file_pos_str[128];
     char   conf_strat_file_neg_str[128];
     char   conf_simul_file_str[128];
+    bool   conf_dbg_log_enabled;
+    _u32   conf_calib_lidar_nsamples;
+    goldo_conf_calib_lidar_sample_t conf_calib_lidar_sample[30];
   } goldo_conf_info_t;
 
   class GoldoConf
@@ -62,6 +70,8 @@ namespace goldobot
       115200;
     static constexpr _u32   conf_zmq_port_def                 = 
       3101;
+    static constexpr bool   conf_dbg_log_enabled_def          = 
+      false;
     static constexpr _u32   conf_n_obstacles_def              = 
       3;
     static char   conf_strat_file_str_def[];

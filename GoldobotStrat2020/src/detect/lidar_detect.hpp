@@ -9,6 +9,13 @@
 namespace goldobot
 {
 
+  typedef struct _beacon_zone {
+    double x_min_mm;
+    double y_min_mm;
+    double x_max_mm;
+    double y_max_mm;
+  } beacon_zone_t;
+
   typedef struct _lidar_sample {
     unsigned int timestamp_ms;
     double x_mm;
@@ -36,6 +43,10 @@ namespace goldobot
     void taskFunctionFunny();
 
     void clearSlots();
+
+    bool sampleInBeaconZone(double x_mm, double y_mm);
+
+    void sendPlot(unsigned int ts_ms, double x_mm, double y_mm);
 
     void recordNewLidarSample(unsigned int ts_ms, double x_mm, double y_mm);
 
@@ -76,6 +87,8 @@ namespace goldobot
 
     detected_robot_info_t m_detect_export[MAX_NB_OF_DETECTED_ROBOTS]; /* copie de m_detect_t_* pour visibilite depuis classes externes */
 
+    int m_beacon_zone_cnt;
+    beacon_zone_t m_beacon_zone[10];
 
     static double dist(double x0, double y0, double x1, double y1);
 

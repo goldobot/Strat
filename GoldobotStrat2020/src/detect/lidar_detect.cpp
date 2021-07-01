@@ -39,6 +39,8 @@ LidarDetect::LidarDetect()
   m_nb_of_send_detect = MAX_NB_OF_DETECTED_ROBOTS;
 
   m_detect_lock = false;
+
+  m_beacon_zone_cnt = 0;
 }
 
 int LidarDetect::init()
@@ -89,6 +91,38 @@ int LidarDetect::init()
   memset (m_sample_cache, 0, sizeof(m_sample_cache));
 
   m_last_free_cache = 0;
+
+  /* FIXME : TODO : add beacon zones in conf! */
+  m_beacon_zone_cnt = 4;
+
+  m_beacon_zone[0].x_min_mm =  1000.0 - 100.0;
+  m_beacon_zone[0].y_min_mm = -1500.0 - 100.0;
+  m_beacon_zone[0].x_max_mm =  1000.0 + 100.0;
+  m_beacon_zone[0].y_max_mm = -1500.0 +  20.0;
+
+  m_beacon_zone[1].x_min_mm =    50.0 - 100.0;
+  m_beacon_zone[1].y_min_mm =  1500.0 -  20.0;
+  m_beacon_zone[1].x_max_mm =    50.0 + 100.0;
+  m_beacon_zone[1].y_max_mm =  1500.0 + 100.0;
+
+  m_beacon_zone[2].x_min_mm =  1950.0 - 100.0;
+  m_beacon_zone[2].y_min_mm =  1500.0 -  20.0;
+  m_beacon_zone[2].x_max_mm =  1950.0 + 100.0;
+  m_beacon_zone[2].y_max_mm =  1500.0 + 100.0;
+
+#if 1
+/* FIXME : EXPERIMENTAL : girouette */
+  m_beacon_zone[3].x_min_mm =  -200.0;
+  m_beacon_zone[3].y_min_mm =  -200.0;
+  m_beacon_zone[3].x_max_mm =   200.0;
+  m_beacon_zone[3].y_max_mm =   200.0;
+#else
+/* FIXME : DEBUG : CALIB */
+  m_beacon_zone[3].x_min_mm =  1500.0;
+  m_beacon_zone[3].y_min_mm = -1300.0;
+  m_beacon_zone[3].x_max_mm =  1800.0;
+  m_beacon_zone[3].y_max_mm =  1500.0;
+#endif
 
   return 0;
 }
@@ -213,6 +247,42 @@ void LidarDetect::clearSlots()
     m_detect_slot[i].timestamp_ms = 0;
     m_detect_slot[i].x_mm = 0.0;
     m_detect_slot[i].y_mm = 0.0;
+  }
+}
+
+
+bool LidarDetect::sampleInBeaconZone(double x_mm, double y_mm)
+{
+  for (int i=0; i<m_beacon_zone_cnt; i++)
+  {
+    if (
+      (x_mm>=m_beacon_zone[i].x_min_mm) && 
+      (y_mm>=m_beacon_zone[i].y_min_mm) && 
+      (x_mm<=m_beacon_zone[i].x_max_mm) && 
+      (y_mm<=m_beacon_zone[i].y_max_mm)
+      )
+    {
+      return true;
+    }
+  }
+  return false;
+}
+
+
+void LidarDetect::sendPlot(unsigned int ts_ms, double x_mm, double y_mm)
+{
+  lidar_plot_msg_t my_plot_message;
+  /* FIXME : TODO : use mesage_types.hpp */
+  unsigned short my_message_type = 1270;
+
+  if (sampleInBeaconZone(x_mm,y_mm))
+  {
+    my_plot_message.timestamp_ms = ts_ms;
+    my_plot_message.x_mm         = x_mm;
+    my_plot_message.y_mm         = y_mm;
+    CommZmq::instance().send((const char*)(&my_message_type), 2, ZMQ_SNDMORE);
+    CommZmq::instance().send((const char*)(&my_plot_message), 
+                             sizeof(my_plot_message), 0);
   }
 }
 

@@ -3,6 +3,12 @@
 namespace goldobot
 {
 
+  typedef struct _lidar_plot_msg {
+    unsigned int timestamp_ms;
+    short int x_mm;
+    short int y_mm;
+  } lidar_plot_msg_t;
+
   typedef struct _robot_detection_msg {
     unsigned int timestamp_ms;
     unsigned int id;

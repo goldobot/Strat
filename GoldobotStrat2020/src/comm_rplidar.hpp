@@ -13,6 +13,7 @@
 
 #include "rplidar.h" //RPLIDAR standard sdk, all-in-one header
 
+#include "goldo_conf.hpp"
 #include "goldo_thread.hpp"
 #include "robot_state.hpp"
 
@@ -44,6 +45,8 @@ namespace goldobot
   private:
     static bool checkRPLIDARHealth(RPlidarDriver * drv);
 
+    double rho_correction(double meas_rho);
+
     bool m_scanning = false;
 
     static const int M_NB_POINTS = 720;
@@ -59,6 +62,9 @@ namespace goldobot
     char m_viewer_addr_str[40];
     struct sockaddr_in m_viewer_saddr;
     unsigned char m_viewer_send_buf[65500];
+
+    unsigned int m_calib_ns;
+    goldo_conf_calib_lidar_sample_t m_calib[30];
 
     RPlidarDriver * m_drv;
 

@@ -274,6 +274,7 @@ void RobotStrat::taskFunction()
     }
 
     if (RobotState::instance().emergency_stop() && 
+        (m_strat_state!=STRAT_STATE_IDDLE) &&
         (m_strat_state!=STRAT_STATE_EMERGENCY_STOP) &&
         (m_strat_state!=STRAT_STATE_EMERGENCY_MOVE_AWAY) )
     {

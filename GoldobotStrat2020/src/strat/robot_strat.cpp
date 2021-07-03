@@ -1174,7 +1174,7 @@ strat_action_t * RobotStrat::prepare_STRAT_STATE_EMERGENCY_RECOVER(strat_action_
       act_traj->wp[0].x_mm = my_x_mm;
       act_traj->wp[0].y_mm = my_y_mm;
       int new_i=1;
-      for (int i=1; i<=last_wp; i++)
+      for (int i=next_wp; i<=last_wp; i++)
       {
         act_traj->wp[new_i].x_mm = act_traj->wp[i].x_mm;
         act_traj->wp[new_i].y_mm = act_traj->wp[i].y_mm;

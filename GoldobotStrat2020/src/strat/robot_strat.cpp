@@ -285,9 +285,6 @@ void RobotStrat::taskFunction()
     {
       printf ("EMERGENCY_STOP!\n");
       cmd_clear_prop_err();
-      /* FIXME : TODO : is this necessary? */
-      RobotState::instance().m_lidar_detection_enabled = false;
-      RobotState::instance().set_obstacle_gpio(false);
       soft_deadline_ms = my_time_ms + 500;
       hard_deadline_ms = my_time_ms + m_task_dbg->m_obstacle_freeze_timeout_ms;
       m_strat_state = STRAT_STATE_EMERGENCY_STOP;
@@ -670,6 +667,13 @@ void RobotStrat::taskFunction()
       if (my_time_ms > hard_deadline_ms)
       {
         printf ("\n");
+        printf ("Obstacle still present, trying to move away..\n");
+        printf ("\n");
+
+        /* FIXME : TODO : is this necessary? */
+        RobotState::instance().m_lidar_detection_enabled = false;
+        RobotState::instance().set_obstacle_gpio(false);
+
         auto move_away_action = prepare_STRAT_STATE_EMERGENCY_MOVE_AWAY();
         do_STRAT_STATE_INIT_ACTION(move_away_action, true);
         do_STRAT_STATE_EXEC_ACTION(move_away_action);

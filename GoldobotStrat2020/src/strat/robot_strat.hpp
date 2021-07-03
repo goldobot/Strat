@@ -88,13 +88,15 @@ namespace goldobot
                                           strat_state_t new_strat_state,
                                           const char *done_log);
 
-    bool do_STRAT_STATE_INIT_ACTION(strat_action_t *_act);
+    bool do_STRAT_STATE_INIT_ACTION(strat_action_t *_act, bool send_prep_cmd);
 
     void do_STRAT_STATE_EXEC_ACTION(strat_action_t *_act);
 
     strat_action_t * prepare_STRAT_STATE_EMERGENCY_MOVE_AWAY();
 
     strat_action_t * prepare_STRAT_STATE_EMERGENCY_ESCAPE();
+
+    strat_action_t * prepare_STRAT_STATE_EMERGENCY_RECOVER(strat_action_t * orig_act);
 
     int cmd_traj (strat_way_point_t *_wp, int _nwp, float speed, float accel, float deccel);
 
@@ -125,6 +127,8 @@ namespace goldobot
     int m_current_task_idx;
 
     bool m_start_match_sig;
+
+    bool m_end_match_flag;
 
     StratPlayground m_path_find_pg;
 

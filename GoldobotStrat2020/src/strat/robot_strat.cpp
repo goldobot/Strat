@@ -72,6 +72,8 @@ RobotStrat::RobotStrat()
 
   m_start_match_sig = false;
 
+  m_end_match_flag = false;
+
   //m_core_astar.setMatrix(m_path_find_pg.X_SZ_CM, m_path_find_pg.Y_SZ_CM);
 
 
@@ -107,6 +109,8 @@ int RobotStrat::init(char *strat_file_name)
   m_current_task_idx = 0;
 
   m_start_match_sig = false;
+
+  m_end_match_flag = false;
 
   m_path_find_pg.init();
 
@@ -255,8 +259,9 @@ void RobotStrat::taskFunction()
         match_funny_done = true;
       }
 
-      if ((match_start_ms!=0) && (my_time_ms>(match_start_ms+100000)) && (m_strat_state != STRAT_STATE_IDDLE))
+      if ((match_start_ms!=0) && (my_time_ms>(match_start_ms+100000)) && (!m_end_match_flag))
       {
+        m_end_match_flag = true;
         RobotState::instance().s().strat_stop = true;
         cmd_emergency_stop();
         m_strat_state = STRAT_STATE_IDDLE;
@@ -437,7 +442,7 @@ void RobotStrat::taskFunction()
         state_change_dbg = false;
       }
 
-      action_ok = do_STRAT_STATE_INIT_ACTION(my_action);
+      action_ok = do_STRAT_STATE_INIT_ACTION(my_action, true);
 
       if (my_action->h.type==STRAT_ACTION_TYPE_GOTO_ASTAR)
       {
@@ -636,16 +641,37 @@ void RobotStrat::taskFunction()
         state_change_dbg = false;
       }
 
-      if (my_time_ms > soft_deadline_ms)
+      if ((my_time_ms > soft_deadline_ms) && !RobotState::instance().emergency_stop())
       {
-        /* FIXME : TODO */
+        printf ("\n");
+        printf ("Way cleared, trying to continue last action..\n");
+        printf ("\n");
+
+        (void) prepare_STRAT_STATE_EMERGENCY_RECOVER(my_action);
+        action_ok = do_STRAT_STATE_INIT_ACTION(my_action, false);
+        if (!action_ok)
+        {
+          printf ("Failed to recover action!\n");
+#if 1 /* FIXME : TODO : what to do next?!.. */
+          m_strat_state = STRAT_STATE_IDDLE;
+          state_change_dbg = true;
+#endif
+        }
+        else
+        {
+          soft_deadline_ms = my_time_ms + my_action->h.min_duration_ms;
+          hard_deadline_ms = my_time_ms + my_action->h.max_duration_ms;
+          do_STRAT_STATE_EXEC_ACTION(my_action);
+          m_strat_state = STRAT_STATE_WAIT_END_ACTION;
+          state_change_dbg = true;
+        }
       }
 
       if (my_time_ms > hard_deadline_ms)
       {
         printf ("\n");
         auto move_away_action = prepare_STRAT_STATE_EMERGENCY_MOVE_AWAY();
-        do_STRAT_STATE_INIT_ACTION(move_away_action);
+        do_STRAT_STATE_INIT_ACTION(move_away_action, true);
         do_STRAT_STATE_EXEC_ACTION(move_away_action);
         soft_deadline_ms = my_time_ms + move_away_action->h.min_duration_ms;
         hard_deadline_ms = my_time_ms + move_away_action->h.max_duration_ms;
@@ -674,7 +700,7 @@ void RobotStrat::taskFunction()
         my_escape_action = prepare_STRAT_STATE_EMERGENCY_ESCAPE();
         soft_deadline_ms = my_time_ms + my_escape_action->h.min_duration_ms;
         hard_deadline_ms = my_time_ms + my_escape_action->h.max_duration_ms;
-        action_ok = do_STRAT_STATE_INIT_ACTION(my_escape_action);
+        action_ok = do_STRAT_STATE_INIT_ACTION(my_escape_action, true);
         if (action_ok)
         {
           m_strat_state = STRAT_STATE_EMERGENCY_ESCAPE_INIT;
@@ -797,7 +823,7 @@ bool RobotStrat::check_deadlines_and_change_state(unsigned int my_time_ms,
   return state_changed;
 }
 
-bool RobotStrat::do_STRAT_STATE_INIT_ACTION(strat_action_t *my_action)
+bool RobotStrat::do_STRAT_STATE_INIT_ACTION(strat_action_t *my_action, bool send_prep_cmd)
 {
   bool action_ok = false;
 
@@ -946,7 +972,7 @@ bool RobotStrat::do_STRAT_STATE_INIT_ACTION(strat_action_t *my_action)
     m_path_find_pg.create_playground_ppm();
     m_path_find_pg.dump_playground_ppm(m_dbg_fname);
     m_path_find_pg.send_playground_ppm();
-    if (action_ok)
+    if (action_ok && send_prep_cmd)
     {
       /* FIXME : TODO : configuration for speed, acc and dec.. */
       cmd_point_to (&(act_ast->wp[1]), 3.5, 10.0, 10.0);
@@ -1104,6 +1130,73 @@ strat_action_t * RobotStrat::prepare_STRAT_STATE_EMERGENCY_ESCAPE()
   return (strat_action_t *) act_escape;
 }
 
+strat_action_t * RobotStrat::prepare_STRAT_STATE_EMERGENCY_RECOVER(strat_action_t * orig_act)
+{
+  if (orig_act->h.type == STRAT_ACTION_TYPE_TRAJ)
+  {
+    strat_action_traj_t *act_traj = (strat_action_traj_t *) orig_act;
+
+    int next_wp = 1;
+    int last_wp = act_traj->nwp-1;
+
+    float my_x_mm = RobotState::instance().s().x_mm;
+    float my_y_mm = RobotState::instance().s().y_mm;
+    float my_dist = 0.0;
+    float min_dist = 3000.0;
+
+    for (int i=1; i<=last_wp; i++)
+    {
+      my_dist = goldo_dist(my_x_mm,my_y_mm,act_traj->wp[i].x_mm,act_traj->wp[i].y_mm);
+      if (my_dist < min_dist)
+      {
+        next_wp = i;
+        min_dist = my_dist;
+      }
+    }
+
+    if (next_wp < last_wp)
+    {
+      /* Pas de retour en arriere! */
+      float delta_x = act_traj->wp[next_wp].x_mm - my_x_mm;
+      float delta_y = act_traj->wp[next_wp].y_mm - my_y_mm;
+      float delta_x_wp = act_traj->wp[next_wp+1].x_mm - act_traj->wp[next_wp].x_mm;
+      float delta_y_wp = act_traj->wp[next_wp+1].y_mm - act_traj->wp[next_wp].y_mm;
+
+      if ((delta_x*delta_x_wp+delta_y*delta_y_wp)<=0.0)
+      {
+        next_wp++;
+      }
+
+      act_traj->wp[0].x_mm = my_x_mm;
+      act_traj->wp[0].y_mm = my_y_mm;
+      int new_i=1;
+      for (int i=1; i<=last_wp; i++)
+      {
+        act_traj->wp[new_i].x_mm = act_traj->wp[i].x_mm;
+        act_traj->wp[new_i].y_mm = act_traj->wp[i].y_mm;
+        new_i++;
+      }
+      act_traj->nwp = new_i;
+    }
+    else
+    {
+      act_traj->wp[1].x_mm = act_traj->wp[last_wp].x_mm;
+      act_traj->wp[1].y_mm = act_traj->wp[last_wp].y_mm;
+      act_traj->nwp = 2;
+    }
+
+    printf ("Recoverd TRAJ:\n");
+    printf ("  nwp : %d\n", act_traj->nwp);
+    printf ("  wp:\n");
+    for (int j=0; j<act_traj->nwp; j++)
+    {
+      printf ("    - [%8.1f,%8.1f]\n", 
+                act_traj->wp[j].x_mm, act_traj->wp[j].y_mm);
+    }
+  }
+
+  return orig_act;
+}
 
 void RobotStrat::start_match()
 {

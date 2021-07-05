@@ -194,6 +194,7 @@ void RobotStrat::taskFunction()
   bool state_change_dbg = true;
   unsigned int soft_deadline_ms = 0;
   unsigned int hard_deadline_ms = 0;
+  unsigned int recov_fail_cnt = 0;
   strat_action_t *my_action = NULL;
   strat_action_t *my_escape_action = NULL;
   unsigned int match_start_ms = 0;
@@ -305,6 +306,7 @@ void RobotStrat::taskFunction()
       cmd_clear_prop_err();
       soft_deadline_ms = my_time_ms + 500;
       hard_deadline_ms = my_time_ms + m_task_dbg->m_obstacle_freeze_timeout_ms;
+      recov_fail_cnt = 0;
       m_strat_state = STRAT_STATE_EMERGENCY_STOP;
       state_change_dbg = true;
     }
@@ -695,16 +697,25 @@ void RobotStrat::taskFunction()
         action_ok = do_STRAT_STATE_INIT_ACTION(my_action, false);
         if (!action_ok)
         {
-          printf ("Failed to recover action!\n");
+          printf ("Failed to recover action! (%d tries)\n", recov_fail_cnt);
+          recov_fail_cnt++;
+          if (recov_fail_cnt>20)
+          {
 #if 1 /* FIXME : TODO : what to do next?!.. */
-          m_strat_state = STRAT_STATE_IDDLE;
-          state_change_dbg = true;
+            m_strat_state = STRAT_STATE_IDDLE;
+            state_change_dbg = true;
 #endif
+          }
+          else
+          {
+            soft_deadline_ms += 500;
+          }
         }
         else
         {
           soft_deadline_ms = my_time_ms + my_action->h.min_duration_ms;
           hard_deadline_ms = my_time_ms + my_action->h.max_duration_ms;
+          recov_fail_cnt = 0;
           do_STRAT_STATE_EXEC_ACTION(my_action);
           m_strat_state = STRAT_STATE_WAIT_END_ACTION;
           state_change_dbg = true;
@@ -925,11 +936,14 @@ bool RobotStrat::do_STRAT_STATE_INIT_ACTION(strat_action_t *my_action, bool send
       m_path_find_pg.put_mob_point_obst(o1.x_mm, o1.y_mm);
     if (o2.detect_quality>2)
       m_path_find_pg.put_mob_point_obst(o2.x_mm, o2.y_mm);
+    float x_start_mm = RobotState::instance().s().x_mm;
+    float y_start_mm = RobotState::instance().s().y_mm;
+    m_path_find_pg.put_free_zone(x_start_mm, y_start_mm);
     /* apply A* */
     m_core_astar.setMatrix(m_path_find_pg.X_SZ_CM,m_path_find_pg.Y_SZ_CM);
     m_path_find_pg.feed_astar(m_core_astar);
-    int x_start_cm = RobotState::instance().s().x_mm/10;
-    int y_start_cm = RobotState::instance().s().y_mm/10;
+    int x_start_cm = x_start_mm/10;
+    int y_start_cm = y_start_mm/10;
     int x_end_cm   = act_ast->target.x_mm/10;
     int y_end_cm   = act_ast->target.y_mm/10;
     int Y_OFF_CM   = m_path_find_pg.Y_OFFSET_CM;
@@ -1622,6 +1636,9 @@ void RobotStrat::dbg_astar_test(int x_start_mm, int y_start_mm,
   m_path_find_pg.put_mob_point_obst(xo1_mm, yo1_mm);
   m_path_find_pg.put_mob_point_obst(xo2_mm, yo2_mm);
   m_path_find_pg.put_mob_point_obst(xo3_mm, yo3_mm);
+
+  /* put free zone around our robot initial position */
+  m_path_find_pg.put_free_zone(x_start_mm, y_start_mm);
 
   /* astar test */
   m_core_astar.setMatrix(m_path_find_pg.X_SZ_CM, m_path_find_pg.Y_SZ_CM);

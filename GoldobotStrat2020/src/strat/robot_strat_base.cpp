@@ -319,6 +319,7 @@ StratPlayground::StratPlayground()
 {
   memset (m_stat_pattern, 0, sizeof(m_stat_pattern));
   memset (m_mob_pattern, 0, sizeof(m_mob_pattern));
+  memset (m_free_pattern, 0, sizeof(m_free_pattern));
   memset (m_playground, 0, sizeof(m_playground));
   memset (m_stat_playground, 0, sizeof(m_stat_playground));
   m_ppm_sz = 0;
@@ -332,6 +333,8 @@ void StratPlayground::init()
   /* patterns */
   init_pattern(m_stat_pattern, S_PATT_SZ_CM, S_OBST_R_CM, S_EXCL);
   init_pattern(m_mob_pattern, M_PATT_SZ_CM, M_OBST_R_CM, M_EXCL);
+  /* FIXME : TODO : don't use the PATH code for the free zone! */
+  init_pattern(m_free_pattern, M_FREE_SZ_CM, M_FREE_R_CM, PATH);
 
   /* playground */
   for (y=Y_MIN_CM; y<Y_MAX_CM; y++)
@@ -347,28 +350,28 @@ void StratPlayground::init()
   for (y=Y_MIN_CM; y<Y_MAX_CM; y++)
   {
     m_playground[(y+Y_OFFSET_CM)*(X_SZ_CM) + x] = S_OBST;
-    put_pattern(x, y, m_stat_pattern, S_PATT_SZ_CM);
+    put_pattern(x, y, m_stat_pattern, S_PATT_SZ_CM, true);
   }
 
   x = X_MAX_CM-1;
   for (y=Y_MIN_CM; y<Y_MAX_CM; y++)
   {
     m_playground[(y+Y_OFFSET_CM)*(X_SZ_CM) + x] = S_OBST;
-    put_pattern(x, y, m_stat_pattern, S_PATT_SZ_CM);
+    put_pattern(x, y, m_stat_pattern, S_PATT_SZ_CM, true);
   }
 
   y = Y_MIN_CM;
   for (x=X_MIN_CM; x<X_MAX_CM; x++)
   {
     m_playground[(y+Y_OFFSET_CM)*(X_SZ_CM) + x] = S_OBST;
-    put_pattern(x, y, m_stat_pattern, S_PATT_SZ_CM);
+    put_pattern(x, y, m_stat_pattern, S_PATT_SZ_CM, true);
   }
 
   y = Y_MAX_CM-1;
   for (x=X_MIN_CM; x<X_MAX_CM; x++)
   {
     m_playground[(y+Y_OFFSET_CM)*(X_SZ_CM) + x] = S_OBST;
-    put_pattern(x, y, m_stat_pattern, S_PATT_SZ_CM);
+    put_pattern(x, y, m_stat_pattern, S_PATT_SZ_CM, true);
   }
 
   /* static obstacles */
@@ -376,9 +379,11 @@ void StratPlayground::init()
   put_stat_rect_obst(1850, 2000,   610,   590);
   put_stat_rect_obst(1700, 2000,   -10,    10);
 
-  /* FIXME : TODO : make these zones (adversary homes) configurable */
+  /* FIXME : TODO : make these zones (harbors) configurable */
   put_stat_rect_obst(1700, 2000,  -450,  -150);
+  put_stat_rect_obst(1700, 2000,   450,   150);
   put_stat_rect_obst( 500, 1100,  1100,  1500);
+  put_stat_rect_obst( 500, 1100, -1100, -1500);
 
   /* make backup */
   memcpy(m_stat_playground, m_playground, sizeof(m_playground));
@@ -414,7 +419,7 @@ void StratPlayground::init_pattern(unsigned char *_patt,
 }
 
 void StratPlayground::put_pattern(int x_cm, int y_cm, unsigned char*_patt, 
-                                  int _patt_sz_cm)
+                                  int _patt_sz_cm, bool is_obst)
 {
   int xx, yy;
   int xx_abs, yy_abs;
@@ -429,9 +434,19 @@ void StratPlayground::put_pattern(int x_cm, int y_cm, unsigned char*_patt,
       if ((yy_abs>Y_MIN_CM) && (yy_abs<Y_MAX_CM) && 
           (xx_abs>X_MIN_CM) && (xx_abs<X_MAX_CM))
       {
-        if (m_playground[(yy_abs+Y_OFFSET_CM)*(X_SZ_CM)+(xx_abs)]==NO_OBST)
-          m_playground[(yy_abs+Y_OFFSET_CM)*(X_SZ_CM)+(xx_abs)] = 
-            _patt[(yy)*(_patt_sz_cm) + xx];
+        if (is_obst)
+        {
+          if (m_playground[(yy_abs+Y_OFFSET_CM)*(X_SZ_CM)+(xx_abs)]==NO_OBST)
+            m_playground[(yy_abs+Y_OFFSET_CM)*(X_SZ_CM)+(xx_abs)] = 
+              _patt[(yy)*(_patt_sz_cm) + xx];
+        }
+        else
+        {
+          if ((m_playground[(yy_abs+Y_OFFSET_CM)*(X_SZ_CM)+(xx_abs)]!=NO_OBST) &&
+              (_patt[(yy)*(_patt_sz_cm) + xx]!=NO_OBST))
+            m_playground[(yy_abs+Y_OFFSET_CM)*(X_SZ_CM)+(xx_abs)] = NO_OBST;
+            
+        }
       }
     }
   }
@@ -465,7 +480,7 @@ void StratPlayground::put_stat_rect_obst(int x_min_mm, int x_max_mm,
     for (x=x_min_cm; x<x_max_cm; x++)
     {
       m_playground[(y+Y_OFFSET_CM)*(X_SZ_CM) + x] = S_OBST;
-      put_pattern(x, y, m_stat_pattern, S_PATT_SZ_CM);
+      put_pattern(x, y, m_stat_pattern, S_PATT_SZ_CM, true);
     }
   }
 }
@@ -475,8 +490,17 @@ void StratPlayground::put_mob_point_obst(int x_mm, int y_mm)
   int x = x_mm/10;
   int y = y_mm/10;
 
+  put_pattern(x, y, m_mob_pattern, M_PATT_SZ_CM, true);
   m_playground[(y+Y_OFFSET_CM)*(X_SZ_CM) + x] = M_OBST;
-  put_pattern(x, y, m_mob_pattern, M_PATT_SZ_CM);
+}
+
+void StratPlayground::put_free_zone(int x_mm, int y_mm)
+{
+  int x = x_mm/10;
+  int y = y_mm/10;
+
+  put_pattern(x, y, m_free_pattern, M_FREE_SZ_CM, false);
+  m_playground[(y+Y_OFFSET_CM)*(X_SZ_CM) + x] = M_OBST;
 }
 
 void StratPlayground::feed_astar(AStar & _astar)

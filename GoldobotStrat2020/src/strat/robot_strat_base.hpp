@@ -24,12 +24,14 @@ namespace goldobot
                       int _patt_sz_cm, int _obst_r_cm, 
                       unsigned char _code);
 
-    void put_pattern(int x_cm, int y_cm, unsigned char*_patt, int _patt_sz_cm);
+    void put_pattern(int x_cm, int y_cm, unsigned char*_patt, int _patt_sz_cm, bool is_obst);
 
     void put_stat_rect_obst(int x_min_mm, int x_max_mm,
                             int y_min_mm, int y_max_mm);
 
     void put_mob_point_obst(int x_mm, int y_mm);
+
+    void put_free_zone(int x_mm, int y_mm);
 
     void erase_mob_obst();
 
@@ -51,8 +53,10 @@ namespace goldobot
     static const int Y_SZ_CM         = Y_MAX_CM-Y_MIN_CM;
     static const int S_OBST_R_CM     =  14;
     static const int M_OBST_R_CM     =  34;
+    static const int M_FREE_R_CM     =  10;
     static const int S_PATT_SZ_CM    = 2*S_OBST_R_CM;
     static const int M_PATT_SZ_CM    = 2*M_OBST_R_CM;
+    static const int M_FREE_SZ_CM    = 2*M_FREE_R_CM;
 
     static const unsigned char NO_OBST  = 255;
     static const unsigned char S_OBST   =   0;
@@ -67,6 +71,7 @@ namespace goldobot
     unsigned char m_stat_playground[X_SZ_CM * Y_SZ_CM];
     unsigned char m_stat_pattern[S_PATT_SZ_CM * S_PATT_SZ_CM];
     unsigned char m_mob_pattern[M_PATT_SZ_CM * M_PATT_SZ_CM];
+    unsigned char m_free_pattern[M_FREE_SZ_CM * M_FREE_SZ_CM];
 
     int m_ppm_sz;
     unsigned char m_ppm_buff[0x40000];

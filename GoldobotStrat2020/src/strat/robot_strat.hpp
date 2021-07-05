@@ -92,6 +92,12 @@ namespace goldobot
 
     void do_STRAT_STATE_EXEC_ACTION(strat_action_t *_act);
 
+    bool is_point_forward(float _x_mm, float _y_mm);
+
+    detected_robot_info_t* get_nearest_obst(int _area_code);
+
+    bool adversary_moved_away();
+
     strat_action_t * prepare_STRAT_STATE_EMERGENCY_MOVE_AWAY();
 
     strat_action_t * prepare_STRAT_STATE_EMERGENCY_ESCAPE();
@@ -134,6 +140,7 @@ namespace goldobot
 
     AStar m_core_astar;
 
+    bool m_last_move_forwards;
 
     /* FIXME : DEBUG */
     bool m_dbg_step_by_step;

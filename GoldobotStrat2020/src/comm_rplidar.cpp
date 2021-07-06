@@ -366,7 +366,7 @@ void CommRplidar::taskFunction()
           //printf("GOLDO my_theta:%f my_R:%f m_x[pos]:%f m_y[pos]:%f\n", my_theta, my_R, m_x[pos], m_y[pos]);
 
           /* check si a l'interieur du terain de jeu */ 
-          if ((my_abs_x >   100.0) && (my_abs_x < 1400.0) && 
+          if ((my_abs_x >   100.0) && (my_abs_x < 1900.0) && 
               (my_abs_y > -1400.0) && (my_abs_y < 1400.0)) 
           {
             if ((l_odo_y_mm>-1300) && (l_odo_y_mm<1300))

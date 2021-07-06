@@ -221,7 +221,18 @@ void RobotStrat::taskFunction()
 
 #if 1 /* FIXME : DEBUG : EXPERIMENTAL */
   goldo_conf_info_t& ci = GoldoConf::instance().c();
-  bool is_neg = ((RobotState::instance().s().robot_sensors&RobotState::GPIO_SIDE_SELECT_MASK) == 0);
+  unsigned int robot_sensors = RobotState::instance().s().robot_sensors;
+  bool is_neg = ((robot_sensors&RobotState::GPIO_SIDE_SELECT_MASK) == 0);
+  if (robot_sensors&0x00000020)
+  {
+    printf (" DEBUG: HACK: set 2 obstacles\n");
+    LidarDetect::instance().set_nb_of_send_detect(2);
+  }
+  else
+  {
+    printf (" DEBUG: HACK: set 1 obstacle\n");
+    LidarDetect::instance().set_nb_of_send_detect(1);
+  }
   if (is_neg) /* Y - */
   {
     if (ci.conf_strat_file_neg_str[0]==0x00)
@@ -244,6 +255,7 @@ void RobotStrat::taskFunction()
       read_yaml_conf (ci.conf_strat_file_pos_str);
     }
   }
+  printf (" DEBUG: robot_sensors: %.8x\n", robot_sensors);
   printf (" DEBUG: color: %s\n", is_neg?"BLUE":"YELLOW");
   printf (" DEBUG: task_name: %s\n", m_task_dbg->m_task_name);
 #endif
@@ -282,8 +294,11 @@ void RobotStrat::taskFunction()
         m_end_match_flag = true;
         RobotState::instance().s().strat_stop = true;
         cmd_emergency_stop();
+        cmd_propulsion_disable();
+        cmd_motors_disable();
         m_strat_state = STRAT_STATE_IDDLE;
         printf ("\n");
+        printf ("GAME OVER!\n");
         printf ("match_time = %8.3f\n", 0.001*(my_time_ms-match_start_ms));
         printf ("\n");
         state_change_dbg = true;
@@ -1581,6 +1596,52 @@ int RobotStrat::cmd_clear_prop_err()
 
   field_len = sizeof(unsigned short int);
   memcpy (_pc, (unsigned char *)&cmd_code, field_len);
+  _pc += field_len;
+  cmd_buf_len += field_len;
+
+  DirectUartNucleo::instance().send(m_nucleo_cmd_buf, cmd_buf_len);
+
+  return 0;
+}
+
+int RobotStrat::cmd_motors_disable()
+{
+  unsigned short int cmd_code = (unsigned short int ) goldobot::CommMessageType::SetMotorsEnable;
+
+  unsigned char *_pc = m_nucleo_cmd_buf;
+  int cmd_buf_len = 0;
+  int field_len = 0;
+
+  field_len = sizeof(unsigned short int);
+  memcpy (_pc, (unsigned char *)&cmd_code, field_len);
+  _pc += field_len;
+  cmd_buf_len += field_len;
+
+  field_len = 1;
+  *_pc = 0x00; /* disable */
+  _pc += field_len;
+  cmd_buf_len += field_len;
+
+  DirectUartNucleo::instance().send(m_nucleo_cmd_buf, cmd_buf_len);
+
+  return 0;
+}
+
+int RobotStrat::cmd_propulsion_disable()
+{
+  unsigned short int cmd_code = (unsigned short int ) goldobot::CommMessageType::PropulsionSetEnable;
+
+  unsigned char *_pc = m_nucleo_cmd_buf;
+  int cmd_buf_len = 0;
+  int field_len = 0;
+
+  field_len = sizeof(unsigned short int);
+  memcpy (_pc, (unsigned char *)&cmd_code, field_len);
+  _pc += field_len;
+  cmd_buf_len += field_len;
+
+  field_len = 1;
+  *_pc = 0x00; /* disable */
   _pc += field_len;
   cmd_buf_len += field_len;
 

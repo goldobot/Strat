@@ -116,6 +116,10 @@ namespace goldobot
 
     int cmd_emergency_stop ();
 
+    int cmd_motors_disable ();
+
+    int cmd_propulsion_disable();
+
     char m_strat_file_name[40];
 
     int m_n_tasks;

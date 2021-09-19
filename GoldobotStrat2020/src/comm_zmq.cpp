@@ -41,6 +41,9 @@ CommZmq::CommZmq()
   m_zmq_context = NULL;
   m_pub_socket = NULL;
   m_pull_socket = NULL;
+#if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
+  m_detect_socket = NULL;
+#endif
 }
 
 int CommZmq::init(int port_nb)
@@ -79,6 +82,14 @@ int CommZmq::init(int port_nb)
   }
   zmq_setsockopt(m_pull_socket,ZMQ_SUBSCRIBE, "", 0);
 
+#if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
+  rc = zmq_connect(m_detect_socket, "tcp://127.0.0.1:3202");
+  if (rc<0) {
+    printf ("zmq_connect() error\n");
+  }
+  zmq_setsockopt(m_detect_socket,ZMQ_SUBSCRIBE, "", 0);
+#endif
+
   return 0;
 }
 
@@ -89,17 +100,22 @@ void CommZmq::taskFunction()
   int old_time_ms = 0;
 
 
-  zmq_pollitem_t poll_items[1];
+  zmq_pollitem_t poll_items[2]; /* FIXME : DEBUG : HACK CRIDF2021 (was 1) */
 
   poll_items[0].socket = m_pull_socket;
   poll_items[0].fd = 0;
   poll_items[0].events = ZMQ_POLLIN;
+#if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
+  poll_items[1].socket = m_detect_socket;
+  poll_items[1].fd = 0;
+  poll_items[1].events = ZMQ_POLLIN;
+#endif
 
   m_task_running = true;
 
   while(!m_stop_task)
   {
-    zmq_poll (poll_items, 1, 100);
+    zmq_poll (poll_items, 2, 100); /* FIXME : DEBUG : HACK CRIDF2021 (was 1) */
 
     clock_gettime(1, &curr_tp);
 
@@ -169,6 +185,37 @@ void CommZmq::taskFunction()
         break;
       }
     }
+
+#if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
+    if(poll_items[1].revents && ZMQ_POLLIN)
+    {            
+      unsigned char buff[1024];
+      size_t bytes_read = 0;
+      int64_t more=1;
+      size_t more_size = sizeof(more);
+      while(more)
+      {
+        bytes_read += zmq_recv(m_pull_socket, buff + bytes_read, sizeof(buff) - bytes_read, 0);           
+        zmq_getsockopt(m_pull_socket, ZMQ_RCVMORE, &more, &more_size);
+      }
+      if (bytes_read==12)
+      {
+        int *buff_i = (int *)buff;
+        if (buff_i[0]==0x7d7f1892)
+        {
+          printf ("P=<%d,%d>\n\n", buff_i[1], buff_i[2]);
+        }
+        else
+        {
+          printf ("DETECT ERROR (coockie=%x)\n", buff_i[0]);
+        }
+      }
+      else
+      {
+        printf ("DETECT ERROR (bytes_read=%d)\n", (int)bytes_read);
+      }
+    }
+#endif
 
 #ifndef WIN32
     pthread_yield();

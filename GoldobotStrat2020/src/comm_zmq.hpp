@@ -25,6 +25,9 @@ namespace goldobot
     void* m_zmq_context;
     void* m_pub_socket;
     void* m_pull_socket;
+#if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
+    void* m_detect_socket;
+#endif
 
     static CommZmq s_instance;
   };

@@ -55,7 +55,7 @@ int CommZmq::init(int port_nb)
 
   m_pub_socket = zmq_socket(m_zmq_context, ZMQ_PUB);
   if (m_pub_socket<0) {
-    printf ("RPLIDAR : cannot create ZMQ_PUB socket\n");
+    printf ("pub_socket : cannot create ZMQ_PUB socket\n");
     return -1;
   }
 
@@ -63,13 +63,13 @@ int CommZmq::init(int port_nb)
   //printf("  ZMQ DEBUG: char_buff = %s\n", char_buff);
   rc = zmq_bind(m_pub_socket, char_buff);
   if (rc<0) {
-    printf ("RPLIDAR : cannot bind ZMQ_PUB socket\n");
+    printf ("pub_socket : cannot bind ZMQ_PUB socket\n");
     return -1;
   }
 
   m_pull_socket = zmq_socket(m_zmq_context, ZMQ_SUB);
   if (m_pull_socket<0) {
-    printf ("RPLIDAR : cannot create ZMQ_SUB socket\n");
+    printf ("pull_socket : cannot create ZMQ_SUB socket\n");
     return -1;
   }
 
@@ -77,12 +77,18 @@ int CommZmq::init(int port_nb)
   //printf("  ZMQ DEBUG: char_buff = %s\n", char_buff);
   rc = zmq_bind(m_pull_socket, char_buff);
   if (rc<0) {
-    printf ("RPLIDAR : cannot bind ZMQ_SUB socket\n");
+    printf ("pull_socket : cannot bind ZMQ_SUB socket\n");
     return -1;
   }
   zmq_setsockopt(m_pull_socket,ZMQ_SUBSCRIBE, "", 0);
 
 #if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
+  m_detect_socket = zmq_socket(m_zmq_context, ZMQ_SUB);
+  if (m_detect_socket<0) {
+    printf ("detect_socket : cannot create ZMQ_SUB socket\n");
+    return -1;
+  }
+
   rc = zmq_connect(m_detect_socket, "tcp://127.0.0.1:3202");
   if (rc<0) {
     printf ("zmq_connect() error\n");

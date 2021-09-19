@@ -201,8 +201,8 @@ void CommZmq::taskFunction()
       size_t more_size = sizeof(more);
       while(more)
       {
-        bytes_read += zmq_recv(m_pull_socket, buff + bytes_read, sizeof(buff) - bytes_read, 0);           
-        zmq_getsockopt(m_pull_socket, ZMQ_RCVMORE, &more, &more_size);
+        bytes_read += zmq_recv(m_detect_socket, buff + bytes_read, sizeof(buff) - bytes_read, 0);
+        zmq_getsockopt(m_detect_socket, ZMQ_RCVMORE, &more, &more_size);
       }
       if (bytes_read==12)
       {

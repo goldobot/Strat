@@ -31,6 +31,10 @@ namespace goldobot
 
     void put_mob_point_obst(int x_mm, int y_mm);
 
+#if 1 /* FIXME : DEBUG */
+    void hack_coupe(int x_mm, int y_mm);
+#endif
+
     void put_free_zone(int x_mm, int y_mm);
 
     void erase_mob_obst();

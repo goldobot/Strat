@@ -186,7 +186,7 @@ int main(int argc, const char * argv[])
       RobotStrat::instance().dbg_astar_test(1650,   290,
                                             1850, -1350,
                                              400, -1000,
-                                            1600,  -300,
+                                             800,  -300,
                                              200,   650,
                                             dbg_fname);
     }

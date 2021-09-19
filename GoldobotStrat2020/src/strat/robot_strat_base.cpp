@@ -492,7 +492,28 @@ void StratPlayground::put_mob_point_obst(int x_mm, int y_mm)
 
   put_pattern(x, y, m_mob_pattern, M_PATT_SZ_CM, true);
   m_playground[(y+Y_OFFSET_CM)*(X_SZ_CM) + x] = M_OBST;
+
+#if 0 /* FIXME : DEBUG : HACK coupe */
+  if ((x_mm>750) && (y_mm>-500) && (y_mm<500))
+  {
+    hack_coupe(x_mm, y_mm);
+  }
+#endif
 }
+
+#if 1 /* FIXME : DEBUG : HACK coupe */
+void StratPlayground::hack_coupe(int x_mm, int y_mm)
+{
+  int x = x_mm/10;
+  int y = y_mm/10;
+
+  int yy = y;
+  for (int xx=x; xx<X_MAX_CM; xx++)
+  {
+    m_playground[(yy+Y_OFFSET_CM)*(X_SZ_CM) + xx] = S_EXCL;
+  }
+}
+#endif
 
 void StratPlayground::put_free_zone(int x_mm, int y_mm)
 {

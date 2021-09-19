@@ -353,13 +353,13 @@ void CommRplidar::taskFunction()
         /* check si proche des bords anterieur ou posterieurs du robot */ 
         if(
            (
-            ((m_x[pos]>90.0)&& (m_x[pos]<300.0)&& (l_forward_move)) 
+            ((m_x[pos]>90.0)&& (m_x[pos]<350.0)&& (l_forward_move)) 
             ||
-            ((m_x[pos]<-90.0)&& (m_x[pos]>-300.0)&& (!l_forward_move))
+            ((m_x[pos]<-90.0)&& (m_x[pos]>-350.0)&& (!l_forward_move))
            ) 
            && 
            (
-            ((m_y[pos]>-140.0) && (m_y[pos]<140.0))
+            ((m_y[pos]>-300.0) && (m_y[pos]<300.0))
            )
           ) 
         {
@@ -381,7 +381,7 @@ void CommRplidar::taskFunction()
         int my_thread_time_ms = my_tp.tv_sec*1000 + my_tp.tv_nsec/1000000;
 
         /* FIXME : DEBUG : envoi des plots lidar (pour les balises et/ou pour le debug) */ 
-        //LidarDetect::instance().sendPlot(my_thread_time_ms, my_abs_x, my_abs_y);
+        LidarDetect::instance().sendPlot(my_thread_time_ms, my_abs_x, my_abs_y);
 
         /* envoi des echantillons au tracker d'adversaire (detection robots) */ 
         if ((my_abs_x >   100.0) && (my_abs_x < 1900.0) && 

@@ -272,7 +272,7 @@ void RobotStrat::taskFunction()
 
     if (!m_dbg_step_by_step)
     {
-      if ((!match_funny_done) && (match_start_ms!=0) && (my_time_ms>(match_start_ms+95000)))
+      if ((!match_funny_done) && (match_start_ms!=0) && (my_time_ms>(match_start_ms+97000)))
       {
         printf ("\n");
         printf ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
@@ -1194,7 +1194,7 @@ detected_robot_info_t* RobotStrat::get_nearest_obst(int _area_code)
 }
 
 /* FIXME : TODO : configuration */
-#define SAFE_DISTANCE_MM  350.0
+#define SAFE_DISTANCE_MM  380.0
 bool RobotStrat::adversary_moved_away()
 {
   detected_robot_info_t* obst = get_nearest_obst(m_last_move_forwards?1:-1);

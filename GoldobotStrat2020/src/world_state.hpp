@@ -13,10 +13,20 @@ namespace goldobot
     bool value;
   } environment_observable_simple_t;
 
+  typedef struct _detected_object_info {
+    unsigned int timestamp_ms;
+    unsigned int id;
+    double x_mm;
+    double y_mm;
+    unsigned int detect_quality;
+  } detected_object_info_t;
+
   typedef struct _world_state_info {
     unsigned int                    local_ts_ms;
     int                             n_detected_robots;
     detected_robot_info_t           detected_robot[3];
+    int                             n_detected_objects;
+    detected_object_info_t          detected_object[10];
     int                             n_observ;
     environment_observable_simple_t observable[4];
   } world_state_info_t;
@@ -38,6 +48,8 @@ namespace goldobot
     world_state_info_t& s() {return m_s;}
 
     detected_robot_info_t& detected_robot(int _obst_idx);
+
+    detected_object_info_t& detected_object(int _obj_idx);
 
     bool get_observable_value(char *observable_name);
 

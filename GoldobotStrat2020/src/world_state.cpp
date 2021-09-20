@@ -88,6 +88,12 @@ detected_robot_info_t& WorldState::detected_robot(int _obst_idx)
   return m_s.detected_robot[_obst_idx];
 }
 
+detected_object_info_t& WorldState::detected_object(int _obj_idx)
+{
+  /* FIXME : TODO : throw exception if _obst_idx out of bounds */
+  return m_s.detected_object[_obj_idx];
+}
+
 bool WorldState::get_observable_value(char *observable_name)
 {
   bool val = false;

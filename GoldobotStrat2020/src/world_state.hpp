@@ -16,6 +16,7 @@ namespace goldobot
   typedef struct _detected_object_info {
     unsigned int timestamp_ms;
     unsigned int id;
+    unsigned int attr;
     double x_mm;
     double y_mm;
     unsigned int detect_quality;

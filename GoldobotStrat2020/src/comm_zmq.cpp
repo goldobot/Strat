@@ -204,7 +204,7 @@ void CommZmq::taskFunction()
         bytes_read += zmq_recv(m_detect_socket, buff + bytes_read, sizeof(buff) - bytes_read, 0);
         zmq_getsockopt(m_detect_socket, ZMQ_RCVMORE, &more, &more_size);
       }
-      if (bytes_read==12)
+      if (bytes_read==16)
       {
         int *buff_i = (int *)buff;
         if (buff_i[0]==0x7d7f1892)
@@ -219,8 +219,9 @@ void CommZmq::taskFunction()
           double cos_theta = cos(l_odo_theta_rad);
           double sin_theta = sin(l_odo_theta_rad);
 
-          double x_rel = buff_i[1];
-          double y_rel = buff_i[2];
+          unsigned int color_code = buff_i[1];
+          double x_rel = buff_i[2];
+          double y_rel = buff_i[3];
 
           double x_abs = x_rel*cos_theta - y_rel*sin_theta + l_odo_x_mm;
           double y_abs = x_rel*sin_theta + y_rel*cos_theta + l_odo_y_mm;
@@ -231,12 +232,28 @@ void CommZmq::taskFunction()
 
           WorldState::instance().lock();
           WorldState::instance().detected_object(0).timestamp_ms = curr_time_ms;
+          WorldState::instance().detected_object(0).attr = color_code;
           WorldState::instance().detected_object(0).x_mm = x_abs;
           WorldState::instance().detected_object(0).y_mm = y_abs;
           WorldState::instance().release();
 
-          printf ("Prel=<%f,%f>\n", x_rel, y_rel);
-          printf ("Pabs=<%f,%f>\n", x_abs, y_abs);
+          char color_s[16];
+          if (color_code==1)
+          {
+            strncpy(color_s,"RED  :",16);
+          }
+          else if (color_code==2)
+          {
+            strncpy(color_s,"GREEN:",16);
+          }
+          else
+          {
+            strncpy(color_s,"?????:",16);
+          }
+
+          printf ("%s:\n", color_s);
+          printf (" Prel=<%f,%f>\n", x_rel, y_rel);
+          printf (" Pabs=<%f,%f>\n", x_abs, y_abs);
           printf ("\n");
         }
         else

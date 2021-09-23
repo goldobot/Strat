@@ -28,6 +28,9 @@ namespace goldobot
 
     /* FIXME : TODO : add other types */
 
+#if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
+    STRAT_ACTION_TYPE_CRIDF2021 = 128,
+#endif
   } strat_action_type_t;
 
   typedef struct _strat_action_header {
@@ -86,6 +89,12 @@ namespace goldobot
     char condition[64];
     char target_if_true[32];
   } strat_action_branch_t;
+
+#if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
+  typedef struct _strat_action_cridf2021 {
+    strat_action_header_t h;
+  } strat_action_cridf2021_t;
+#endif
 
 
 /**  Strat resources  *********************************************************/

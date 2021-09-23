@@ -284,6 +284,19 @@ int StratTask::read_yaml_conf(YAML::Node &yconf)
       m_action_list[i] = (strat_action_t *) action;
       curr_act_p += sizeof(*action);
     }
+#if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
+    else if (strcmp(act_type_str,"CRIDF2021")==0)
+    {
+      strat_action_cridf2021_t *action = (strat_action_cridf2021_t *) curr_act_p;
+      action->h.type = STRAT_ACTION_TYPE_CRIDF2021;
+      my_str = act_node["min_duration_ms"].as<std::string>().c_str();
+      action->h.min_duration_ms = strtoul(my_str, NULL, 10);
+      my_str = act_node["max_duration_ms"].as<std::string>().c_str();
+      action->h.max_duration_ms = strtoul(my_str, NULL, 10);
+      m_action_list[i] = (strat_action_t *) action;
+      curr_act_p += sizeof(*action);
+    }
+#endif
     else
     {
       printf ("  ERROR : unknown action (index=%d, act_type_str=%s)\n", i, act_type_str);
@@ -742,6 +755,11 @@ void StratTask::dbg_dump_task()
       printf ("      condition       : %s\n", act_branch->condition);
       printf ("      target_if_true  : %s\n", act_branch->target_if_true);
       break;
+#if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
+    case STRAT_ACTION_TYPE_CRIDF2021:
+      printf ("    type: CRIDF2021\n");
+      break;
+#endif
     default:
       printf ("    UNKNOWN type!(%d)\n", act->h.type);
     }

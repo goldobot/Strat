@@ -260,6 +260,9 @@ void RobotStrat::taskFunction()
   printf (" DEBUG: task_name: %s\n", m_task_dbg->m_task_name);
 #endif
 
+#if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
+  m_task_cridf2021.init();
+#endif
 
   while(!m_stop_task)
   {
@@ -553,10 +556,20 @@ void RobotStrat::taskFunction()
       soft_deadline_ms = my_time_ms + my_action->h.min_duration_ms;
       hard_deadline_ms = my_time_ms + my_action->h.max_duration_ms;
 
-      do_STRAT_STATE_EXEC_ACTION(my_action);
+#if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
+      if (my_action->h.type==STRAT_ACTION_TYPE_CRIDF2021)
+      {
+        m_strat_state = STRAT_STATE_EXEC_TASK_CRIDF2021;
+        state_change_dbg = true;
+      }
+      else
+#endif
+      {
+        do_STRAT_STATE_EXEC_ACTION(my_action);
 
-      m_strat_state = STRAT_STATE_WAIT_END_ACTION;
-      state_change_dbg = true;
+        m_strat_state = STRAT_STATE_WAIT_END_ACTION;
+        state_change_dbg = true;
+      }
 
       break;
 
@@ -575,6 +588,32 @@ void RobotStrat::taskFunction()
         my_time_ms, soft_deadline_ms, hard_deadline_ms, STRAT_STATE_END_ACTION, "EXEC DONE");
 
       break;
+
+#if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
+    case STRAT_STATE_EXEC_TASK_CRIDF2021:
+      if (state_change_dbg)
+      {
+        printf ("\n");
+        printf ("****************************************\n");
+        printf ("* STRAT_STATE_EXEC_TASK_CRIDF2021 ******\n");
+        printf ("****************************************\n");
+        printf ("\n");
+        state_change_dbg = false;
+      }
+
+      if (my_time_ms > hard_deadline_ms)
+      {
+        printf ("\n");
+        m_strat_state = STRAT_STATE_END_ACTION;
+        state_change_dbg = true;
+      }
+      else
+      {
+        m_task_cridf2021.do_step(my_time_ms);
+      }
+
+      break;
+#endif
 
     case STRAT_STATE_END_ACTION:
       if (state_change_dbg)
@@ -678,6 +717,33 @@ void RobotStrat::taskFunction()
         printf ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
         printf ("! STRAT_STATE_EMERGENCY_STOP !!!!!!!!!!!\n");
         printf ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+        printf ("\n");
+        state_change_dbg = false;
+      }
+
+#if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
+      if (my_action->h.type==STRAT_ACTION_TYPE_CRIDF2021)
+      {
+        m_strat_state = STRAT_STATE_EXEC_TASK_CRIDF2021;
+        m_task_cridf2021.m_task_state = STRAT_STATE_EMERGENCY_WAIT;
+        state_change_dbg = true;
+      }
+      else
+#endif
+      {
+        m_strat_state = STRAT_STATE_EMERGENCY_WAIT;
+        state_change_dbg = true;
+      }
+
+      break;
+
+    case STRAT_STATE_EMERGENCY_WAIT:
+      if (state_change_dbg)
+      {
+        printf ("\n");
+        printf ("****************************************\n");
+        printf ("* STRAT_STATE_EMERGENCY_WAIT ***********\n");
+        printf ("****************************************\n");
         printf ("\n");
         state_change_dbg = false;
       }
@@ -1064,6 +1130,12 @@ bool RobotStrat::do_STRAT_STATE_INIT_ACTION(strat_action_t *my_action, bool send
     printf (" STRAT_ACTION_TYPE_BRANCH\n");
     action_ok = true;
     break;
+#if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
+  case STRAT_ACTION_TYPE_CRIDF2021:
+    printf (" STRAT_ACTION_TYPE_CRIDF2021\n");
+    action_ok = true;
+    break;
+#endif
   default:
     printf (" Warning : Unknown action type!\n");
     action_ok = false;
@@ -1111,6 +1183,10 @@ void RobotStrat::do_STRAT_STATE_EXEC_ACTION(strat_action_t *my_action)
   break;
   case STRAT_ACTION_TYPE_BRANCH:
     break;
+#if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
+  case STRAT_ACTION_TYPE_CRIDF2021:
+    break;
+#endif
   default:
     printf (" Warning : Unknown action type!\n");
   } /* switch (my_action->h.type) */
@@ -1757,5 +1833,17 @@ void RobotStrat::dbg_dump()
   m_task_dbg->dbg_dump_task();
 }
 
+/* FIXME : DEBUG : HACK CRIDF2021 + */
+void TaskCRIDF2021::init()
+{
+  m_task_state = STRAT_STATE_IDDLE;
+  /* FIXME : TODO */
+}
+
+void TaskCRIDF2021::do_step(float _time)
+{
+  /* FIXME : TODO */
+}
+/* FIXME : DEBUG : HACK CRIDF2021 - */
 
 

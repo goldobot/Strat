@@ -103,6 +103,9 @@ RobotStrat::RobotStrat()
 
   memset (m_dbg_fname, 0, sizeof(m_dbg_fname));
 
+#if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
+  m_task_cridf2021 = new TaskCRIDF2021();
+#endif
 }
 
 int RobotStrat::init(char *strat_file_name)
@@ -146,6 +149,10 @@ int RobotStrat::init(char *strat_file_name)
   m_dbg_resume_match_sig = false;
 
   memset (m_dbg_fname, 0, sizeof(m_dbg_fname));
+
+#if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
+  m_task_cridf2021->init();
+#endif
 
   return 0;
 }
@@ -258,10 +265,6 @@ void RobotStrat::taskFunction()
   printf (" DEBUG: robot_sensors: %.8x\n", robot_sensors);
   printf (" DEBUG: color: %s\n", is_neg?"BLUE":"YELLOW");
   printf (" DEBUG: task_name: %s\n", m_task_dbg->m_task_name);
-#endif
-
-#if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
-  m_task_cridf2021.init();
 #endif
 
   while(!m_stop_task)
@@ -609,7 +612,7 @@ void RobotStrat::taskFunction()
       }
       else
       {
-        m_task_cridf2021.do_step(my_time_ms);
+        m_task_cridf2021->do_step(my_time_ms);
       }
 
       break;
@@ -725,7 +728,7 @@ void RobotStrat::taskFunction()
       if (my_action->h.type==STRAT_ACTION_TYPE_CRIDF2021)
       {
         m_strat_state = STRAT_STATE_EXEC_TASK_CRIDF2021;
-        m_task_cridf2021.m_task_state = STRAT_STATE_EMERGENCY_WAIT;
+        m_task_cridf2021->set_state(TASK_STATE_EMERGENCY_WAIT);
         state_change_dbg = true;
       }
       else
@@ -1833,17 +1836,74 @@ void RobotStrat::dbg_dump()
   m_task_dbg->dbg_dump_task();
 }
 
+
 /* FIXME : DEBUG : HACK CRIDF2021 + */
 void TaskCRIDF2021::init()
 {
-  m_task_state = STRAT_STATE_IDDLE;
+  m_task_state = TASK_STATE_IDDLE;
+  memset (&m_target, 0, sizeof(m_target));
   /* FIXME : TODO */
+}
+
+void TaskCRIDF2021::set_state(task_state_cridf2021_t new_state)
+{
+  m_task_state = new_state;
 }
 
 void TaskCRIDF2021::do_step(float _time)
 {
   /* FIXME : TODO */
+
+  switch (m_task_state) {
+  case TASK_STATE_IDDLE:
+    m_task_state = TASK_STATE_GO_TO_OBSERVATION_POINT;
+    break;
+  case TASK_STATE_GO_TO_OBSERVATION_POINT:
+    m_task_state = TASK_STATE_POINT_TO_PLAYGROUND_CENTER;
+    break;
+  case TASK_STATE_POINT_TO_PLAYGROUND_CENTER:
+    m_task_state = TASK_STATE_GET_TARGET;
+    break;
+  case TASK_STATE_GET_TARGET:
+    m_task_state = TASK_STATE_POINT_TO_TARGET;
+    break;
+  case TASK_STATE_POINT_TO_TARGET:
+    m_task_state = TASK_STATE_GO_TO_TARGET;
+    break;
+  case TASK_STATE_GO_TO_TARGET:
+    m_task_state = TASK_STATE_POINT_TO_HARBOR;
+    break;
+  case TASK_STATE_POINT_TO_HARBOR:
+    m_task_state = TASK_STATE_GO_TO_HARBOR;
+    break;
+  case TASK_STATE_GO_TO_HARBOR:
+    m_task_state = TASK_STATE_ENTER_HARBOR;
+    break;
+  case TASK_STATE_ENTER_HARBOR:
+    m_task_state = TASK_STATE_EXIT_HARBOR;
+    break;
+  case TASK_STATE_EXIT_HARBOR:
+    m_task_state = TASK_STATE_GO_TO_OBSERVATION_POINT;
+    break;
+  case TASK_STATE_EMERGENCY_STOP:
+    m_task_state = TASK_STATE_EMERGENCY_WAIT;
+    break;
+  case TASK_STATE_EMERGENCY_WAIT:
+    m_task_state = TASK_STATE_EMERGENCY_MOVE_AWAY;
+    break;
+  case TASK_STATE_EMERGENCY_MOVE_AWAY:
+    m_task_state = TASK_STATE_EMERGENCY_ESCAPE;
+    break;
+  case TASK_STATE_EMERGENCY_ESCAPE:
+    m_task_state = TASK_STATE_GO_TO_OBSERVATION_POINT;
+    break;
+  default:
+    m_task_state = TASK_STATE_IDDLE;
+  }
+
 }
+
+
 /* FIXME : DEBUG : HACK CRIDF2021 - */
 
 

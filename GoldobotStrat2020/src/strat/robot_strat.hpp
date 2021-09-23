@@ -9,6 +9,7 @@
 #include "goldo_thread.hpp"
 #include "strat/robot_strat_types.hpp"
 #include "strat/robot_strat_base.hpp"
+#include "world_state.hpp"
 
 namespace goldobot
 {
@@ -48,15 +49,7 @@ namespace goldobot
   };
 
 /* FIXME : DEBUG : HACK CRIDF2021 + */
-  class TaskCRIDF2021
-  {
-  public:
-    strat_state_t m_task_state;
-
-    TaskCRIDF2021(){};
-    void init();
-    void do_step(float _time);
-  };
+  class TaskCRIDF2021;
 /* FIXME : DEBUG : HACK CRIDF2021 - */
 
 /**  Strat engine (main class)  ***********************************************/
@@ -173,11 +166,50 @@ namespace goldobot
     char m_dbg_fname[128];
 
 #if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
-    TaskCRIDF2021 m_task_cridf2021;
+    TaskCRIDF2021* m_task_cridf2021;
 #endif
 
     static RobotStrat s_instance;
   };
+
+/* FIXME : DEBUG : HACK CRIDF2021 + */
+  /**  Strat SM states  **/
+  enum task_state_cridf2021_t {
+    TASK_STATE_NULL = 0,
+    TASK_STATE_IDDLE,
+
+    TASK_STATE_GO_TO_OBSERVATION_POINT,
+    TASK_STATE_POINT_TO_PLAYGROUND_CENTER,
+    TASK_STATE_GET_TARGET,
+    TASK_STATE_POINT_TO_TARGET,
+    TASK_STATE_GO_TO_TARGET,
+    TASK_STATE_POINT_TO_HARBOR,
+    TASK_STATE_GO_TO_HARBOR,
+    TASK_STATE_ENTER_HARBOR,
+    TASK_STATE_EXIT_HARBOR,
+
+    TASK_STATE_EMERGENCY_STOP,
+    TASK_STATE_EMERGENCY_WAIT,
+    TASK_STATE_EMERGENCY_MOVE_AWAY,
+    TASK_STATE_EMERGENCY_ESCAPE,
+
+    /* debug states */
+    TASK_STATE_PAUSE_DBG = 128,
+  };
+
+  class TaskCRIDF2021
+  {
+  public:
+    task_state_cridf2021_t m_task_state;
+    detected_object_info_t m_target;
+    goldo_vec_2d_t m_harbor;
+
+    TaskCRIDF2021(){};
+    void init();
+    void set_state(task_state_cridf2021_t new_state);
+    void do_step(float _time);
+  };
+/* FIXME : DEBUG : HACK CRIDF2021 - */
 
 }
 

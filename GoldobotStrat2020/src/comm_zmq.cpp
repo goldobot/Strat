@@ -232,6 +232,7 @@ void CommZmq::taskFunction()
 
           WorldState::instance().lock();
           WorldState::instance().detected_object(0).timestamp_ms = curr_time_ms;
+          WorldState::instance().detected_object(0).id = 1;
           WorldState::instance().detected_object(0).attr = color_code;
           WorldState::instance().detected_object(0).x_mm = x_abs;
           WorldState::instance().detected_object(0).y_mm = y_abs;

@@ -108,6 +108,7 @@ namespace goldobot
 
     strat_action_t * prepare_STRAT_STATE_EMERGENCY_RECOVER(strat_action_t * orig_act);
 
+  public: /* FIXME : DEBUG : HACK CRDIF2021 (crade!) */
     int cmd_traj (strat_way_point_t *_wp, int _nwp, float speed, float accel, float deccel);
 
     int cmd_point_to (strat_way_point_t *_wp, float speed, float accel, float deccel);
@@ -124,6 +125,7 @@ namespace goldobot
 
     int cmd_propulsion_disable();
 
+  private: /* FIXME : DEBUG : HACK CRDIF2021 (crade!) */
     char m_strat_file_name[40];
 
     int m_n_tasks;
@@ -183,6 +185,7 @@ namespace goldobot
     TASK_STATE_GET_TARGET,
     TASK_STATE_POINT_TO_TARGET,
     TASK_STATE_GO_TO_TARGET,
+    TASK_STATE_CATCH_TARGET,
     TASK_STATE_POINT_TO_HARBOR,
     TASK_STATE_GO_TO_HARBOR,
     TASK_STATE_ENTER_HARBOR,
@@ -200,24 +203,29 @@ namespace goldobot
   class TaskCRIDF2021
   {
   public:
+    bool m_side_is_blue;
     task_state_cridf2021_t m_task_state;
+    unsigned int m_act_start_time_ms;
     detected_object_info_t m_target;
-    goldo_vec_2d_t m_harbor;
-    goldo_vec_2d_t m_obs_pt;
-    goldo_vec_2d_t m_obs_tgt;
+    strat_way_point_t m_harbor;
+    strat_way_point_t m_obs_pt;
+    strat_way_point_t m_obs_dir;
     bool m_state_change;
     unsigned int m_soft_deadline_ms;
     unsigned int m_hard_deadline_ms;
+    unsigned char m_action_buf[4096];
 
     TaskCRIDF2021(){};
     void init(bool is_blue);
-    void set_state(task_state_cridf2021_t new_state);
+    void set_state(task_state_cridf2021_t new_state, unsigned int _time_ms);
     bool state_exit_test(unsigned int _time_ms,
                          unsigned int soft_deadline_ms,
                          unsigned int hard_deadline_ms);
     void check_deadlines_and_change_state(unsigned int _time_ms,
                                           task_state_cridf2021_t new_state);
     void do_step(float _time_ms);
+    strat_action_traj_t * prepare_action_go_to(strat_way_point_t *_target);
+    strat_action_point_to_t * prepare_action_point_to(strat_way_point_t *_target);
   };
 /* FIXME : DEBUG : HACK CRIDF2021 - */
 

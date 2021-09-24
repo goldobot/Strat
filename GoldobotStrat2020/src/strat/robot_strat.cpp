@@ -150,10 +150,6 @@ int RobotStrat::init(char *strat_file_name)
 
   memset (m_dbg_fname, 0, sizeof(m_dbg_fname));
 
-#if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
-  m_task_cridf2021->init();
-#endif
-
   return 0;
 }
 
@@ -229,7 +225,7 @@ void RobotStrat::taskFunction()
 #if 1 /* FIXME : DEBUG : EXPERIMENTAL */
   goldo_conf_info_t& ci = GoldoConf::instance().c();
   unsigned int robot_sensors = RobotState::instance().s().robot_sensors;
-  bool is_neg = ((robot_sensors&RobotState::GPIO_SIDE_SELECT_MASK) == 0);
+  bool is_blue = ((robot_sensors&RobotState::GPIO_SIDE_SELECT_MASK) == 0);
   if (robot_sensors&0x00000020)
   {
     printf (" DEBUG: HACK: set 2 obstacles\n");
@@ -240,7 +236,7 @@ void RobotStrat::taskFunction()
     printf (" DEBUG: HACK: set 1 obstacle\n");
     LidarDetect::instance().set_nb_of_send_detect(1);
   }
-  if (is_neg) /* Y - */
+  if (is_blue) /* Y - */
   {
     if (ci.conf_strat_file_neg_str[0]==0x00)
     {
@@ -263,8 +259,12 @@ void RobotStrat::taskFunction()
     }
   }
   printf (" DEBUG: robot_sensors: %.8x\n", robot_sensors);
-  printf (" DEBUG: color: %s\n", is_neg?"BLUE":"YELLOW");
+  printf (" DEBUG: color: %s\n", is_blue?"BLUE":"YELLOW");
   printf (" DEBUG: task_name: %s\n", m_task_dbg->m_task_name);
+#endif
+
+#if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
+  m_task_cridf2021->init(is_blue);
 #endif
 
   while(!m_stop_task)
@@ -602,6 +602,7 @@ void RobotStrat::taskFunction()
         printf ("****************************************\n");
         printf ("\n");
         state_change_dbg = false;
+        m_task_cridf2021->set_state(TASK_STATE_GO_TO_OBSERVATION_POINT);
       }
 
       if (my_time_ms > hard_deadline_ms)
@@ -1838,67 +1839,197 @@ void RobotStrat::dbg_dump()
 
 
 /* FIXME : DEBUG : HACK CRIDF2021 + */
-void TaskCRIDF2021::init()
+void TaskCRIDF2021::init(bool is_blue)
 {
   m_task_state = TASK_STATE_IDDLE;
+  m_state_change = false;
   memset (&m_target, 0, sizeof(m_target));
-  /* FIXME : TODO */
+  if (is_blue)
+  {
+    m_harbor.x  = 1600;
+    m_harbor.y  = 1800;
+    m_obs_pt.x  =  800;
+    m_obs_pt.y  =  600;
+    m_obs_tgt.x = 1000;
+    m_obs_tgt.y =    0;
+  }
+  else
+  {
+    m_harbor.x  = 1600;
+    m_harbor.y  =-1800;
+    m_obs_pt.x  =  800;
+    m_obs_pt.y  = -600;
+    m_obs_tgt.x = 1000;
+    m_obs_tgt.y =    0;
+  }
+  m_soft_deadline_ms = 500;   /* FIXME : DEBUG */
+  m_hard_deadline_ms = 10000; /* FIXME : DEBUG */
 }
 
 void TaskCRIDF2021::set_state(task_state_cridf2021_t new_state)
 {
   m_task_state = new_state;
+  m_state_change = true;
 }
 
-void TaskCRIDF2021::do_step(float _time)
+bool TaskCRIDF2021::state_exit_test(unsigned int _time_ms,
+                                    unsigned int soft_deadline_ms,
+                                    unsigned int hard_deadline_ms)
 {
-  /* FIXME : TODO */
+  bool exit_test = false;
+
+  if (_time_ms > soft_deadline_ms)
+  {
+    /* FIXME : TODO : add completion test for actuators */
+    if (!RobotState::instance().propulsion_busy())
+    {
+      exit_test = true;
+    }
+    /* FIXME : TODO : error management */
+    //else if (RobotState::instance().propulsion_error())
+    //{
+    //  printf (" Propulsion ERROR\n");
+    //  m_strat_state = TASK_STATE_IDDLE;
+    //  m_state_change = false;
+    //  exit_test = true;
+    //}
+  }
+  if (_time_ms > hard_deadline_ms)
+  {
+    exit_test = true;
+  }
+
+  return exit_test;
+}
+
+void TaskCRIDF2021::check_deadlines_and_change_state(unsigned int _time_ms,
+                                                     task_state_cridf2021_t new_state)
+{
+  if (state_exit_test(_time_ms, m_soft_deadline_ms, m_hard_deadline_ms))
+  {
+    set_state(new_state);
+  }
+}
+
+void TaskCRIDF2021::do_step(float _time_ms)
+{
 
   switch (m_task_state) {
   case TASK_STATE_IDDLE:
-    m_task_state = TASK_STATE_GO_TO_OBSERVATION_POINT;
+    if(m_state_change)
+    {
+      /* FIXME : TODO */
+      m_state_change = false;
+    }
+    check_deadlines_and_change_state(_time_ms, TASK_STATE_GO_TO_OBSERVATION_POINT);
     break;
   case TASK_STATE_GO_TO_OBSERVATION_POINT:
-    m_task_state = TASK_STATE_POINT_TO_PLAYGROUND_CENTER;
+    if(m_state_change)
+    {
+      /* FIXME : TODO */
+      m_state_change = false;
+    }
+    check_deadlines_and_change_state(_time_ms, TASK_STATE_POINT_TO_PLAYGROUND_CENTER);
     break;
   case TASK_STATE_POINT_TO_PLAYGROUND_CENTER:
-    m_task_state = TASK_STATE_GET_TARGET;
+    if(m_state_change)
+    {
+      /* FIXME : TODO */
+      m_state_change = false;
+    }
+    check_deadlines_and_change_state(_time_ms, TASK_STATE_GET_TARGET);
     break;
   case TASK_STATE_GET_TARGET:
-    m_task_state = TASK_STATE_POINT_TO_TARGET;
+    if(m_state_change)
+    {
+      /* FIXME : TODO */
+      m_state_change = false;
+    }
+    check_deadlines_and_change_state(_time_ms, TASK_STATE_POINT_TO_TARGET);
     break;
   case TASK_STATE_POINT_TO_TARGET:
-    m_task_state = TASK_STATE_GO_TO_TARGET;
+    if(m_state_change)
+    {
+      /* FIXME : TODO */
+      m_state_change = false;
+    }
+    check_deadlines_and_change_state(_time_ms, TASK_STATE_GO_TO_TARGET);
     break;
   case TASK_STATE_GO_TO_TARGET:
-    m_task_state = TASK_STATE_POINT_TO_HARBOR;
+    if(m_state_change)
+    {
+      /* FIXME : TODO */
+      m_state_change = false;
+    }
+    check_deadlines_and_change_state(_time_ms, TASK_STATE_POINT_TO_HARBOR);
     break;
   case TASK_STATE_POINT_TO_HARBOR:
-    m_task_state = TASK_STATE_GO_TO_HARBOR;
+    if(m_state_change)
+    {
+      /* FIXME : TODO */
+      m_state_change = false;
+    }
+    check_deadlines_and_change_state(_time_ms, TASK_STATE_GO_TO_HARBOR);
     break;
   case TASK_STATE_GO_TO_HARBOR:
-    m_task_state = TASK_STATE_ENTER_HARBOR;
+    if(m_state_change)
+    {
+      /* FIXME : TODO */
+      m_state_change = false;
+    }
+    check_deadlines_and_change_state(_time_ms, TASK_STATE_ENTER_HARBOR);
     break;
   case TASK_STATE_ENTER_HARBOR:
-    m_task_state = TASK_STATE_EXIT_HARBOR;
+    if(m_state_change)
+    {
+      /* FIXME : TODO */
+      m_state_change = false;
+    }
+    check_deadlines_and_change_state(_time_ms, TASK_STATE_EXIT_HARBOR);
     break;
   case TASK_STATE_EXIT_HARBOR:
-    m_task_state = TASK_STATE_GO_TO_OBSERVATION_POINT;
+    if(m_state_change)
+    {
+      /* FIXME : TODO */
+      m_state_change = false;
+    }
+    check_deadlines_and_change_state(_time_ms, TASK_STATE_GO_TO_OBSERVATION_POINT);
     break;
   case TASK_STATE_EMERGENCY_STOP:
-    m_task_state = TASK_STATE_EMERGENCY_WAIT;
+    if(m_state_change)
+    {
+      /* FIXME : TODO */
+      m_state_change = false;
+    }
+    check_deadlines_and_change_state(_time_ms, TASK_STATE_EMERGENCY_WAIT);
     break;
   case TASK_STATE_EMERGENCY_WAIT:
-    m_task_state = TASK_STATE_EMERGENCY_MOVE_AWAY;
+    if(m_state_change)
+    {
+      /* FIXME : TODO */
+      m_state_change = false;
+    }
+    check_deadlines_and_change_state(_time_ms, TASK_STATE_EMERGENCY_MOVE_AWAY);
     break;
   case TASK_STATE_EMERGENCY_MOVE_AWAY:
-    m_task_state = TASK_STATE_EMERGENCY_ESCAPE;
+    if(m_state_change)
+    {
+      /* FIXME : TODO */
+      m_state_change = false;
+    }
+    check_deadlines_and_change_state(_time_ms, TASK_STATE_EMERGENCY_ESCAPE);
     break;
   case TASK_STATE_EMERGENCY_ESCAPE:
-    m_task_state = TASK_STATE_GO_TO_OBSERVATION_POINT;
+    if(m_state_change)
+    {
+      /* FIXME : TODO */
+      m_state_change = false;
+    }
+    check_deadlines_and_change_state(_time_ms, TASK_STATE_GO_TO_OBSERVATION_POINT);
     break;
   default:
     m_task_state = TASK_STATE_IDDLE;
+    m_state_change = false;
   }
 
 }

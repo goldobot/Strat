@@ -203,11 +203,21 @@ namespace goldobot
     task_state_cridf2021_t m_task_state;
     detected_object_info_t m_target;
     goldo_vec_2d_t m_harbor;
+    goldo_vec_2d_t m_obs_pt;
+    goldo_vec_2d_t m_obs_tgt;
+    bool m_state_change;
+    unsigned int m_soft_deadline_ms;
+    unsigned int m_hard_deadline_ms;
 
     TaskCRIDF2021(){};
-    void init();
+    void init(bool is_blue);
     void set_state(task_state_cridf2021_t new_state);
-    void do_step(float _time);
+    bool state_exit_test(unsigned int _time_ms,
+                         unsigned int soft_deadline_ms,
+                         unsigned int hard_deadline_ms);
+    void check_deadlines_and_change_state(unsigned int _time_ms,
+                                          task_state_cridf2021_t new_state);
+    void do_step(float _time_ms);
   };
 /* FIXME : DEBUG : HACK CRIDF2021 - */
 

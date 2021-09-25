@@ -202,6 +202,11 @@ void RobotStrat::taskFunction()
   strat_action_t *my_escape_action = NULL;
   unsigned int match_start_ms = 0;
   bool match_funny_done = false;
+#if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
+  int last_wait_idx = -1;
+  unsigned int enter_emergency_time_ms = 0;
+  unsigned int emergency_lost_ms = 0;
+#endif
 
   m_task_running = true;
 
@@ -261,6 +266,19 @@ void RobotStrat::taskFunction()
   printf (" DEBUG: robot_sensors: %.8x\n", robot_sensors);
   printf (" DEBUG: color: %s\n", is_blue?"BLUE":"YELLOW");
   printf (" DEBUG: task_name: %s\n", m_task_dbg->m_task_name);
+
+#if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
+  char last_wait_s[16];
+  strncpy(last_wait_s,"LAST_WAIT",16);
+  last_wait_idx = m_task_dbg->get_action_idx_with_label(last_wait_s);
+  printf (" DEBUG: last_wait_idx = %d\n", last_wait_idx);
+  if (last_wait_idx != -1)
+  {
+    strat_action_wait_t *last_wait_action = (strat_action_wait_t *)m_task_dbg->m_action_list[last_wait_idx];
+    printf (" DEBUG: last_wait_action->h.min_duration_ms = %d\n", last_wait_action->h.min_duration_ms);
+    printf (" DEBUG: last_wait_action->h.max_duration_ms = %d\n", last_wait_action->h.max_duration_ms);
+  }
+#endif
 #endif
 
 #if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
@@ -326,6 +344,7 @@ void RobotStrat::taskFunction()
       printf ("EMERGENCY_STOP!\n");
       printf ("  last move dir : %s\n", m_last_move_forwards?"FORWARDS":"BACKWARDS");
       cmd_clear_prop_err();
+      enter_emergency_time_ms = my_time_ms;
       soft_deadline_ms = my_time_ms + 500;
       hard_deadline_ms = my_time_ms + m_task_dbg->m_obstacle_freeze_timeout_ms;
       recov_fail_cnt = 0;
@@ -772,6 +791,23 @@ void RobotStrat::taskFunction()
         printf ("  s_delta_y_mm = %f\n", s_delta_y_mm);
 #endif
         printf ("\n");
+
+#if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
+        emergency_lost_ms = my_time_ms - enter_emergency_time_ms;
+        if (last_wait_idx != -1)
+        {
+          strat_action_wait_t *last_wait_action = (strat_action_wait_t *)m_task_dbg->m_action_list[last_wait_idx];
+          unsigned int available_ms = last_wait_action->h.max_duration_ms;
+          if (available_ms > emergency_lost_ms)
+          {
+            last_wait_action->h.min_duration_ms = available_ms - emergency_lost_ms;
+            last_wait_action->h.max_duration_ms = available_ms - emergency_lost_ms;
+          }
+          printf (" DEBUG: Decreasing the last WAIT state duration:\n");
+          printf (" DEBUG:  last_wait_action->h.min_duration_ms = %d\n", last_wait_action->h.min_duration_ms);
+          printf (" DEBUG:  last_wait_action->h.max_duration_ms = %d\n", last_wait_action->h.max_duration_ms);
+        }
+#endif
 
 #if 0 /* FIXME : DEBUG */
         {

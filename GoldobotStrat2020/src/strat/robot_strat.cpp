@@ -320,6 +320,7 @@ void RobotStrat::taskFunction()
     if (RobotState::instance().emergency_stop() && 
         (m_strat_state!=STRAT_STATE_IDDLE) &&
         (m_strat_state!=STRAT_STATE_EMERGENCY_STOP) &&
+        (m_strat_state!=STRAT_STATE_EMERGENCY_WAIT) &&
         (m_strat_state!=STRAT_STATE_EMERGENCY_MOVE_AWAY) )
     {
       printf ("EMERGENCY_STOP!\n");
@@ -333,6 +334,7 @@ void RobotStrat::taskFunction()
     }
 
     if ((m_strat_state!=STRAT_STATE_IDDLE) &&
+        (m_strat_state!=STRAT_STATE_EMERGENCY_WAIT) &&
         (m_strat_state!=STRAT_STATE_EMERGENCY_STOP) )
     {
       if (RobotState::instance().s().speed_abs>0.01) 
@@ -1834,6 +1836,7 @@ void RobotStrat::dbg_astar_test(int x_start_mm, int y_start_mm,
 
 void RobotStrat::dbg_dump()
 {
+  read_yaml_conf (m_strat_file_name);
   m_task_dbg->dbg_dump_task();
 }
 

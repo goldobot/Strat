@@ -1997,6 +1997,7 @@ void TaskCRIDF2021::do_step(float _time_ms)
     if(m_state_change)
     {
       /* FIXME : TODO : what to do? */
+      printf (">>> TASK_STATE_IDDLE\n");
       m_state_change = false;
     }
     //check_deadlines_and_change_state(_time_ms, TASK_STATE_GO_TO_OBSERVATION_POINT);
@@ -2008,6 +2009,7 @@ void TaskCRIDF2021::do_step(float _time_ms)
       strat_action_traj_t * goto_act = prepare_action_go_to(&m_obs_pt);
       RobotStrat::instance().cmd_traj (goto_act->wp, goto_act->nwp, 
                                        goto_act->speed, goto_act->accel, goto_act->deccel);
+      printf (">>> TASK_STATE_GO_TO_OBSERVATION_POINT\n");
       m_state_change = false;
     }
     check_deadlines_and_change_state(_time_ms, TASK_STATE_POINT_TO_PLAYGROUND_CENTER);
@@ -2018,6 +2020,7 @@ void TaskCRIDF2021::do_step(float _time_ms)
       strat_action_point_to_t * act_pt = prepare_action_point_to(&m_obs_dir);
       RobotStrat::instance().cmd_point_to (&(act_pt->target), 
                                            act_pt->speed, act_pt->accel, act_pt->deccel);
+      printf (">>> TASK_STATE_POINT_TO_PLAYGROUND_CENTER\n");
       m_state_change = false;
     }
     check_deadlines_and_change_state(_time_ms, TASK_STATE_GET_TARGET);
@@ -2032,6 +2035,7 @@ void TaskCRIDF2021::do_step(float _time_ms)
       m_target.x_mm = 800;
       m_target.y_mm = 400;
 #endif
+      printf (">>> TASK_STATE_GET_TARGET\n");
       m_state_change = false;
     }
     check_deadlines_and_change_state(_time_ms, TASK_STATE_POINT_TO_TARGET);
@@ -2045,6 +2049,7 @@ void TaskCRIDF2021::do_step(float _time_ms)
       strat_action_point_to_t * act_pt = prepare_action_point_to(&m_target_pose);
       RobotStrat::instance().cmd_point_to (&(act_pt->target), 
                                            act_pt->speed, act_pt->accel, act_pt->deccel);
+      printf (">>> TASK_STATE_POINT_TO_TARGET\n");
       m_state_change = false;
     }
     check_deadlines_and_change_state(_time_ms, TASK_STATE_GO_TO_TARGET);
@@ -2059,6 +2064,7 @@ void TaskCRIDF2021::do_step(float _time_ms)
       strat_action_traj_t * goto_act = prepare_action_go_to(&m_target_pose);
       RobotStrat::instance().cmd_traj (goto_act->wp, goto_act->nwp, 
                                        goto_act->speed, goto_act->accel, goto_act->deccel);
+      printf (">>> TASK_STATE_GO_TO_TARGET\n");
       m_state_change = false;
     }
     check_deadlines_and_change_state(_time_ms, TASK_STATE_CATCH_TARGET);
@@ -2069,6 +2075,7 @@ void TaskCRIDF2021::do_step(float _time_ms)
       RobotStrat::instance().cmd_nucleo_seq (15); /* pales_serre */
       m_soft_deadline_ms = 1000; /* FIXME : DEBUG */
       m_hard_deadline_ms = 2000; /* FIXME : DEBUG */
+      printf (">>> TASK_STATE_CATCH_TARGET\n");
       m_state_change = false;
     }
     check_deadlines_and_change_state(_time_ms, TASK_STATE_POINT_TO_HARBOR);
@@ -2081,6 +2088,7 @@ void TaskCRIDF2021::do_step(float _time_ms)
                                            act_pt->speed, act_pt->accel, act_pt->deccel);
       m_soft_deadline_ms = 500;   /* FIXME : DEBUG */
       m_hard_deadline_ms = 10000; /* FIXME : DEBUG */
+      printf (">>> TASK_STATE_POINT_TO_HARBOR\n");
       m_state_change = false;
     }
     check_deadlines_and_change_state(_time_ms, TASK_STATE_GO_TO_HARBOR);
@@ -2091,6 +2099,7 @@ void TaskCRIDF2021::do_step(float _time_ms)
       strat_action_traj_t * goto_act = prepare_action_go_to(&m_harbor);
       RobotStrat::instance().cmd_traj (goto_act->wp, goto_act->nwp, 
                                        goto_act->speed, goto_act->accel, goto_act->deccel);
+      printf (">>> TASK_STATE_GO_TO_HARBOR\n");
       m_state_change = false;
     }
     check_deadlines_and_change_state(_time_ms, TASK_STATE_ENTER_HARBOR);
@@ -2112,6 +2121,7 @@ void TaskCRIDF2021::do_step(float _time_ms)
       strat_action_traj_t * goto_act = prepare_action_go_to(&inside_harbor);
       RobotStrat::instance().cmd_traj (goto_act->wp, goto_act->nwp, 
                                        goto_act->speed, goto_act->accel, goto_act->deccel);
+      printf (">>> TASK_STATE_ENTER_HARBOR\n");
       m_state_change = false;
     }
     check_deadlines_and_change_state(_time_ms, TASK_STATE_EXIT_HARBOR);
@@ -2122,6 +2132,7 @@ void TaskCRIDF2021::do_step(float _time_ms)
       strat_action_traj_t * goto_act = prepare_action_go_to(&m_harbor);
       RobotStrat::instance().cmd_traj (goto_act->wp, goto_act->nwp, 
                                        goto_act->speed, goto_act->accel, goto_act->deccel);
+      printf (">>> TASK_STATE_EXIT_HARBOR\n");
       m_state_change = false;
     }
     check_deadlines_and_change_state(_time_ms, TASK_STATE_GO_TO_OBSERVATION_POINT);
@@ -2130,6 +2141,7 @@ void TaskCRIDF2021::do_step(float _time_ms)
     if(m_state_change)
     {
       /* FIXME : TODO */
+      printf (">>> TASK_STATE_EMERGENCY_STOP\n");
       m_state_change = false;
     }
 #if 0 /* FIXME : DEBUG */
@@ -2143,6 +2155,7 @@ void TaskCRIDF2021::do_step(float _time_ms)
     if(m_state_change)
     {
       /* FIXME : TODO */
+      printf (">>> TASK_STATE_EMERGENCY_WAIT\n");
       m_state_change = false;
     }
 #if 0 /* FIXME : DEBUG */
@@ -2156,6 +2169,7 @@ void TaskCRIDF2021::do_step(float _time_ms)
     if(m_state_change)
     {
       /* FIXME : TODO */
+      printf (">>> TASK_STATE_EMERGENCY_MOVE_AWAY\n");
       m_state_change = false;
     }
 #if 0 /* FIXME : DEBUG */
@@ -2169,6 +2183,7 @@ void TaskCRIDF2021::do_step(float _time_ms)
     if(m_state_change)
     {
       /* FIXME : TODO */
+      printf (">>> TASK_STATE_EMERGENCY_ESCAPE\n");
       m_state_change = false;
     }
 #if 0 /* FIXME : DEBUG */

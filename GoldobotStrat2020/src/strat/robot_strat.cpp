@@ -2052,12 +2052,22 @@ void TaskCRIDF2021::do_step(float _time_ms)
       printf (">>> TASK_STATE_POINT_TO_TARGET\n");
       m_state_change = false;
     }
+    check_deadlines_and_change_state(_time_ms, TASK_STATE_PREP_GO_TO_TARGET);
+    break;
+  case TASK_STATE_PREP_GO_TO_TARGET:
+    if(m_state_change)
+    {
+      RobotStrat::instance().cmd_nucleo_seq (14); /* pales_ouvre */
+      m_soft_deadline_ms = 1000; /* FIXME : DEBUG */
+      m_hard_deadline_ms = 2000; /* FIXME : DEBUG */
+      printf (">>> TASK_STATE_PREP_GO_TO_TARGET\n");
+      m_state_change = false;
+    }
     check_deadlines_and_change_state(_time_ms, TASK_STATE_GO_TO_TARGET);
     break;
   case TASK_STATE_GO_TO_TARGET:
     if(m_state_change)
     {
-      RobotStrat::instance().cmd_nucleo_seq (14); /* pales_ouvre */
       strat_way_point_t m_target_pose;
       m_target_pose.x_mm = m_target.x_mm;
       m_target_pose.y_mm = m_target.y_mm;
@@ -2104,10 +2114,20 @@ void TaskCRIDF2021::do_step(float _time_ms)
     }
     check_deadlines_and_change_state(_time_ms, TASK_STATE_ENTER_HARBOR);
     break;
-  case TASK_STATE_ENTER_HARBOR:
+  case TASK_STATE_PREP_ENTER_HARBOR:
     if(m_state_change)
     {
       RobotStrat::instance().cmd_nucleo_seq (14); /* pales_ouvre */
+      m_soft_deadline_ms = 1000; /* FIXME : DEBUG */
+      m_hard_deadline_ms = 2000; /* FIXME : DEBUG */
+      printf (">>> TASK_STATE_PREP_ENTER_HARBOR\n");
+      m_state_change = false;
+    }
+    check_deadlines_and_change_state(_time_ms, TASK_STATE_ENTER_HARBOR);
+    break;
+  case TASK_STATE_ENTER_HARBOR:
+    if(m_state_change)
+    {
       strat_way_point_t inside_harbor;
       inside_harbor.x_mm = m_harbor.x_mm + 200;
       if (m_target.attr == 1) /* RED */

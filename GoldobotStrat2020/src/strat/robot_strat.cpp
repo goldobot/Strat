@@ -2112,7 +2112,7 @@ void TaskCRIDF2021::do_step(float _time_ms)
       printf (">>> TASK_STATE_GO_TO_HARBOR\n");
       m_state_change = false;
     }
-    check_deadlines_and_change_state(_time_ms, TASK_STATE_ENTER_HARBOR);
+    check_deadlines_and_change_state(_time_ms, TASK_STATE_PREP_ENTER_HARBOR);
     break;
   case TASK_STATE_PREP_ENTER_HARBOR:
     if(m_state_change)

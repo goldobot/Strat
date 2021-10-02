@@ -2030,25 +2030,26 @@ void TaskCRIDF2021::do_step(float _time_ms)
   case TASK_STATE_GET_TARGET:
     if(m_state_change)
     {
-#if 0 /* FIXME : DEBUG : TEST */
-      m_target.timestamp_ms = _time_ms;
-      m_target.id = 1;
-      m_target.attr = 2; /* GREEN */
-      m_target.x_mm = 800;
-      m_target.y_mm = 400;
-#else
-      WorldState::instance().lock();
-      m_target.timestamp_ms = WorldState::instance().detected_object(0).timestamp_ms;
-      m_target.id           = WorldState::instance().detected_object(0).id;
-      m_target.attr         = WorldState::instance().detected_object(0).attr;
-      m_target.x_mm         = WorldState::instance().detected_object(0).x_mm;
-      m_target.y_mm         = WorldState::instance().detected_object(0).y_mm;
-      WorldState::instance().release();
-#endif
-
       printf (">>> TASK_STATE_GET_TARGET\n");
       m_state_change = false;
     }
+
+#if 0 /* FIXME : DEBUG : TEST */
+    m_target.timestamp_ms = _time_ms;
+    m_target.id = 1;
+    m_target.attr = 2; /* GREEN */
+    m_target.x_mm = 800;
+    m_target.y_mm = 400;
+#else
+    WorldState::instance().lock();
+    m_target.timestamp_ms = WorldState::instance().detected_object(0).timestamp_ms;
+    m_target.id           = WorldState::instance().detected_object(0).id;
+    m_target.attr         = WorldState::instance().detected_object(0).attr;
+    m_target.x_mm         = WorldState::instance().detected_object(0).x_mm;
+    m_target.y_mm         = WorldState::instance().detected_object(0).y_mm;
+    WorldState::instance().release();
+#endif
+
     if (m_target.id != 0)
     {
       printf ("  target : %s@<%f,%f>\n", (m_target.attr==1)?"RED":"GREEN",m_target.x_mm, m_target.y_mm);

@@ -194,10 +194,12 @@ void CommZmq::taskFunction()
 
 #if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
     WorldState::instance().lock();
+    int obj_id = WorldState::instance().detected_object(0).id;
     int obj_time_ms = WorldState::instance().detected_object(0).timestamp_ms;
-    if(curr_time_ms > (obj_time_ms+1000))
+    if((obj_id!=0) && (curr_time_ms > (obj_time_ms+1000)))
     {
       WorldState::instance().detected_object(0).id = 0;
+      printf ("CLEAN\n");
     }
     WorldState::instance().release();
 
@@ -217,6 +219,7 @@ void CommZmq::taskFunction()
         int *buff_i = (int *)buff;
         if (buff_i[0]==0x7d7f1892)
         {
+          bool hit = false;
           RobotState::instance().lock();
           int l_odo_x_mm      = RobotState::instance().s().x_mm;
           int l_odo_y_mm      = RobotState::instance().s().y_mm;
@@ -240,6 +243,7 @@ void CommZmq::taskFunction()
 
           if ((x_abs>150.0) && (x_abs<1600.0) && (y_abs>-800.0) && (y_abs<800.0) && ((color_code==1) || (color_code==2)))
           {
+            hit = true;
             WorldState::instance().lock();
             WorldState::instance().detected_object(0).timestamp_ms = detect_time_ms;
             WorldState::instance().detected_object(0).id = 1;
@@ -250,24 +254,30 @@ void CommZmq::taskFunction()
           }
 
 #if 0
-          char color_s[16];
-          if (color_code==1)
+          if (hit)
           {
-            strncpy(color_s,"RED  :",16);
-          }
-          else if (color_code==2)
-          {
-            strncpy(color_s,"GREEN:",16);
-          }
-          else
-          {
-            strncpy(color_s,"?????:",16);
-          }
+            printf ("HIT\n");
+            char color_s[16];
+            if (color_code==1)
+            {
+              strncpy(color_s,"RED  :",16);
+            }
+            else if (color_code==2)
+            {
+              strncpy(color_s,"GREEN:",16);
+            }
+            else
+            {
+              strncpy(color_s,"?????:",16);
+            }
 
-          printf ("%s:\n", color_s);
-          printf (" Prel=<%f,%f>\n", x_rel, y_rel);
-          printf (" Pabs=<%f,%f>\n", x_abs, y_abs);
-          printf ("\n");
+            printf ("%s:\n", color_s);
+            printf (" Prel=<%f,%f>\n", x_rel, y_rel);
+            printf (" Pabs=<%f,%f>\n", x_abs, y_abs);
+            printf ("\n");
+          }
+#else
+          hit = hit;
 #endif
         }
         else

@@ -1890,7 +1890,7 @@ void TaskCRIDF2021::init(bool is_blue)
     m_harbor.y_mm  =  300;
     m_obs_pt.x_mm  =  800;
     m_obs_pt.y_mm  = -600;
-    m_obs_dir.x_mm = 1000;
+    m_obs_dir.x_mm =  800;
     m_obs_dir.y_mm =    0;
   }
   else
@@ -1899,7 +1899,7 @@ void TaskCRIDF2021::init(bool is_blue)
     m_harbor.y_mm  = -300;
     m_obs_pt.x_mm  =  800;
     m_obs_pt.y_mm  =  600;
-    m_obs_dir.x_mm = 1000;
+    m_obs_dir.x_mm =  800;
     m_obs_dir.y_mm =    0;
   }
   m_soft_deadline_ms = 500;   /* FIXME : DEBUG */
@@ -2152,11 +2152,11 @@ void TaskCRIDF2021::do_step(float _time_ms)
       inside_harbor.x_mm = m_harbor.x_mm + 150;
       if (m_target.attr == 1) /* RED */
       {
-        inside_harbor.y_mm = m_harbor.y_mm + 30;
+        inside_harbor.y_mm = m_harbor.y_mm + 50;
       }
       else /* GREEN */
       {
-        inside_harbor.y_mm = m_harbor.y_mm - 30;
+        inside_harbor.y_mm = m_harbor.y_mm - 50;
       }
       strat_action_traj_t * goto_act = prepare_action_go_to(&inside_harbor);
       RobotStrat::instance().cmd_traj (goto_act->wp, goto_act->nwp, 

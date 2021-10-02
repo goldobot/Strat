@@ -2020,6 +2020,8 @@ void TaskCRIDF2021::do_step(float _time_ms)
       strat_action_point_to_t * act_pt = prepare_action_point_to(&m_obs_dir);
       RobotStrat::instance().cmd_point_to (&(act_pt->target), 
                                            act_pt->speed, act_pt->accel, act_pt->deccel);
+      m_soft_deadline_ms = 1000; /* FIXME : DEBUG */
+      m_hard_deadline_ms = 2000; /* FIXME : DEBUG */
       printf (">>> TASK_STATE_POINT_TO_PLAYGROUND_CENTER\n");
       m_state_change = false;
     }
@@ -2050,7 +2052,7 @@ void TaskCRIDF2021::do_step(float _time_ms)
     if (m_target.id != 0)
     {
       printf ("  target : %s@<%f,%f>\n", (m_target.attr==1)?"RED":"GREEN",m_target.x_mm, m_target.y_mm);
-      check_deadlines_and_change_state(_time_ms, TASK_STATE_POINT_TO_TARGET);
+      set_state(TASK_STATE_POINT_TO_TARGET, _time_ms);
     }
     else
     {

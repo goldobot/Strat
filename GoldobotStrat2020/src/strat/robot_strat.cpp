@@ -1888,8 +1888,8 @@ void TaskCRIDF2021::init(bool is_blue)
   {
     m_harbor.x_mm  = 1600;
     m_harbor.y_mm  =  300;
-    m_obs_pt.x_mm  =  800;
-    m_obs_pt.y_mm  = -600;
+    m_obs_pt.x_mm  = 1500;
+    m_obs_pt.y_mm  =  300;
     m_obs_dir.x_mm =  800;
     m_obs_dir.y_mm =    0;
   }
@@ -1897,8 +1897,8 @@ void TaskCRIDF2021::init(bool is_blue)
   {
     m_harbor.x_mm  = 1600;
     m_harbor.y_mm  = -300;
-    m_obs_pt.x_mm  =  800;
-    m_obs_pt.y_mm  =  600;
+    m_obs_pt.x_mm  = 1500;
+    m_obs_pt.y_mm  = -300;
     m_obs_dir.x_mm =  800;
     m_obs_dir.y_mm =    0;
   }

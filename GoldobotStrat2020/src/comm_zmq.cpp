@@ -193,6 +193,14 @@ void CommZmq::taskFunction()
     }
 
 #if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
+    WorldState::instance().lock();
+    int obj_time_ms = WorldState::instance().detected_object(0).timestamp_ms;
+    if(curr_time_ms > (obj_time_ms+1000))
+    {
+      WorldState::instance().detected_object(0).id = 0;
+    }
+    WorldState::instance().release();
+
     if(poll_items[1].revents && ZMQ_POLLIN)
     {            
       unsigned char buff[1024];
@@ -228,16 +236,20 @@ void CommZmq::taskFunction()
 
           struct timespec curr_tp;
           clock_gettime(1, &curr_tp);
-          int curr_time_ms = curr_tp.tv_sec*1000 + curr_tp.tv_nsec/1000000;
+          int detect_time_ms = curr_tp.tv_sec*1000 + curr_tp.tv_nsec/1000000;
 
-          WorldState::instance().lock();
-          WorldState::instance().detected_object(0).timestamp_ms = curr_time_ms;
-          WorldState::instance().detected_object(0).id = 1;
-          WorldState::instance().detected_object(0).attr = color_code;
-          WorldState::instance().detected_object(0).x_mm = x_abs;
-          WorldState::instance().detected_object(0).y_mm = y_abs;
-          WorldState::instance().release();
+          if ((x_abs>150.0) && (x_abs<1600.0) && (y_abs>-800.0) && (y_abs<800.0) && ((color_code==1) || (color_code==2)))
+          {
+            WorldState::instance().lock();
+            WorldState::instance().detected_object(0).timestamp_ms = detect_time_ms;
+            WorldState::instance().detected_object(0).id = 1;
+            WorldState::instance().detected_object(0).attr = color_code;
+            WorldState::instance().detected_object(0).x_mm = x_abs;
+            WorldState::instance().detected_object(0).y_mm = y_abs;
+            WorldState::instance().release();
+          }
 
+#if 0
           char color_s[16];
           if (color_code==1)
           {
@@ -256,6 +268,7 @@ void CommZmq::taskFunction()
           printf (" Prel=<%f,%f>\n", x_rel, y_rel);
           printf (" Pabs=<%f,%f>\n", x_abs, y_abs);
           printf ("\n");
+#endif
         }
         else
         {

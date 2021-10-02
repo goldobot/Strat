@@ -2028,25 +2028,42 @@ void TaskCRIDF2021::do_step(float _time_ms)
   case TASK_STATE_GET_TARGET:
     if(m_state_change)
     {
-#if 1 /* FIXME : DEBUG : TEST */
+#if 0 /* FIXME : DEBUG : TEST */
       m_target.timestamp_ms = _time_ms;
       m_target.id = 1;
       m_target.attr = 2; /* GREEN */
       m_target.x_mm = 800;
       m_target.y_mm = 400;
+#else
+      WorldState::instance().lock();
+      m_target.timestamp_ms = WorldState::instance().detected_object(0).timestamp_ms;
+      m_target.id           = WorldState::instance().detected_object(0).id;
+      m_target.attr         = WorldState::instance().detected_object(0).attr;
+      m_target.x_mm         = WorldState::instance().detected_object(0).x_mm;
+      m_target.y_mm         = WorldState::instance().detected_object(0).y_mm;
+      WorldState::instance().release();
 #endif
+
       printf (">>> TASK_STATE_GET_TARGET\n");
       m_state_change = false;
     }
-    check_deadlines_and_change_state(_time_ms, TASK_STATE_POINT_TO_TARGET);
+    if (m_target.id != 0)
+    {
+      printf ("  target : %s@<%f,%f>\n", (m_target.attr==1)?"RED":"GREEN",m_target.x_mm, m_target.y_mm);
+      check_deadlines_and_change_state(_time_ms, TASK_STATE_POINT_TO_TARGET);
+    }
+    else
+    {
+      //printf ("  no target ..\n");
+    }
     break;
   case TASK_STATE_POINT_TO_TARGET:
     if(m_state_change)
     {
-      strat_way_point_t m_target_pose;
-      m_target_pose.x_mm = m_target.x_mm;
-      m_target_pose.y_mm = m_target.y_mm;
-      strat_action_point_to_t * act_pt = prepare_action_point_to(&m_target_pose);
+      strat_way_point_t target_pose;
+      target_pose.x_mm = m_target.x_mm;
+      target_pose.y_mm = m_target.y_mm;
+      strat_action_point_to_t * act_pt = prepare_action_point_to(&target_pose);
       RobotStrat::instance().cmd_point_to (&(act_pt->target), 
                                            act_pt->speed, act_pt->accel, act_pt->deccel);
       printf (">>> TASK_STATE_POINT_TO_TARGET\n");
@@ -2068,10 +2085,10 @@ void TaskCRIDF2021::do_step(float _time_ms)
   case TASK_STATE_GO_TO_TARGET:
     if(m_state_change)
     {
-      strat_way_point_t m_target_pose;
-      m_target_pose.x_mm = m_target.x_mm;
-      m_target_pose.y_mm = m_target.y_mm;
-      strat_action_traj_t * goto_act = prepare_action_go_to(&m_target_pose);
+      strat_way_point_t target_pose;
+      target_pose.x_mm = m_target.x_mm;
+      target_pose.y_mm = m_target.y_mm;
+      strat_action_traj_t * goto_act = prepare_action_go_to(&target_pose);
       RobotStrat::instance().cmd_traj (goto_act->wp, goto_act->nwp, 
                                        goto_act->speed, goto_act->accel, goto_act->deccel);
       printf (">>> TASK_STATE_GO_TO_TARGET\n");

@@ -2146,14 +2146,14 @@ void TaskCRIDF2021::do_step(float _time_ms)
     if(m_state_change)
     {
       strat_way_point_t inside_harbor;
-      inside_harbor.x_mm = m_harbor.x_mm + 200;
+      inside_harbor.x_mm = m_harbor.x_mm + 150;
       if (m_target.attr == 1) /* RED */
       {
-        inside_harbor.y_mm = m_harbor.y_mm + 100;
+        inside_harbor.y_mm = m_harbor.y_mm + 30;
       }
       else /* GREEN */
       {
-        inside_harbor.y_mm = m_harbor.y_mm - 100;
+        inside_harbor.y_mm = m_harbor.y_mm - 30;
       }
       strat_action_traj_t * goto_act = prepare_action_go_to(&inside_harbor);
       RobotStrat::instance().cmd_traj (goto_act->wp, goto_act->nwp, 

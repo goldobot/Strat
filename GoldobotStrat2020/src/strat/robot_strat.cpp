@@ -2104,6 +2104,8 @@ void TaskCRIDF2021::do_step(float _time_ms)
       strat_action_traj_t * goto_act = prepare_action_go_to(&target_pose);
       RobotStrat::instance().cmd_traj (goto_act->wp, goto_act->nwp, 
                                        goto_act->speed, goto_act->accel, goto_act->deccel);
+      m_soft_deadline_ms = 500; /* FIXME : DEBUG */
+      m_hard_deadline_ms = 10000; /* FIXME : DEBUG */
       printf (">>> TASK_STATE_GO_TO_TARGET\n");
       m_state_change = false;
     }

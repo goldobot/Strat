@@ -199,7 +199,7 @@ void CommZmq::taskFunction()
     if((obj_id!=0) && (curr_time_ms > (obj_time_ms+1000)))
     {
       WorldState::instance().detected_object(0).id = 0;
-      printf ("CLEAN\n");
+      //printf ("CLEAN\n");
     }
     WorldState::instance().release();
 

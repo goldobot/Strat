@@ -2025,6 +2025,16 @@ void TaskCRIDF2021::do_step(float _time_ms)
       printf (">>> TASK_STATE_POINT_TO_PLAYGROUND_CENTER\n");
       m_state_change = false;
     }
+    check_deadlines_and_change_state(_time_ms, TASK_STATE_WAIT_TARGET);
+    break;
+  case TASK_STATE_WAIT_TARGET:
+    if(m_state_change)
+    {
+      m_soft_deadline_ms = 2000; /* FIXME : DEBUG */
+      m_hard_deadline_ms = 2000; /* FIXME : DEBUG */
+      printf (">>> TASK_STATE_WAIT_TARGET\n");
+      m_state_change = false;
+    }
     check_deadlines_and_change_state(_time_ms, TASK_STATE_GET_TARGET);
     break;
   case TASK_STATE_GET_TARGET:

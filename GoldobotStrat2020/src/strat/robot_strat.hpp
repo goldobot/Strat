@@ -213,6 +213,8 @@ namespace goldobot
     strat_way_point_t m_harbor;
     strat_way_point_t m_obs_pt;
     strat_way_point_t m_obs_dir;
+    int m_red_cnt;
+    int m_green_cnt;
     bool m_state_change;
     unsigned int m_soft_deadline_ms;
     unsigned int m_hard_deadline_ms;

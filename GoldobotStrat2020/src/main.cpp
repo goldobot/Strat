@@ -341,7 +341,7 @@ int process_command_line(int argc, const char * argv[])
     {
       if (argc>2)
       {
-        debug_flags = atoi(argv[1]);
+        debug_flags = atoi(argv[2]);
       } 
       else
       {

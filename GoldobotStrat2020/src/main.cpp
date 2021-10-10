@@ -64,7 +64,7 @@ using namespace goldobot;
 bool ctrl_c_pressed = false;
 void ctrlc(int);
 
-bool debug_flag = false;
+int debug_flags = 0;
 bool autotest_flag = false;
 bool test_astar_flag = false;
 bool test_strat_conf_flag = false;
@@ -171,9 +171,10 @@ int main(int argc, const char * argv[])
   signal(SIGINT, ctrlc);
 
 
-  if (debug_flag)
+  if (debug_flags!=0)
   {
-    RobotStrat::instance().set_debug(true);
+    printf ("DEBUG : debug_flags=%d\n",debug_flags);
+    RobotStrat::instance().set_debug(debug_flags);
   }
 
   if (autotest_flag)
@@ -338,7 +339,14 @@ int process_command_line(int argc, const char * argv[])
     }
     if (strncmp(argv[1],"debug",5)==0)
     {
-      debug_flag = true;
+      if (argc>2)
+      {
+        debug_flags = atoi(argv[1]);
+      } 
+      else
+      {
+        debug_flags = 3;
+      }
       return 0;
     }
   }

@@ -63,7 +63,7 @@ namespace goldobot
 
     int init(char *strat_file_name);
 
-    void set_debug(bool debug_flag);
+    void set_debug(unsigned int debug_flags);
 
     int read_yaml_conf (char *strat_file_name);
 
@@ -160,6 +160,9 @@ namespace goldobot
 
     /* FIXME : DEBUG */
     bool m_dbg_resume_match_sig;
+
+    /* FIXME : DEBUG */
+    bool m_dbg_no_time_limit;
 
     /* FIXME : DEBUG */
     StratTask *m_task_dbg;

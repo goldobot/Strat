@@ -101,6 +101,8 @@ RobotStrat::RobotStrat()
 
   m_dbg_resume_match_sig = false;
 
+  m_dbg_no_time_limit = false;
+
   memset (m_dbg_fname, 0, sizeof(m_dbg_fname));
 
 #if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
@@ -153,9 +155,10 @@ int RobotStrat::init(char *strat_file_name)
   return 0;
 }
 
-void RobotStrat::set_debug(bool debug_flag)
+void RobotStrat::set_debug(unsigned int debug_flags)
 {
-  m_dbg_step_by_step = debug_flag;
+  if (debug_flags&1) m_dbg_step_by_step = true;
+  if (debug_flags&2) m_dbg_no_time_limit = true;
 }
 
 int RobotStrat::read_yaml_conf(char *fname)
@@ -294,7 +297,7 @@ void RobotStrat::taskFunction()
     clock_gettime(1, &my_tp);
     my_time_ms = my_tp.tv_sec*1000 + my_tp.tv_nsec/1000000;
 
-    if (!m_dbg_step_by_step)
+    if ((!m_dbg_step_by_step) && (!m_dbg_no_time_limit))
     {
       if ((!match_funny_done) && (match_start_ms!=0) && (my_time_ms>(match_start_ms+97000)))
       {
@@ -2165,13 +2168,13 @@ void TaskCRIDF2021::do_step(float _time_ms)
       strat_way_point_t inside_harbor;
       if (m_target.attr == 1) /* RED */
       {
-        inside_harbor.x_mm = m_harbor.x_mm + 50*m_red_cnt;
+        inside_harbor.x_mm = m_harbor.x_mm + 150 - 50*m_red_cnt;
         inside_harbor.y_mm = m_harbor.y_mm + 50;
         m_red_cnt++;
       }
       else /* GREEN */
       {
-        inside_harbor.x_mm = m_harbor.x_mm + 50*m_green_cnt;
+        inside_harbor.x_mm = m_harbor.x_mm + 150 - 50*m_green_cnt;
         inside_harbor.y_mm = m_harbor.y_mm - 50;
         m_green_cnt++;
       }

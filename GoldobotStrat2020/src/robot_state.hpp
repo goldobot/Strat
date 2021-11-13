@@ -17,6 +17,7 @@ namespace goldobot
     unsigned int robot_sensors;
     bool         strat_stop;
     int          obstacle_plot_cnt;
+    unsigned int oob_data;
   } robot_state_info_t;
 
   class RobotState : public GoldoThread
@@ -57,6 +58,11 @@ namespace goldobot
         return (m_s.robot_sensors&GPIO_EMERGENCY_STOP_MASK)!=0;
       }
 
+    void compute_oob_data(unsigned int v) 
+      {
+        m_s.oob_data = (v&FLAG_OOB_DATA_MASK)>>FLAG_OOB_DATA_SHIFT;
+      }
+
     int lock(int timeout_ms = -1);
 
     void release();
@@ -70,6 +76,9 @@ namespace goldobot
 
     static const unsigned int FLAG_PROPULSION_BUSY_MASK    = 0x00010000;
     static const unsigned int FLAG_PROPULSION_ERROR_MASK   = 0x00020000;
+
+    static const unsigned int FLAG_OOB_DATA_MASK           = 0xfffc0000;
+    static const unsigned int FLAG_OOB_DATA_SHIFT          = 18;
 
 #if 1 /* FIXME : TODO : where to move this? */ 
     void set_obstacle_gpio(bool obstacle_detect);

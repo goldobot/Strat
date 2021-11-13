@@ -374,6 +374,7 @@ void DirectUartNucleo::taskFunction()
         RobotState::instance().s().y_mm          = cur_odo_y_mm;
         RobotState::instance().s().theta_deg     = cur_odo_theta_deg;
         RobotState::instance().s().robot_sensors = cur_robot_sensors_32;
+        RobotState::instance().compute_oob_data(cur_robot_sensors_32);
         RobotState::instance().release();
 
         break;
@@ -449,6 +450,7 @@ int DirectUartNucleo::send(const unsigned char *msg_buf, size_t msg_len)
   pw = (unsigned int *) &m_send_buf[4];
   *pw = m_uart_send_seq;
   m_uart_send_seq++;
+  if (m_uart_send_seq==0xffff) m_uart_send_seq=0;
 
   pc = (unsigned char *) &m_send_buf[8];
   memcpy (pc, msg_buf, msg_len);

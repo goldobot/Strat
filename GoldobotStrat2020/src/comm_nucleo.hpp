@@ -60,7 +60,7 @@ namespace goldobot
 
     virtual void taskFunction();
 
-    int send(const unsigned char *buf, size_t len);
+    int send(const unsigned char *buf, size_t len, unsigned short oob_data=0xffff);
 
     int recv(unsigned char *buf, size_t len);
 

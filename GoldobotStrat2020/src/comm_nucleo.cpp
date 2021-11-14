@@ -430,11 +430,13 @@ void DirectUartNucleo::taskFunction()
   m_task_running = false;
 }
 
-int DirectUartNucleo::send(const unsigned char *msg_buf, size_t msg_len)
+int DirectUartNucleo::send(const unsigned char *msg_buf, size_t msg_len, unsigned short oob_data)
 {
   unsigned char *pc = NULL;
   unsigned int  *pw = NULL;
   int res;
+  unsigned int oob_data_32 = (unsigned int) oob_data;
+  oob_data_32 = oob_data_32<<16;
 
   if ((msg_len<0) || (msg_len>(SEND_BUF_SZ-10)) || (msg_buf==NULL)) {
     return -1;
@@ -448,7 +450,7 @@ int DirectUartNucleo::send(const unsigned char *msg_buf, size_t msg_len)
   m_send_buf[3] = (unsigned char) msg_len + 8;
 
   pw = (unsigned int *) &m_send_buf[4];
-  *pw = m_uart_send_seq;
+  *pw = (m_uart_send_seq & 0x0000ffff) | (oob_data_32 & 0xffff0000);
   m_uart_send_seq++;
   if (m_uart_send_seq==0xffff) m_uart_send_seq=0;
 

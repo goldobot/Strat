@@ -432,6 +432,53 @@ detected_robot_info_t& WorldState::detected_robot(int _obst_idx)
   return m_s.detected_robot[_obst_idx];
 }
 
+detected_object_info_t& WorldState::detected_object(int _obj_idx)
+{
+  /* FIXME : TODO : throw exception if _obst_idx out of bounds */
+  return m_s.detected_object[_obj_idx];
+}
+
+bool WorldState::get_observable_value(char *observable_name)
+{
+  bool val = false;
+
+#if 0 /* FIXME : TODO : polling des differents observables dans taskFunction() */
+  for (int i=0; i<n_observ; i++)
+  {
+    if (strcmp(m_s.observable[i].name,observable_name)==0)
+    {
+      val = m_s.observable[i].value;
+      break;
+    }
+  }
+#else
+  if (strcmp(m_s.observable[0].name,observable_name)==0)
+  {
+    int goldo_girouette_fd;
+    char read_buf[8];
+    int res;
+
+    read_buf[0] = 0;
+
+    goldo_girouette_fd = open ("/tmp/girouette.txt", O_RDWR);
+    if (goldo_girouette_fd<0) {
+      printf ("error opening /tmp/girouette.txt\n");
+      return false;
+    }
+    res = read (goldo_girouette_fd,read_buf,1);
+    if (res<0) {
+      printf ("error reading girouette value\n");
+    }
+
+    if (read_buf[0]=='S') val=true;
+
+    close (goldo_girouette_fd);
+  }
+#endif
+
+  return val;
+}
+
 int WorldState::lock(int timeout_ms)
 {
   if (timeout_ms < 0)

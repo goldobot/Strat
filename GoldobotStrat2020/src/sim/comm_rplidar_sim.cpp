@@ -23,6 +23,7 @@
 #include "goldo_conf.hpp"
 #include "detect/lidar_detect.hpp"
 
+#pragma GCC diagnostic ignored "-Wstringop-truncation"
 
 using namespace goldobot;
 

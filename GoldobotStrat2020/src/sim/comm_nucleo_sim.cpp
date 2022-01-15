@@ -122,7 +122,7 @@ void DirectUartNucleo::taskFunction()
   m_task_running = false;
 }
 
-int DirectUartNucleo::send(const unsigned char *msg_buf, size_t msg_len)
+int DirectUartNucleo::send(const unsigned char *msg_buf, size_t msg_len, unsigned short oob_data)
 {
 #if 1 /* FIXME : DEBUG */
   {
@@ -132,6 +132,8 @@ int DirectUartNucleo::send(const unsigned char *msg_buf, size_t msg_len)
     printf ("\n");
   }
 #endif
+
+  oob_data = oob_data;
 
   VirtualRobots::myself().sim_receive(msg_buf, msg_len);
 

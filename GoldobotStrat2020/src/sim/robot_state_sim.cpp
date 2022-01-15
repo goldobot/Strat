@@ -206,3 +206,8 @@ void RobotState::release()
   pthread_mutex_unlock(&m_lock);
 }
 
+void RobotState::set_obstacle_gpio(bool obstacle_detect)
+{
+  /* FIXME : TODO */
+  obstacle_detect = obstacle_detect;
+}

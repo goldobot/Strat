@@ -5,6 +5,8 @@
 #include <math.h>
 #include <sys/time.h>
 
+#pragma GCC diagnostic ignored "-Wclass-memaccess"
+
 
 #define ROBOT_SIM 1
 //#define SIM_DEBUG 1

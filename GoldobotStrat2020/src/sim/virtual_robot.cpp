@@ -14,6 +14,7 @@
 #include "goldo_geometry.hpp"
 #include "robot_state.hpp"
 #include "sim/virtual_robot.hpp"
+#include "comm_zmq.hpp"
 
 using namespace goldobot;
 
@@ -276,6 +277,144 @@ void VirtualRobot::sim_receive(const unsigned char *msg_buf, size_t msg_len)
   }
 
 }
+
+void VirtualRobot::sim_send_heartbeat(int time_ms)
+{
+  unsigned char msg_buf[64];
+
+  /* FIXME : TODO : use defines.. */
+  unsigned short int msg_code = 0x0001; /*Heartbeat*/
+  unsigned char *_pc = msg_buf;
+  int msg_buf_len = 0;
+  int field_len = 0;
+
+  field_len = sizeof(unsigned short);
+  memcpy (_pc, (unsigned char *)&msg_code, field_len);
+  _pc += field_len;
+  msg_buf_len += field_len;
+
+  /* timestamp */
+  int msg_timestamp = time_ms; /* FIXME : TODO */
+  field_len = sizeof(int);
+  memcpy (_pc, (unsigned char *)&msg_timestamp, field_len);
+  _pc += field_len;
+  msg_buf_len += field_len;
+
+  CommZmq::instance().send(msg_buf, msg_buf_len, 0);
+}
+
+void VirtualRobot::sim_send_propulsion_telemetry()
+{
+  unsigned char msg_buf[64];
+
+  /* FIXME : TODO : use defines.. */
+  unsigned short int msg_code = 0x0008; /*PropulsionTelemetry*/
+  unsigned char *_pc = msg_buf;
+  int msg_buf_len = 0;
+  int field_len = 0;
+
+  field_len = sizeof(unsigned short);
+  memcpy (_pc, (unsigned char *)&msg_code, field_len);
+  _pc += field_len;
+  msg_buf_len += field_len;
+
+  /* x */
+  short msg_x = m_sv.p.x * 4000.0;
+  field_len = sizeof(short);
+  memcpy (_pc, (unsigned char *)&msg_x, field_len);
+  _pc += field_len;
+  msg_buf_len += field_len;
+
+  /* y */
+  short msg_y = m_sv.p.y * 4000.0;
+  field_len = sizeof(short);
+  memcpy (_pc, (unsigned char *)&msg_y, field_len);
+  _pc += field_len;
+  msg_buf_len += field_len;
+
+  /* yaw */
+  short msg_yaw = 32767.0 * m_sv.theta / M_PI;
+  field_len = sizeof(short);
+  memcpy (_pc, (unsigned char *)&msg_yaw, field_len);
+  _pc += field_len;
+  msg_buf_len += field_len;
+
+  /* speed */
+  double _v_x = m_sv.v.x;
+  double _v_y = m_sv.v.y;
+  double _v_abs = sqrt(_v_x*_v_x+_v_y*_v_y);
+  short msg_speed = _v_abs * 1000.0;
+  field_len = sizeof(short);
+  memcpy (_pc, (unsigned char *)&msg_speed, field_len);
+  _pc += field_len;
+  msg_buf_len += field_len;
+
+  /* yaw_rate */
+  short msg_yaw_rate = fabs(m_sv.v_theta) * 1000.0;
+  field_len = sizeof(short);
+  memcpy (_pc, (unsigned char *)&msg_yaw_rate, field_len);
+  _pc += field_len;
+  msg_buf_len += field_len;
+
+  /* acceleration */
+  short msg_acceleration = 0; /* FIXME : TODO */
+  field_len = sizeof(short);
+  memcpy (_pc, (unsigned char *)&msg_acceleration, field_len);
+  _pc += field_len;
+  msg_buf_len += field_len;
+
+  /* angular_acceleration */
+  short msg_angular_acceleration = 0; /* FIXME : TODO */
+  field_len = sizeof(short);
+  memcpy (_pc, (unsigned char *)&msg_angular_acceleration, field_len);
+  _pc += field_len;
+  msg_buf_len += field_len;
+
+  /* left_encoder */
+  unsigned short msg_left_encoder = 0; /* FIXME : TODO */
+  field_len = sizeof(unsigned short);
+  memcpy (_pc, (unsigned char *)&msg_left_encoder, field_len);
+  _pc += field_len;
+  msg_buf_len += field_len;
+
+  /* right_encoder */
+  unsigned short msg_right_encoder = 0; /* FIXME : TODO */
+  field_len = sizeof(unsigned short);
+  memcpy (_pc, (unsigned char *)&msg_right_encoder, field_len);
+  _pc += field_len;
+  msg_buf_len += field_len;
+
+  /* left_pwm */
+  char msg_left_pwm = 0; /* FIXME : TODO */
+  field_len = sizeof(char);
+  memcpy (_pc, (unsigned char *)&msg_left_pwm, field_len);
+  _pc += field_len;
+  msg_buf_len += field_len;
+
+  /* right_pwm */
+  char msg_right_pwm = 0; /* FIXME : TODO */
+  field_len = sizeof(char);
+  memcpy (_pc, (unsigned char *)&msg_right_pwm, field_len);
+  _pc += field_len;
+  msg_buf_len += field_len;
+
+  /* state */
+  unsigned char msg_state = 0; /* FIXME : TODO */
+  field_len = sizeof(unsigned char);
+  memcpy (_pc, (unsigned char *)&msg_state, field_len);
+  _pc += field_len;
+  msg_buf_len += field_len;
+
+  /* error */
+  unsigned char msg_error = 0; /* FIXME : TODO */
+  field_len = sizeof(unsigned char);
+  memcpy (_pc, (unsigned char *)&msg_error, field_len);
+  _pc += field_len;
+  msg_buf_len += field_len;
+
+  CommZmq::instance().send(msg_buf, msg_buf_len, 0);
+}
+
 
 void VirtualRobot::sim_brutal_stop()
 {

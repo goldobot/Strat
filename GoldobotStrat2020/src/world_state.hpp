@@ -76,10 +76,6 @@ namespace goldobot
     static constexpr double SIM_CRASH_DIST = 0.050;
 
     /* used in simulation */
-    void sim_send_heartbeat(int time_ms);
-    /* used in simulation */
-    void sim_send_propulsion_telemetry();
-    /* used in simulation */
     void sim_send_robot_detection();
 
     static WorldState s_instance;

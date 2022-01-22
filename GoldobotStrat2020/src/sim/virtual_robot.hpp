@@ -60,6 +60,10 @@ namespace goldobot
 
     void sim_receive(const unsigned char *msg_buf, size_t msg_len);
 
+    void sim_send_heartbeat(int time_ms);
+
+    void sim_send_propulsion_telemetry();
+
     virtual void sim_brutal_stop();
 
     bool is_crashed() {return m_flag_robot_crash;};

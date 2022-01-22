@@ -185,17 +185,6 @@ void WorldState::start_signal()
   /* bouchon */
 }
 
-void WorldState::sim_send_heartbeat(int time_ms)
-{
-  /* bouchon */
-  time_ms = time_ms;
-}
-
-void WorldState::sim_send_propulsion_telemetry()
-{
-  /* bouchon */
-}
-
 void WorldState::sim_send_robot_detection()
 {
   /* bouchon */

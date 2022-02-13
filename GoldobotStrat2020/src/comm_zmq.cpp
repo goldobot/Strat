@@ -39,10 +39,13 @@ CommZmq::CommZmq()
   m_task_running = false;
 
   m_zmq_context = NULL;
+
   m_pub_socket = NULL;
   m_pull_socket = NULL;
+
 #if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
-  m_detect_socket = NULL;
+  m_pub1_socket = NULL;
+  m_pull1_socket = NULL;
 #endif
 }
 
@@ -83,17 +86,17 @@ int CommZmq::init(int port_nb)
   zmq_setsockopt(m_pull_socket,ZMQ_SUBSCRIBE, "", 0);
 
 #if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
-  m_detect_socket = zmq_socket(m_zmq_context, ZMQ_SUB);
-  if (m_detect_socket<0) {
+  m_pull1_socket = zmq_socket(m_zmq_context, ZMQ_SUB);
+  if (m_pull1_socket<0) {
     printf ("detect_socket : cannot create ZMQ_SUB socket\n");
     return -1;
   }
 
-  rc = zmq_connect(m_detect_socket, "tcp://127.0.0.1:3202");
+  rc = zmq_connect(m_pull1_socket, "tcp://127.0.0.1:3202");
   if (rc<0) {
     printf ("zmq_connect() error\n");
   }
-  zmq_setsockopt(m_detect_socket,ZMQ_SUBSCRIBE, "", 0);
+  zmq_setsockopt(m_pull1_socket,ZMQ_SUBSCRIBE, "", 0);
 #endif
 
   return 0;
@@ -112,7 +115,7 @@ void CommZmq::taskFunction()
   poll_items[0].fd = 0;
   poll_items[0].events = ZMQ_POLLIN;
 #if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
-  poll_items[1].socket = m_detect_socket;
+  poll_items[1].socket = m_pull1_socket;
   poll_items[1].fd = 0;
   poll_items[1].events = ZMQ_POLLIN;
 #endif
@@ -211,8 +214,8 @@ void CommZmq::taskFunction()
       size_t more_size = sizeof(more);
       while(more)
       {
-        bytes_read += zmq_recv(m_detect_socket, buff + bytes_read, sizeof(buff) - bytes_read, 0);
-        zmq_getsockopt(m_detect_socket, ZMQ_RCVMORE, &more, &more_size);
+        bytes_read += zmq_recv(m_pull1_socket, buff + bytes_read, sizeof(buff) - bytes_read, 0);
+        zmq_getsockopt(m_pull1_socket, ZMQ_RCVMORE, &more, &more_size);
       }
       if (bytes_read==16)
       {
@@ -314,5 +317,15 @@ int CommZmq::recv(void *buf, size_t len, int flags)
 {
   if (m_pull_socket==NULL) return -1;
   return zmq_recv (m_pull_socket, buf, len, flags);
+}
+
+void CommZmq::send_robot_detection(const char *buf, size_t len)
+{
+  unsigned short my_message_type;
+
+  my_message_type = 1280; /* FIXME : TODO : use mesage_types.hpp */
+
+  send((const char*)(&my_message_type), 2, ZMQ_SNDMORE);
+  send(buf, len, 0);
 }
 

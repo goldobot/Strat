@@ -521,10 +521,7 @@ void WorldState::release()
 
 void WorldState::sim_send_robot_detection()
 {
-  unsigned short my_message_type;
   robot_detection_msg_t my_message;
-
-  my_message_type = 1280; /* FIXME : TODO : use mesage_types.hpp */
 
   for (int r=0; r<m_s.n_detected_robots; r++)
   {
@@ -538,8 +535,7 @@ void WorldState::sim_send_robot_detection()
     my_message.ay_mm_sec_2    = m_s.detected_robot[r].ay_mm_sec_2;
     my_message.detect_quality = m_s.detected_robot[r].detect_quality;
 
-    CommZmq::instance().send((const char*)(&my_message_type), 2, ZMQ_SNDMORE);
-    CommZmq::instance().send((const char*)(&my_message), sizeof(my_message), 0);
+    CommZmq::instance().send_robot_detection((const char*)(&my_message), sizeof(my_message));
   }
 }
 

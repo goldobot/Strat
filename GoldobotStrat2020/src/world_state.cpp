@@ -190,4 +190,9 @@ void WorldState::sim_send_robot_detection()
   /* bouchon */
 }
 
+void WorldState::lock_update(bool disable)
+{
+  /* bouchon */
+  disable = disable;
+}
 

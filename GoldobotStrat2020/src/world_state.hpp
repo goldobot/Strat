@@ -61,6 +61,8 @@ namespace goldobot
     /* used in simulation */
     void start_signal();
 
+    void lock_update(bool lock_state);
+
   private:
     world_state_info_t m_s;
 
@@ -77,6 +79,8 @@ namespace goldobot
 
     /* used in simulation */
     void sim_send_robot_detection();
+
+    bool m_update_lock{false};
 
     static WorldState s_instance;
   };

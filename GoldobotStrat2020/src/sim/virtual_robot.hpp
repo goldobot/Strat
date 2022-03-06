@@ -68,22 +68,23 @@ namespace goldobot
 
     bool is_crashed() {return m_flag_robot_crash;};
 
+    bool is_crashed_or_disabled() {return (m_flag_robot_crash || (!m_enabled));};
+
     void sim_crash_robot() {m_flag_robot_crash=true;};
 
     void sim_compute_motion_times(double L, double V, 
                                   double A, double D, 
                                   double &t_a, double &t_i, double &t_d);
 
-    /* FIXME : TODO */
-  protected:
-    template<typename T> void yaml_helper_read (
-      YAML::Node &conf_section, const std::string field_name, T &field);
-
     virtual void on_cmd_execute_trajectory(unsigned char *_buf, size_t _len);
     virtual void on_cmd_execute_point_to(unsigned char *_buf, size_t _len);
     virtual void on_cmd_set_pose(unsigned char *_buf, size_t _len);
     virtual void on_cmd_start_sequence(unsigned char *_buf, size_t _len);
     virtual void on_cmd_propulsion_clear_error(unsigned char *_buf,size_t _len);
+
+  protected:
+    template<typename T> void yaml_helper_read (
+      YAML::Node &conf_section, const std::string field_name, T &field);
 
     int decode_msg_execute_trajectory(unsigned char *_buf, size_t _len);
     int decode_msg_execute_point_to(unsigned char *_buf, size_t _len);
@@ -154,12 +155,12 @@ namespace goldobot
     virtual sim_motion_state_vector_t& odometry() {return m_sv;};
 #endif
 
-  protected:
     virtual void on_cmd_execute_trajectory(unsigned char *_buf, size_t _len);
     virtual void on_cmd_execute_point_to(unsigned char *_buf, size_t _len);
     virtual void on_cmd_set_pose(unsigned char *_buf, size_t _len);
     virtual void on_cmd_propulsion_clear_error(unsigned char *_buf,size_t _len);
 
+  protected:
 #ifdef ROS
     static constexpr double ROS_PROPULSION_STEP_PERIOD = 0.001;
     double m_ros_update_propulsion_time;

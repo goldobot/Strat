@@ -23,6 +23,10 @@ namespace goldobot
 
     int recv(void *buf, size_t len, int flags);
 
+#if 1 /* FIXME : DEBUG : HACK */
+    void* get_pub_socket() {return m_pub_socket;}
+#endif
+
   private:
     void* m_zmq_context;
     void* m_pub_socket;

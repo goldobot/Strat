@@ -137,6 +137,8 @@ void VirtualRobot::sim_update(double t_inc)
   double old_v_y     = m_sv.v.y;
   double old_v_theta = m_sv.v_theta;
 
+  if (!m_enabled) return;
+
   /* FIXME : TODO : is this OK? */
   if (m_flag_robot_crash) return;
 
@@ -282,6 +284,8 @@ void VirtualRobot::sim_send_heartbeat(int time_ms)
 {
   unsigned char msg_buf[64];
 
+  if (!m_enabled) return;
+
   /* FIXME : TODO : use defines.. */
   unsigned short int msg_code = 0x0001; /*Heartbeat*/
   unsigned char *_pc = msg_buf;
@@ -306,6 +310,8 @@ void VirtualRobot::sim_send_heartbeat(int time_ms)
 void VirtualRobot::sim_send_propulsion_telemetry()
 {
   unsigned char msg_buf[64];
+
+  if (!m_enabled) return;
 
   /* FIXME : TODO : use defines.. */
   unsigned short int msg_code = 0x0008; /*PropulsionTelemetry*/
@@ -1441,6 +1447,10 @@ void VirtualRobotROSImport::on_cmd_set_pose(
 
 #ifdef ROS
   m_ros_propulsion_controller->resetPose(m_sv.p.x, m_sv.p.y, m_sv.theta);
+  /* FIXME : TODO : refactor! crap! */
+  m_ros_robot_simulator.m_x = m_sv.p.x;
+  m_ros_robot_simulator.m_y = m_sv.p.y;
+  m_ros_robot_simulator.m_yaw = m_sv.theta;
 #endif
 }
 

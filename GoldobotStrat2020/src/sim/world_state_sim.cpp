@@ -237,7 +237,9 @@ void WorldState::taskFunction()
     {
       double delta_time_s = (double)delta_time_ms/1000.0;
 
-      VirtualRobots::myself().sim_update(delta_time_s/SIM_GRANULARITY);
+      if (!m_update_lock) {
+        VirtualRobots::myself().sim_update(delta_time_s/SIM_GRANULARITY);
+      }
       VirtualRobots::partner().sim_update(delta_time_s/SIM_GRANULARITY);
       VirtualRobots::adversary1().sim_update(delta_time_s/SIM_GRANULARITY);
       VirtualRobots::adversary2().sim_update(delta_time_s/SIM_GRANULARITY);
@@ -330,19 +332,19 @@ void WorldState::taskFunction()
 #endif
           VirtualRobots::myself().sim_crash_robot();
         }
-        if ((!VirtualRobots::partner().is_crashed()) && 
+        if ((!VirtualRobots::partner().is_crashed_or_disabled()) && 
             (goldo_segm_dist(partner_p,m_hard_obstacles[i])<SIM_CRASH_DIST))
         {
           printf ("DEBUG : Partner robot crashed.\n");
           VirtualRobots::partner().sim_crash_robot();
         }
-        if ((!VirtualRobots::adversary1().is_crashed()) && 
+        if ((!VirtualRobots::adversary1().is_crashed_or_disabled()) && 
             (goldo_segm_dist(adv1_p,m_hard_obstacles[i])<SIM_CRASH_DIST))
         {
           printf ("DEBUG : Adversary1 robot crashed.\n");
           VirtualRobots::adversary1().sim_crash_robot();
         }
-        if ((!VirtualRobots::adversary2().is_crashed()) && 
+        if ((!VirtualRobots::adversary2().is_crashed_or_disabled()) && 
             (goldo_segm_dist(adv2_p,m_hard_obstacles[i])<SIM_CRASH_DIST))
         {
           printf ("DEBUG : Adversary2 robot crashed.\n");
@@ -352,19 +354,19 @@ void WorldState::taskFunction()
 
       if ((!VirtualRobots::myself().is_crashed()))
       {
-        if (goldo_dist(my_p,partner_p)<SIM_CRASH_DIST)
+        if ((VirtualRobots::partner().enabled()) && (goldo_dist(my_p,partner_p)<SIM_CRASH_DIST))
         {
           printf ("DEBUG : Collision with partner. Our robot crashed!!\n");
           VirtualRobots::myself().sim_crash_robot();
           VirtualRobots::partner().sim_crash_robot();
         }
-        if (goldo_dist(my_p,adv1_p)<SIM_CRASH_DIST)
+        if ((VirtualRobots::adversary1().enabled()) && (goldo_dist(my_p,adv1_p)<SIM_CRASH_DIST))
         {
           printf ("DEBUG : Collision with adversary1. Our robot crashed!!\n");
           VirtualRobots::myself().sim_crash_robot();
           VirtualRobots::adversary1().sim_crash_robot();
         }
-        if (goldo_dist(my_p,adv2_p)<SIM_CRASH_DIST)
+        if ((VirtualRobots::adversary2().enabled()) && (goldo_dist(my_p,adv2_p)<SIM_CRASH_DIST))
         {
           printf ("DEBUG : Collision with adversary2. Our robot crashed!!\n");
           VirtualRobots::myself().sim_crash_robot();
@@ -372,15 +374,15 @@ void WorldState::taskFunction()
         }
       }
 
-      if ((!VirtualRobots::partner().is_crashed()))
+      if ((!VirtualRobots::partner().is_crashed_or_disabled()))
       {
-        if (goldo_dist(partner_p,adv1_p)<SIM_CRASH_DIST)
+        if ((VirtualRobots::adversary1().enabled()) && (goldo_dist(partner_p,adv1_p)<SIM_CRASH_DIST))
         {
           printf ("DEBUG : Collision between partner and adversary1\n");
           VirtualRobots::partner().sim_crash_robot();
           VirtualRobots::adversary1().sim_crash_robot();
         }
-        if (goldo_dist(partner_p,adv2_p)<SIM_CRASH_DIST)
+        if ((VirtualRobots::adversary2().enabled()) && (goldo_dist(partner_p,adv2_p)<SIM_CRASH_DIST))
         {
           printf ("DEBUG : Collision between partner and adversary2\n");
           VirtualRobots::partner().sim_crash_robot();
@@ -388,9 +390,9 @@ void WorldState::taskFunction()
         }
       }
 
-      if ((!VirtualRobots::adversary1().is_crashed()))
+      if ((!VirtualRobots::adversary1().is_crashed_or_disabled()))
       {
-        if (goldo_dist(adv1_p,adv2_p)<SIM_CRASH_DIST)
+        if ((VirtualRobots::adversary2().enabled()) && (goldo_dist(adv1_p,adv2_p)<SIM_CRASH_DIST))
         {
           printf ("DEBUG : Collision between adversary1 and adversary2\n");
           VirtualRobots::adversary1().sim_crash_robot();
@@ -537,5 +539,10 @@ void WorldState::sim_send_robot_detection()
 
     CommZmq::instance().send_robot_detection((const char*)(&my_message), sizeof(my_message));
   }
+}
+
+void WorldState::lock_update(bool lock_state)
+{
+  m_update_lock = lock_state;
 }
 

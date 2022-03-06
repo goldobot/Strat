@@ -56,7 +56,7 @@ myself:
     init_point_to:
       [   650.0,     0.0]
 
-partner:
+partner0:
   sim_task:
     task_name: PartnerSimulationTask
     init_pos:

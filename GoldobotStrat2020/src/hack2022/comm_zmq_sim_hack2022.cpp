@@ -50,6 +50,7 @@ static void translate_execute_move_to(unsigned char *_buf, size_t _len);
 static void translate_execute_point_to(unsigned char *_buf, size_t _len);
 static void translate_execute_point_to_back(unsigned char *_buf, size_t _len);
 static void translate_execute_face_direction(unsigned char *_buf, size_t _len);
+static void translate_execute_trajectory(unsigned char *_buf, size_t _len);
 
 CommZmq CommZmq::s_instance;
 
@@ -251,18 +252,28 @@ void CommZmq::taskFunction()
         translate_execute_point_to(message_body+sizeof(uint16_t), message_body_size-sizeof(uint16_t));
         send_command_event(seq, CommandEvent::Ack);
         active_propulsion_seq = seq;
+        break;
       case 144: /* PropulsionExecuteFaceDirection  */
         seq = *((uint16_t *)message_body);
         printf ("  ZMQ DEBUG: PropulsionExecuteFaceDirection seq=%d\n", seq);
         translate_execute_face_direction(message_body+sizeof(uint16_t), message_body_size-sizeof(uint16_t));
         send_command_event(seq, CommandEvent::Ack);
         active_propulsion_seq = seq;
+        break;
+      case 145: /* PropulsionExecuteTrajectory    */
+        seq = *((uint16_t *)message_body);
+        printf ("  ZMQ DEBUG: PropulsionExecuteTrajectory seq=%d\n", seq);
+        translate_execute_trajectory(message_body+4, message_body_size-4);
+        send_command_event(seq, CommandEvent::Ack);
+        active_propulsion_seq = seq;
+        break;
       case 153: /* PropulsionExecutePointToBack    */
         seq = *((uint16_t *)message_body);
         printf ("  ZMQ DEBUG: PropulsionExecutePointToBack seq=%d\n", seq);
         translate_execute_point_to_back(message_body+sizeof(uint16_t), message_body_size-sizeof(uint16_t));
         send_command_event(seq, CommandEvent::Ack);
         active_propulsion_seq = seq;
+        break;
       case 152: /* PropulsionODriveClearErrors     */
         printf ("  ZMQ DEBUG: PropulsionODriveClearErrors NOT IMPLEMENTED\n");
         break;
@@ -606,3 +617,31 @@ static void translate_execute_face_direction(unsigned char *_buf, size_t _len)
   int cmd_buf_len = hack_cmd_point_to(new_buf, &my_target, yaw_rate, 0.5, 0.5);
   VirtualRobots::myself().on_cmd_execute_point_to(new_buf, cmd_buf_len);
 }
+
+static void translate_execute_trajectory(unsigned char *_buf, size_t _len)
+{
+  goldo_vec_2d_t my_wp[128];
+  float *dbg_payload = (float *)(_buf);
+  float speed               = *(dbg_payload++);
+  float reposition_distance = *(dbg_payload++);
+  float reposition_speed    = *(dbg_payload++);
+  int np = (_len - (sizeof(float)*3))/(2*sizeof(float)) + 1;
+  my_wp[0] = VirtualRobots::myself().sv().p;
+  for (int i=1; i<np; i++)
+  {
+    my_wp[i].x = *(dbg_payload++);
+    my_wp[i].y = *(dbg_payload++);
+  }
+  printf ("    speed=%f\n", speed);
+  printf ("    reposition_distance=%f\n", reposition_distance);
+  printf ("    reposition_speed=%f\n", reposition_speed);
+  printf ("    np=%d\n", np);
+  for (int i=0; i<np; i++)
+  {
+    printf ("    wp[%d]=<%5.2f,%5.2f>\n", i, my_wp[i].x*1000.0, my_wp[i].y*1000.0);
+  }
+  unsigned char new_buf[512];
+  int cmd_buf_len = hack_cmd_traj(new_buf, my_wp, np, speed, 0.5, 0.5);
+  VirtualRobots::myself().on_cmd_execute_trajectory(new_buf, cmd_buf_len);
+}
+

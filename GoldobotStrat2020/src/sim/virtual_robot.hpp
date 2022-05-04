@@ -2,6 +2,8 @@
 #include <cstdint>
 #include <cstddef>
 
+namespace goldo = goldobot;
+
 #include "yaml-cpp/yaml.h"
 #include "yaml-cpp/eventhandler.h"
 
@@ -14,8 +16,8 @@
 
 #ifdef ROS
 #include "robot_simulator.hpp"
-#include "goldo/odometry/simple_odometry.hpp"
-#include "goldo/control/propulsion_controller.hpp"
+#include "simple_odometry.hpp"
+#include "propulsion_controller.hpp"
 #endif
 
 #ifndef ROBOT_SIM
@@ -62,7 +64,9 @@ namespace goldobot
 
     void sim_send_heartbeat(int time_ms);
 
-    void sim_send_propulsion_telemetry();
+    virtual void sim_send_propulsion_telemetry();
+
+    virtual void sim_send_propulsion_telemetry_ex();
 
     virtual void sim_brutal_stop();
 
@@ -139,6 +143,8 @@ namespace goldobot
     virtual void sim_update(double t_inc);
 
     virtual int read_yaml_conf(YAML::Node &yconf);
+
+    virtual void sim_send_propulsion_telemetry_ex();
 
 #ifdef ROS
     virtual sim_motion_state_vector_t& odometry() {

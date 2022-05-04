@@ -201,6 +201,8 @@ void WorldState::taskFunction()
   int current_match_time_ms = 0;
   struct timespec my_tp;
 
+  unsigned int telemetry_ex_cnt = 0;
+
   m_task_running = true;
 
   while(!m_stop_task)
@@ -322,7 +324,7 @@ void WorldState::taskFunction()
             (goldo_segm_dist(my_p,m_hard_obstacles[i])<SIM_CRASH_DIST))
         {
           printf ("DEBUG : Our robot crashed!!\n");
-#if 0
+#if 1
           printf ("  my_p = <%2.6f,%2.6f>\n", my_p.x, my_p.y);
           printf ("  i = %d\n", i);
           printf ("  obstacles[i].p1 = <%2.6f,%2.6f>\n", 
@@ -407,6 +409,12 @@ void WorldState::taskFunction()
     VirtualRobots::myself().sim_send_heartbeat(current_match_time_ms);
 
     VirtualRobots::myself().sim_send_propulsion_telemetry();
+
+    if ((telemetry_ex_cnt%5)==0)
+    {
+      VirtualRobots::myself().sim_send_propulsion_telemetry_ex();
+    }
+    telemetry_ex_cnt++;
 
     sim_send_robot_detection();
 

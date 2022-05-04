@@ -33,7 +33,7 @@ ifeq ($(MODULE_NAME),GoldobotStrat2020_sim)
 CXXSRC += main.cpp goldo_conf.cpp comm_zmq.cpp sim/comm_rplidar_sim.cpp sim/comm_nucleo_sim.cpp sim/robot_state_sim.cpp sim/world_state_sim.cpp sim/virtual_robot.cpp detect/lidar_detect.cpp strat/robot_strat_base.cpp strat/robot_strat.cpp astar/astar.cpp
 ifeq ($(EXTRA_FLAGS),-DROS)
 EXTRA_CXXSRC := src/robot_simulator.cpp libs/goldo_robot/src/geometry/trajectory.cpp libs/goldo_robot/src/control/speed_controller.cpp libs/goldo_robot/src/control/trapezoidal_speed_profile.cpp libs/goldo_robot/src/control/propulsion_controller.cpp libs/goldo_robot/src/control/pid_controller.cpp libs/goldo_robot/src/control/propulsion_low_level_controller.cpp libs/goldo_robot/src/odometry/simple_odometry.cpp
-EXTRA_CXXINC := -I$(EXTERNAL_PRJ_PATH)/libs/goldo_robot/include -I$(EXTERNAL_PRJ_PATH)/src
+EXTRA_CXXINC := -I$(EXTERNAL_PRJ_PATH)/libs/goldo_robot/include -I$(EXTERNAL_PRJ_PATH)/libs/goldo_robot/include/goldo/odometry -I$(EXTERNAL_PRJ_PATH)/libs/goldo_robot/include/goldo/control -I$(EXTERNAL_PRJ_PATH)/src
 else 
 EXTRA_CXXSRC :=
 EXTRA_CXXINC :=
@@ -41,9 +41,23 @@ endif
 
 else ifeq ($(MODULE_NAME),GoldobotSimul_hack2022)
 
-CXXSRC += hack2022/main_hack2022.cpp goldo_conf.cpp hack2022/comm_zmq_sim_hack2022.cpp sim/robot_state_sim.cpp sim/world_state_sim.cpp sim/virtual_robot.cpp strat/robot_strat_base.cpp astar/astar.cpp
-EXTRA_CXXSRC := src/robot_simulator.cpp libs/goldo_robot/src/geometry/trajectory.cpp libs/goldo_robot/src/control/speed_controller.cpp libs/goldo_robot/src/control/trapezoidal_speed_profile.cpp libs/goldo_robot/src/control/propulsion_controller.cpp libs/goldo_robot/src/control/pid_controller.cpp libs/goldo_robot/src/control/propulsion_low_level_controller.cpp libs/goldo_robot/src/odometry/simple_odometry.cpp
-EXTRA_CXXINC := -I$(EXTERNAL_PRJ_PATH)/libs/goldo_robot/include -I$(EXTERNAL_PRJ_PATH)/src
+CXXSRC += hack2022/main_hack2022.cpp goldo_conf.cpp hack2022/comm_zmq_sim_hack2022.cpp hack2022/virtual_robot_hack2022.cpp sim/robot_state_sim.cpp sim/world_state_sim.cpp strat/robot_strat_base.cpp astar/astar.cpp
+#EXTRA_CXXSRC := src/robot_simulator.cpp libs/goldo_robot/src/geometry/trajectory.cpp libs/goldo_robot/src/control/speed_controller.cpp libs/goldo_robot/src/control/trapezoidal_speed_profile.cpp libs/goldo_robot/src/control/propulsion_controller.cpp libs/goldo_robot/src/control/pid_controller.cpp libs/goldo_robot/src/control/propulsion_low_level_controller.cpp libs/goldo_robot/src/odometry/simple_odometry.cpp
+#EXTRA_CXXINC := -I$(EXTERNAL_PRJ_PATH)/libs/goldo_robot/include -I$(EXTERNAL_PRJ_PATH)/src
+EXTRA_CXXSRC := \
+libs/goldo_math/src/derivative_filter.cpp \
+libs/goldo_math/src/low_pass_filter.cpp \
+libs/goldo_math/src/math_utils.cpp \
+libs/goldo_math/src/pid_controller.cpp \
+libs/goldo_math/src/trajectory.cpp \
+libs/goldo_math/src/trapezoidal_speed_profile.cpp \
+libs/goldo_propulsion/src/blocking_detector.cpp \
+libs/goldo_propulsion/src/controller.cpp \
+libs/goldo_propulsion/src/low_level_controller.cpp \
+libs/goldo_propulsion/src/robot_simulator.cpp \
+libs/goldo_propulsion/src/simple_odometry.cpp \
+libs/goldo_propulsion/src/speed_controller.cpp
+EXTRA_CXXINC := -I$(EXTERNAL_PRJ_PATH)/libs/goldo_math/include -I$(EXTERNAL_PRJ_PATH)/libs/goldo_propulsion/include -I$(EXTERNAL_PRJ_PATH)/libs/goldo_propulsion/include/goldobot/propulsion -I$(HOME_TREE)/src/hack2022/nucleo_2022
 
 else ifeq ($(MODULE_NAME),GoldobotStrat2020_sim_tuto0)
 

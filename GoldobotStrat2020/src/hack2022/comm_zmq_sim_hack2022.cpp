@@ -366,6 +366,9 @@ int CommZmq::send(const void *buf, size_t len, int flags)
   case 0x0008: /* PropulsionTelemetry */
     header.message_type = 120;
     break;
+  case 0x0009: /* PropulsionTelemetryEx */
+    header.message_type = 121;
+    break;
   }
 
   zmq_send(m_pub_socket, (const char*)(&header), sizeof(header), ZMQ_SNDMORE);

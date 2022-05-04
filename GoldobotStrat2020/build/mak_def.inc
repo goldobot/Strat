@@ -179,7 +179,8 @@ OPT_FLAG = -O$(OPT)
 CDEFS += -DNDEBUG -D_NDEBUG
 endif
 
-CXXEXTRA = -std=c++11 -Wno-deprecated -Wno-unused-result
+CXXEXTRA = -std=c++14 -Wno-deprecated -Wno-unused-result
+#CXXEXTRA = -std=c++11 -Wno-deprecated -Wno-unused-result
 #CXXEXTRA = -std=c++11 -Wno-deprecated -Wno-unused-result -Wno-wstringop-truncation 
 
 CFLAGS += -ggdb $(OPT_FLAG) $(CDEFS) $(C_INCLUDES) $(CWARN) $(CSTANDARD) $(CEXTRA) $(CTUNING) -Wstrict-prototypes

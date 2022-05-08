@@ -39,6 +39,9 @@ struct MessageHeader {
 
 enum class CommandEvent : uint8_t { Begin = 0, End, Error, Cancel, Ack };
 
+#define HACK_ACCEL      1.0
+#define HACK_YAW_ACCEL 20.0
+
 static int hack_send(uint16_t message_type, const void *buf, size_t len);
 static int hack_cmd_traj(unsigned char *_pc, goldo_vec_2d_t *_wp, int _nwp, float speed, float accel, float deccel);
 static void simulate_tirette();
@@ -530,7 +533,7 @@ static void translate_execute_move_to(unsigned char *_buf, size_t _len)
   printf ("    origin_pos=<%5.2f,%5.2f>\n", my_wp[0].x*1000.0, my_wp[0].y*1000.0);
   printf ("    target_pos=<%5.2f,%5.2f>\n", my_wp[1].x*1000.0, my_wp[1].y*1000.0);
   unsigned char new_buf[64];
-  int cmd_buf_len = hack_cmd_traj(new_buf, my_wp, 2, speed, 0.5, 0.5);
+  int cmd_buf_len = hack_cmd_traj(new_buf, my_wp, 2, speed, HACK_ACCEL, HACK_ACCEL);
   VirtualRobots::myself().on_cmd_execute_trajectory(new_buf, cmd_buf_len);
 }
 
@@ -581,7 +584,7 @@ static void translate_execute_point_to(unsigned char *_buf, size_t _len)
   printf ("    yaw_rate=%f\n", yaw_rate);
   printf ("    target=<%5.2f,%5.2f>\n", my_target.x*1000.0, my_target.y*1000.0);
   unsigned char new_buf[64];
-  int cmd_buf_len = hack_cmd_point_to(new_buf, &my_target, yaw_rate, 0.5, 0.5);
+  int cmd_buf_len = hack_cmd_point_to(new_buf, &my_target, yaw_rate, HACK_YAW_ACCEL, HACK_YAW_ACCEL);
   VirtualRobots::myself().on_cmd_execute_point_to(new_buf, cmd_buf_len);
 }
 
@@ -600,7 +603,7 @@ static void translate_execute_point_to_back(unsigned char *_buf, size_t _len)
   printf ("    yaw_rate=%f\n", yaw_rate);
   printf ("    target=<%5.2f,%5.2f>\n", my_target.x*1000.0, my_target.y*1000.0);
   unsigned char new_buf[64];
-  int cmd_buf_len = hack_cmd_point_to(new_buf, &my_target, yaw_rate, 0.5, 0.5);
+  int cmd_buf_len = hack_cmd_point_to(new_buf, &my_target, yaw_rate, HACK_YAW_ACCEL, HACK_YAW_ACCEL);
   VirtualRobots::myself().on_cmd_execute_point_to(new_buf, cmd_buf_len);
 }
 
@@ -617,7 +620,7 @@ static void translate_execute_face_direction(unsigned char *_buf, size_t _len)
   printf ("    yaw_rate=%f\n", yaw_rate);
   printf ("    target=<%5.2f,%5.2f>\n", my_target.x*1000.0, my_target.y*1000.0);
   unsigned char new_buf[64];
-  int cmd_buf_len = hack_cmd_point_to(new_buf, &my_target, yaw_rate, 0.5, 0.5);
+  int cmd_buf_len = hack_cmd_point_to(new_buf, &my_target, yaw_rate, HACK_YAW_ACCEL, HACK_YAW_ACCEL);
   VirtualRobots::myself().on_cmd_execute_point_to(new_buf, cmd_buf_len);
 }
 
@@ -644,7 +647,7 @@ static void translate_execute_trajectory(unsigned char *_buf, size_t _len)
     printf ("    wp[%d]=<%5.2f,%5.2f>\n", i, my_wp[i].x*1000.0, my_wp[i].y*1000.0);
   }
   unsigned char new_buf[512];
-  int cmd_buf_len = hack_cmd_traj(new_buf, my_wp, np, speed, 0.5, 0.5);
+  int cmd_buf_len = hack_cmd_traj(new_buf, my_wp, np, speed, HACK_ACCEL, HACK_ACCEL);
   VirtualRobots::myself().on_cmd_execute_trajectory(new_buf, cmd_buf_len);
 }
 

@@ -1126,6 +1126,8 @@ VirtualRobotROSImport::VirtualRobotROSImport()
 
   m_ros_propulsion_controller->setConfig(propulsion_controller_config);
 
+  m_ros_propulsion_controller->setAccelerationLimits(4.0,4.0,40.0,40.0);
+
   uint16_t encoder_left = m_ros_robot_simulator.encoderLeft();
   uint16_t encoder_right = m_ros_robot_simulator.encoderRight();
   m_ros_odometry.reset(encoder_left,encoder_right);

@@ -98,7 +98,7 @@ adversary1:
           - [   150.0,   150.0]
     - # action 1:
       min_duration_ms: 200
-      max_duration_ms: 20000
+      max_duration_ms: 5000
       type: WAIT
     - # action 2:
       min_duration_ms: 200
@@ -109,7 +109,18 @@ adversary1:
         accel  : 0.300000
         deccel : 0.300000
         target:
-          [   550.0,   150.0]
+          [   550.0,   0.0]
+    - # action 3:
+      min_duration_ms: 200
+      max_duration_ms: 20000
+      type: TRAJ
+      param_traj:
+        speed  : 0.300000
+        accel  : 0.200000
+        deccel : 0.200000
+        wp:
+          - [   150.0,   150.0]
+          - [   550.0,     0.0]
 
 adversary2:
   sim_task:

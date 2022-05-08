@@ -88,7 +88,7 @@ int CommZmq::init(int port_nb)
   m_zmq_context = zmq_init(1);
 
   m_pub_socket = zmq_socket(m_zmq_context, ZMQ_PUB);
-  if (m_pub_socket<0) {
+  if (m_pub_socket==NULL) {
     printf ("pub_socket : cannot create ZMQ_PUB socket\n");
     return -1;
   }
@@ -102,7 +102,7 @@ int CommZmq::init(int port_nb)
   }
 
   m_pull_socket = zmq_socket(m_zmq_context, ZMQ_SUB);
-  if (m_pull_socket<0) {
+  if (m_pull_socket==NULL) {
     printf ("pull_socket : cannot create ZMQ_SUB socket\n");
     return -1;
   }
@@ -117,7 +117,7 @@ int CommZmq::init(int port_nb)
   zmq_setsockopt(m_pull_socket,ZMQ_SUBSCRIBE, "", 0);
 
   m_pub1_socket = zmq_socket(m_zmq_context, ZMQ_PUB);
-  if (m_pub1_socket<0) {
+  if (m_pub1_socket==NULL) {
     printf ("pub1_socket : cannot create ZMQ_PUB socket\n");
     return -1;
   }

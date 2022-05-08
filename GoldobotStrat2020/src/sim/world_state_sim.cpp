@@ -78,15 +78,9 @@ int WorldState::init()
   read_yaml_conf (sim_fname);
 
   /* FIXME : TODO : put these in conf .. */
-  m_hard_obstacles_cnt = 7;
+  m_hard_obstacles_cnt = 1;
   goldo_segm_2d_t _hard_obstacles[] = {
-    {{0.000, -1.500}, {2.000, -1.500}}, 
-    {{2.000, -1.500}, {2.000,  1.500}}, 
-    {{2.000,  1.500}, {0.000,  1.500}}, 
-    {{0.000,  1.500}, {0.000, -1.500}}, 
-    {{2.000,  0.000}, {1.700,  0.000}}, 
-    {{2.000, -0.610}, {1.850, -0.610}}, 
-    {{2.000,  0.610}, {1.850,  0.610}}, 
+    {{0.000, -0.010}, {0.250,  0.010}}, 
   };
   memcpy ((unsigned char *)m_hard_obstacles, (unsigned char *)_hard_obstacles, 
           sizeof(_hard_obstacles));

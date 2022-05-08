@@ -64,16 +64,6 @@ partner0:
     init_point_to:
       [   850.0,     0.0]
     actions:
-    - # action 0:
-      min_duration_ms: 200
-      max_duration_ms: 6000
-      type: POINT_TO
-      param_point:
-        speed  : 0.400000
-        accel  : 0.300000
-        deccel : 0.300000
-        target:
-          [  1300.0,  -900.0]
     - # action 1:
       min_duration_ms: 200
       max_duration_ms: 20000
@@ -83,55 +73,8 @@ partner0:
         accel  : 0.200000
         deccel : 0.200000
         wp:
-          - [  1200.0, -1400.0]
-          - [  1300.0, -1000.0]
-          - [  1600.0, -1400.0]
-    - # action 2:
-      min_duration_ms: 200
-      max_duration_ms: 6000
-      type: POINT_TO
-      param_point:
-        speed  : 0.400000
-        accel  : 0.300000
-        deccel : 0.300000
-        target:
-          [  1600.0,     0.0]
-    - # action 3:
-      min_duration_ms: 200
-      max_duration_ms: 20000
-      type: TRAJ
-      param_traj:
-        speed  : 0.300000
-        accel  : 0.200000
-        deccel : 0.200000
-        wp:
-          - [  1600.0, -1400.0]
-          - [  1300.0, -1000.0]
-          - [   150.0,  -650.0]
-    - # action 4:
-      min_duration_ms: 200
-      max_duration_ms: 6000
-      type: POINT_TO
-      param_point:
-        speed  : 0.400000
-        accel  : 0.300000
-        deccel : 0.300000
-        target:
-          [   650.0,  -650.0]
-    - # action 5:
-      min_duration_ms: 200
-      max_duration_ms: 20000
-      type: TRAJ
-      param_traj:
-        speed  : 0.300000
-        accel  : 0.200000
-        deccel : 0.200000
-        wp:
-          - [   150.0,  -650.0]
-          - [   800.0,  -650.0]
-          - [   800.0, -1400.0]
-          - [   970.0, -1400.0]
-          - [   550.0, -1400.0]
+          - [   850.0, -1400.0]
+          - [  1300.0, -1400.0]
 
 adversary1:
   sim_task:
@@ -150,9 +93,9 @@ adversary1:
         accel  : 0.200000
         deccel : 0.200000
         wp:
-          - [   650.0,  1400.0]
-          - [   650.0,   650.0]
-          - [   150.0,   650.0]
+          - [   550.0,  1400.0]
+          - [   550.0,   150.0]
+          - [   150.0,   150.0]
     - # action 1:
       min_duration_ms: 200
       max_duration_ms: 20000
@@ -166,19 +109,7 @@ adversary1:
         accel  : 0.300000
         deccel : 0.300000
         target:
-          [   650.0,   650.0]
-    - # action 3:
-      min_duration_ms: 200
-      max_duration_ms: 20000
-      type: TRAJ
-      param_traj:
-        speed  : 0.300000
-        accel  : 0.200000
-        deccel : 0.200000
-        wp:
-          - [   150.0,   650.0]
-          - [   800.0,   650.0]
-          - [   800.0,  1400.0]
+          [   550.0,   150.0]
 
 adversary2:
   sim_task:
@@ -197,7 +128,28 @@ adversary2:
         accel  : 0.200000
         deccel : 0.200000
         wp:
-          - [  1200.0,  1400.0]
-          - [  1200.0,  -300.0]
-          - [  1700.0,  -300.0]
+          - [   850.0,  1400.0]
+          - [   850.0,   650.0]
+          - [  1850.0,   650.0]
+    - # action 1:
+      min_duration_ms: 200
+      max_duration_ms: 6000
+      type: POINT_TO
+      param_point:
+        speed  : 0.400000
+        accel  : 0.300000
+        deccel : 0.300000
+        target:
+          [  1850.0,   150.0]
+    - # action 2:
+      min_duration_ms: 200
+      max_duration_ms: 20000
+      type: TRAJ
+      param_traj:
+        speed  : 0.300000
+        accel  : 0.200000
+        deccel : 0.200000
+        wp:
+          - [  1850.0,   650.0]
+          - [  1850.0,   150.0]
 

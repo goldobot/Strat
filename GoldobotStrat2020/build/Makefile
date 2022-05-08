@@ -57,7 +57,7 @@ libs/goldo_propulsion/src/low_level_controller.cpp \
 libs/goldo_propulsion/src/robot_simulator.cpp \
 libs/goldo_propulsion/src/simple_odometry.cpp \
 libs/goldo_propulsion/src/speed_controller.cpp
-EXTRA_CXXINC := -I$(EXTERNAL_PRJ_PATH)/libs/goldo_math/include -I$(EXTERNAL_PRJ_PATH)/libs/goldo_propulsion/include -I$(EXTERNAL_PRJ_PATH)/libs/goldo_propulsion/include/goldobot/propulsion -I$(HOME_TREE)/src/hack2022/nucleo_2022
+EXTRA_CXXINC := -I$(EXTERNAL_PRJ_PATH)/libs/goldo_math/include -I$(EXTERNAL_PRJ_PATH)/Middlewares/Third_Party/Eigen/include -I$(EXTERNAL_PRJ_PATH)/libs/goldo_propulsion/include -I$(EXTERNAL_PRJ_PATH)/libs/goldo_propulsion/include/goldobot/propulsion -I$(HOME_TREE)/src/hack2022/nucleo_2022
 
 else ifeq ($(MODULE_NAME),GoldobotStrat2020_sim_tuto0)
 

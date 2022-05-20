@@ -50,6 +50,7 @@ static void send_servo_ack(uint16_t seq);
 static void send_command_event(uint16_t seq, CommandEvent event);
 static void translate_propulsion_set_pose(unsigned char *_buf, size_t _len);
 static void translate_execute_move_to(unsigned char *_buf, size_t _len);
+static void translate_execute_translation(unsigned char *_buf, size_t _len);
 static void translate_execute_point_to(unsigned char *_buf, size_t _len);
 static void translate_execute_point_to_back(unsigned char *_buf, size_t _len);
 static void translate_execute_face_direction(unsigned char *_buf, size_t _len);
@@ -241,6 +242,13 @@ void CommZmq::taskFunction()
         break;
       case 110: /* PropulsionSetSimulationMode     */
         printf ("  ZMQ DEBUG: PropulsionSetSimulationMode NOT IMPLEMENTED\n");
+        break;
+      case 140: /* PropulsionExecuteTranslation    */
+        seq = *((uint16_t *)message_body);
+        printf ("  ZMQ DEBUG: PropulsionExecuteTranslation seq=%d\n", seq);
+        translate_execute_translation(message_body+sizeof(uint16_t), message_body_size-sizeof(uint16_t));
+        send_command_event(seq, CommandEvent::Ack);
+        active_propulsion_seq = seq;
         break;
       case 141: /* PropulsionExecuteMoveTo         */
         seq = *((uint16_t *)message_body);
@@ -530,6 +538,25 @@ static void translate_execute_move_to(unsigned char *_buf, size_t _len)
   float speed;
   speed = dbg_payload[2];
   printf ("    speed=%f\n", speed);
+  printf ("    origin_pos=<%5.2f,%5.2f>\n", my_wp[0].x*1000.0, my_wp[0].y*1000.0);
+  printf ("    target_pos=<%5.2f,%5.2f>\n", my_wp[1].x*1000.0, my_wp[1].y*1000.0);
+  unsigned char new_buf[64];
+  int cmd_buf_len = hack_cmd_traj(new_buf, my_wp, 2, speed, HACK_ACCEL, HACK_ACCEL);
+  VirtualRobots::myself().on_cmd_execute_trajectory(new_buf, cmd_buf_len);
+}
+
+static void translate_execute_translation(unsigned char *_buf, size_t _len)
+{
+  float *dbg_payload = (float *)(_buf);
+  goldo_vec_2d_t my_wp[2];
+  float my_theta = VirtualRobots::myself().sv().theta;
+  float dist = dbg_payload[0];
+  printf ("    dist=%f\n", dist);
+  float speed = dbg_payload[1];
+  printf ("    speed=%f\n", speed);
+  my_wp[0] = VirtualRobots::myself().sv().p;
+  my_wp[1].x = my_wp[0].x + dist*cos(my_theta);
+  my_wp[1].y = my_wp[0].y + dist*sin(my_theta);
   printf ("    origin_pos=<%5.2f,%5.2f>\n", my_wp[0].x*1000.0, my_wp[0].y*1000.0);
   printf ("    target_pos=<%5.2f,%5.2f>\n", my_wp[1].x*1000.0, my_wp[1].y*1000.0);
   unsigned char new_buf[64];

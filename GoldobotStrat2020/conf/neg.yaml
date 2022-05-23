@@ -5,7 +5,7 @@ dbg_task:
   init_pos:
     [   515.0, -1395.0]
   init_point_to:
-    [   515.0,     0.0]
+    [   515.0,    0.0]
   actions:
   - # action GO_TO_DISTRIB1:
     min_duration_ms: 400
@@ -18,9 +18,9 @@ dbg_task:
       wp:
         - [   515.0, -1395.0]
         - [   515.0, -1000.0]
-        - [   200.0,  -700.0]
-        - [   200.0,  -450.0]
-        - [   450.0,  -150.0]
+        - [   230.0, -700.0]
+        - [   230.0, -450.0]
+        - [   450.0, -150.0]
   - # action POINT_TO_DISTRIB1:
     min_duration_ms: 400
     max_duration_ms: 6000
@@ -30,7 +30,7 @@ dbg_task:
       accel  : 9.999999
       deccel : 9.999999
       target:
-        [  100.0,  -150.0]
+        [  250.0, -150.0]
   - # action CLOSE_TO_DISTRIB1:
     min_duration_ms: 400
     max_duration_ms: 100000
@@ -40,8 +40,8 @@ dbg_task:
       accel  : 0.400000
       deccel : 0.400000
       wp:
-        - [   450.0,  -150.0]
-        - [   150.0,  -150.0]
+        - [   450.0, -150.0]
+        - [   250.0, -150.0]
   - # action GRAB_OBJ1:
     min_duration_ms: 10000
     max_duration_ms: 10000
@@ -55,7 +55,7 @@ dbg_task:
       accel  : 9.999999
       deccel : 9.999999
       target:
-        [  250.0,  -450.0]
+        [  250.0, -450.0]
   - # action GO_TO_GALERY1:
     min_duration_ms: 400
     max_duration_ms: 100000
@@ -65,8 +65,8 @@ dbg_task:
       accel  : 0.400000
       deccel : 0.400000
       wp:
-        - [   150.0,  -150.0]
-        - [   250.0,  -450.0]
+        - [   250.0, -150.0]
+        - [   250.0, -450.0]
   - # action POINT_TO_GALERY1:
     min_duration_ms: 400
     max_duration_ms: 6000
@@ -76,18 +76,7 @@ dbg_task:
       accel  : 9.999999
       deccel : 9.999999
       target:
-        [  100.0,  -450.0]
-  - # action CLOSE_TO_GALERY1:
-    min_duration_ms: 400
-    max_duration_ms: 100000
-    type: TRAJ
-    param_traj:
-      speed  : 0.400000
-      accel  : 0.400000
-      deccel : 0.400000
-      wp:
-        - [   250.0,  -450.0]
-        - [   200.0,  -450.0]
+        [  100.0, -450.0]
   - # action PLACE_OBJ1:
     min_duration_ms: 10000
     max_duration_ms: 10000
@@ -101,7 +90,7 @@ dbg_task:
       accel  : 9.999999
       deccel : 9.999999
       target:
-        [ 1000.0,     0.0]
+        [ 1000.0,    0.0]
   - # action GO_TO_CENTER:
     min_duration_ms: 200
     max_duration_ms: 40000
@@ -111,5 +100,5 @@ dbg_task:
       accel  : 0.200000
       deccel : 0.200000
       target:
-        [ 1000.0,     0.0]
+        [ 1000.0,    0.0]
 

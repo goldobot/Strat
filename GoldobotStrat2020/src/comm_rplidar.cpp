@@ -353,9 +353,9 @@ void CommRplidar::taskFunction()
         /* check si proche des bords anterieur ou posterieurs du robot */ 
         if(
            (
-            ((m_x[pos]>90.0)&& (m_x[pos]<350.0)&& (l_forward_move)) 
+            ((m_x[pos]>200.0)&& (m_x[pos]<350.0)&& (l_forward_move)) 
             ||
-            ((m_x[pos]<-90.0)&& (m_x[pos]>-350.0)&& (!l_forward_move))
+            ((m_x[pos]<-200.0)&& (m_x[pos]>-350.0)&& (!l_forward_move))
            ) 
            && 
            (

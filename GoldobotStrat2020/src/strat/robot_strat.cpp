@@ -233,7 +233,7 @@ void RobotStrat::taskFunction()
 #if 1 /* FIXME : DEBUG : EXPERIMENTAL */
   goldo_conf_info_t& ci = GoldoConf::instance().c();
   unsigned int robot_sensors = RobotState::instance().s().robot_sensors;
-  bool is_blue = ((robot_sensors&RobotState::GPIO_SIDE_SELECT_MASK) == 0);
+  bool is_neg = ((robot_sensors&RobotState::GPIO_SIDE_SELECT_MASK) == 0);
   if (robot_sensors&0x00000020)
   {
     printf (" DEBUG: HACK: set 2 obstacles\n");
@@ -244,7 +244,7 @@ void RobotStrat::taskFunction()
     printf (" DEBUG: HACK: set 1 obstacle\n");
     LidarDetect::instance().set_nb_of_send_detect(1);
   }
-  if (is_blue) /* Y - */
+  if (is_neg) /* - */
   {
     if (ci.conf_strat_file_neg_str[0]==0x00)
     {
@@ -255,7 +255,7 @@ void RobotStrat::taskFunction()
       read_yaml_conf (ci.conf_strat_file_neg_str);
     }
   }
-  else /* Y + */
+  else /* + */
   {
     if (ci.conf_strat_file_pos_str[0]==0x00)
     {
@@ -267,7 +267,7 @@ void RobotStrat::taskFunction()
     }
   }
   printf (" DEBUG: robot_sensors: %.8x\n", robot_sensors);
-  printf (" DEBUG: color: %s\n", is_blue?"BLUE":"YELLOW");
+  printf (" DEBUG: color: %s\n", is_neg?"NEG":"POS");
   printf (" DEBUG: task_name: %s\n", m_task_dbg->m_task_name);
 
 #if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
@@ -285,7 +285,7 @@ void RobotStrat::taskFunction()
 #endif
 
 #if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
-  m_task_cridf2021->init(is_blue);
+  m_task_cridf2021->init(is_neg);
 #endif
 
   while(!m_stop_task)
@@ -297,6 +297,7 @@ void RobotStrat::taskFunction()
     clock_gettime(1, &my_tp);
     my_time_ms = my_tp.tv_sec*1000 + my_tp.tv_nsec/1000000;
 
+#if 0 /* FIXME : TODO : remove - no funny action in 2022 */
     if ((!m_dbg_step_by_step) && (!m_dbg_no_time_limit))
     {
       if ((!match_funny_done) && (match_start_ms!=0) && (my_time_ms>(match_start_ms+97000)))
@@ -315,6 +316,7 @@ void RobotStrat::taskFunction()
         cmd_nucleo_seq (9);
         match_funny_done = true;
       }
+#endif
 
       if ((match_start_ms!=0) && (my_time_ms>(match_start_ms+100000)) && (!m_end_match_flag))
       {
@@ -1881,13 +1883,13 @@ void RobotStrat::dbg_dump()
 
 
 /* FIXME : DEBUG : HACK CRIDF2021 + */
-void TaskCRIDF2021::init(bool is_blue)
+void TaskCRIDF2021::init(bool is_neg)
 {
-  m_side_is_blue = is_blue;
+  m_side_is_neg = is_neg;
   m_task_state = TASK_STATE_IDDLE;
   m_state_change = false;
   memset (&m_target, 0, sizeof(m_target));
-  if (is_blue)
+  if (is_neg)
   {
     m_harbor.x_mm  = 1600;
     m_harbor.y_mm  =  300;

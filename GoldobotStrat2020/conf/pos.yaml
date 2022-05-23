@@ -1,5 +1,5 @@
 dbg_task:
-  task_name: StratBlue
+  task_name: StratPos
   move_away_dist: 100.0
   obstacle_freeze_timeout: 20000
   init_pos:

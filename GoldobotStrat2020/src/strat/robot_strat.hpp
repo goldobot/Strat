@@ -209,7 +209,7 @@ namespace goldobot
   class TaskCRIDF2021
   {
   public:
-    bool m_side_is_blue;
+    bool m_side_is_neg;
     task_state_cridf2021_t m_task_state;
     unsigned int m_act_start_time_ms;
     detected_object_info_t m_target;

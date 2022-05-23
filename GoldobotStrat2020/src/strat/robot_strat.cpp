@@ -297,9 +297,9 @@ void RobotStrat::taskFunction()
     clock_gettime(1, &my_tp);
     my_time_ms = my_tp.tv_sec*1000 + my_tp.tv_nsec/1000000;
 
-#if 0 /* FIXME : TODO : remove - no funny action in 2022 */
     if ((!m_dbg_step_by_step) && (!m_dbg_no_time_limit))
     {
+#if 0 /* FIXME : TODO : remove - no funny action in 2022 */
       if ((!match_funny_done) && (match_start_ms!=0) && (my_time_ms>(match_start_ms+97000)))
       {
         printf ("\n");
@@ -316,6 +316,8 @@ void RobotStrat::taskFunction()
         cmd_nucleo_seq (9);
         match_funny_done = true;
       }
+#else
+      match_funny_done = match_funny_done;
 #endif
 
       if ((match_start_ms!=0) && (my_time_ms>(match_start_ms+100000)) && (!m_end_match_flag))

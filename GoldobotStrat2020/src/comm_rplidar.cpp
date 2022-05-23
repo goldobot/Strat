@@ -369,7 +369,7 @@ void CommRplidar::taskFunction()
           if ((my_abs_x >   100.0) && (my_abs_x < 1900.0) && 
               (my_abs_y > -1400.0) && (my_abs_y < 1400.0)) 
           {
-            if ((l_odo_y_mm>-1300) && (l_odo_y_mm<1300))
+            if ((l_odo_y_mm>-1100) && (l_odo_y_mm<1100))
             {
               obstacle_plot_cnt++;
             }

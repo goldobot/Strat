@@ -1,0 +1,115 @@
+dbg_task:
+  task_name: StratBlue
+  move_away_dist: 100.0
+  obstacle_freeze_timeout: 20000
+  init_pos:
+    [   515.0, -1395.0]
+  init_point_to:
+    [   515.0,     0.0]
+  actions:
+  - # action GO_TO_DISTRIB1:
+    min_duration_ms: 400
+    max_duration_ms: 100000
+    type: TRAJ
+    param_traj:
+      speed  : 0.400000
+      accel  : 0.400000
+      deccel : 0.400000
+      wp:
+        - [   515.0, -1395.0]
+        - [   515.0, -1000.0]
+        - [   200.0,  -700.0]
+        - [   200.0,  -450.0]
+        - [   450.0,  -150.0]
+  - # action POINT_TO_DISTRIB1:
+    min_duration_ms: 400
+    max_duration_ms: 6000
+    type: POINT_TO
+    param_point:
+      speed  : 3.500000
+      accel  : 9.999999
+      deccel : 9.999999
+      target:
+        [  100.0,  -150.0]
+  - # action CLOSE_TO_DISTRIB1:
+    min_duration_ms: 400
+    max_duration_ms: 100000
+    type: TRAJ
+    param_traj:
+      speed  : 0.400000
+      accel  : 0.400000
+      deccel : 0.400000
+      wp:
+        - [   450.0,  -150.0]
+        - [   150.0,  -150.0]
+  - # action GRAB_OBJ1:
+    min_duration_ms: 10000
+    max_duration_ms: 10000
+    type: WAIT
+  - # action POINT_TO_EXIT1:
+    min_duration_ms: 400
+    max_duration_ms: 6000
+    type: POINT_TO
+    param_point:
+      speed  : 3.500000
+      accel  : 9.999999
+      deccel : 9.999999
+      target:
+        [  250.0,  -450.0]
+  - # action GO_TO_GALERY1:
+    min_duration_ms: 400
+    max_duration_ms: 100000
+    type: TRAJ
+    param_traj:
+      speed  : 0.400000
+      accel  : 0.400000
+      deccel : 0.400000
+      wp:
+        - [   150.0,  -150.0]
+        - [   250.0,  -450.0]
+  - # action POINT_TO_GALERY1:
+    min_duration_ms: 400
+    max_duration_ms: 6000
+    type: POINT_TO
+    param_point:
+      speed  : 3.500000
+      accel  : 9.999999
+      deccel : 9.999999
+      target:
+        [  100.0,  -450.0]
+  - # action CLOSE_TO_GALERY1:
+    min_duration_ms: 400
+    max_duration_ms: 100000
+    type: TRAJ
+    param_traj:
+      speed  : 0.400000
+      accel  : 0.400000
+      deccel : 0.400000
+      wp:
+        - [   250.0,  -450.0]
+        - [   200.0,  -450.0]
+  - # action PLACE_OBJ1:
+    min_duration_ms: 10000
+    max_duration_ms: 10000
+    type: WAIT
+  - # action POINT_TO_CENTER:
+    min_duration_ms: 400
+    max_duration_ms: 6000
+    type: POINT_TO
+    param_point:
+      speed  : 3.500000
+      accel  : 9.999999
+      deccel : 9.999999
+      target:
+        [ 1000.0,     0.0]
+  - # action GO_TO_CENTER:
+    min_duration_ms: 200
+    max_duration_ms: 40000
+    type: GOTO_ASTAR
+    param_goto_astar:
+      speed  : 0.300000
+      accel  : 0.200000
+      deccel : 0.200000
+      target:
+        [ 1000.0,     0.0]
+

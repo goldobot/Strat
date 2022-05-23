@@ -63,3 +63,6 @@ Couche de strategie (integrant la gestion des capteurs de "haut niveau" comme le
       $ cp -r $STRAT_BASE/GoldobotStrat2020/conf $INSTALL
     - Lancer GoldobotStrat2020_sim_tuto4 dans le repertoire $INSTALL. Demarrer l'IHM et appuyer sur le boutton "Debug Strat GO!". Dans l'affichage du terrain de l'IHM on peut voir notre robot se deplacer vers le centre du terrain (pendant que les adversaires se deplacent aussi..). Apres la premiere trajectoire en ligne droite il execute une rotation a 90° vers sa droite.
 
+# NOTES 2022:
+  * Build sim hack 2022:
+  make sim_hack2022 EXTERNAL_PRJ_PATH=/home/jlouis/src/robotik/coupe2022/goldorak/soft/thomas/Carte_GR_SW4STM32

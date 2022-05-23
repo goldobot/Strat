@@ -185,7 +185,7 @@ int main(int argc, const char * argv[])
       printf(" ASTAR TEST\n");
       strncpy(dbg_fname,"astar_test1.ppm",sizeof(dbg_fname));
       RobotStrat::instance().dbg_astar_test(1650,   290,
-                                            1850, -1350,
+                                            1600, -1100,
                                              400, -1000,
                                              800,  -300,
                                              200,   650,

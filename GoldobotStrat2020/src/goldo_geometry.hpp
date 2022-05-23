@@ -126,5 +126,53 @@ namespace goldobot
     return goldo_compute_theta(orig.x, orig.y, target.x, target.y);
   }
 
+  inline double goldo_scalar_prod(
+    double p2_x, double p2_y, double p1_x, double p1_y, double o_x, double o_y)
+  {
+    double dx1 = p1_x - o_x;
+    double dy1 = p1_y - o_y;
+    double dx2 = p2_x - o_x;
+    double dy2 = p2_y - o_y;
+    return dx1*dx2 + dy1*dy2;
+  }
+
+  inline double goldo_scalar_prod(
+    goldo_vec_2d_t &p2, goldo_vec_2d_t &p1, goldo_vec_2d_t &o)
+  {
+    return goldo_scalar_prod(p2.x, p2.y, p1.x, p1.y, o.x, o.y);
+  }
+
+  inline double goldo_cross_prod(
+    double p2_x, double p2_y, double p1_x, double p1_y, double o_x, double o_y)
+  {
+    double dx1 = p1_x - o_x;
+    double dy1 = p1_y - o_y;
+    double dx2 = p2_x - o_x;
+    double dy2 = p2_y - o_y;
+    return dx1*dy2 - dx2*dy1;
+  }
+
+  inline double goldo_cross_prod(
+    goldo_vec_2d_t &p2, goldo_vec_2d_t &p1, goldo_vec_2d_t &o)
+  {
+    return goldo_cross_prod(p2.x, p2.y, p1.x, p1.y, o.x, o.y);
+  }
+
+  inline bool goldo_point_in_triangle(
+    goldo_vec_2d_t &pt, goldo_vec_2d_t &v1, goldo_vec_2d_t &v2, goldo_vec_2d_t &v3)
+  {
+    float d1, d2, d3;
+    bool has_neg, has_pos;
+
+    d1 = goldo_cross_prod(pt, v1, v2);
+    d2 = goldo_cross_prod(pt, v2, v3);
+    d3 = goldo_cross_prod(pt, v3, v1);
+
+    has_neg = (d1 < 0) || (d2 < 0) || (d3 < 0);
+    has_pos = (d1 > 0) || (d2 > 0) || (d3 > 0);
+
+    return !(has_neg && has_pos);
+  }
+
 }
 

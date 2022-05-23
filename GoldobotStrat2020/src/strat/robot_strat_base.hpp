@@ -26,8 +26,12 @@ namespace goldobot
 
     void put_pattern(int x_cm, int y_cm, unsigned char*_patt, int _patt_sz_cm, bool is_obst);
 
-    void put_stat_rect_obst(int x_min_mm, int x_max_mm,
-                            int y_min_mm, int y_max_mm);
+    void put_stat_rect_obst(int x_min_mm, int y_min_mm,
+                            int x_max_mm, int y_max_mm);
+
+    void put_stat_triangle_obst(int x1_mm, int y1_mm,
+                                int x2_mm, int y2_mm,
+                                int x3_mm, int y3_mm);
 
     void put_mob_point_obst(int x_mm, int y_mm);
 

@@ -5,7 +5,9 @@
 
 #include <fstream>
 #include <iostream>
+#include <algorithm>
 
+#include "goldo_geometry.hpp"
 #include "comm_rplidar.hpp"
 #include "comm_zmq.hpp"
 #include "comm_nucleo.hpp"
@@ -13,7 +15,6 @@
 #include "detect/lidar_detect.hpp"
 #include "strat/robot_strat_types.hpp"
 #include "strat/robot_strat_base.hpp"
-
 
 using namespace goldobot;
 
@@ -387,16 +388,29 @@ void StratPlayground::init()
     put_pattern(x, y, m_stat_pattern, S_PATT_SZ_CM, true);
   }
 
-  /* static obstacles */
-  put_stat_rect_obst(1850, 2000,  -610,  -590);
-  put_stat_rect_obst(1850, 2000,   610,   590);
-  put_stat_rect_obst(1700, 2000,   -10,    10);
+  /* static obstacles 2020 */
+  //put_stat_rect_obst(1850,  -610, 2000,  -590); /* 2020 left rocks   */
+  //put_stat_rect_obst(1850,   610, 2000,   590); /* 2020 right rocks  */
+  //put_stat_rect_obst(1700,   -10, 2000,    10); /* 2020 center rocks */
 
-  /* FIXME : TODO : make these zones (harbors) configurable */
-  put_stat_rect_obst(1700, 2000,  -450,  -150);
-  put_stat_rect_obst(1700, 2000,   450,   150);
-  put_stat_rect_obst( 500, 1100,  1100,  1500);
-  put_stat_rect_obst( 500, 1100, -1100, -1500);
+  //put_stat_rect_obst(1700,  -450, 2000,  -150); /* 2020 left little harbor  */
+  //put_stat_rect_obst(1700,   450, 2000,   150); /* 2020 right little harbor */
+  //put_stat_rect_obst( 500, -1100, 1100, -1500); /* 2020 left big harbor     */
+  //put_stat_rect_obst( 500,  1100, 1100,  1500); /* 2020 right big harbor    */
+
+  /* FIXME : TODO : make these zones (static obstacles) configurable */
+  /* static obstacles 2022 */
+  put_stat_triangle_obst( 2000, -1500,  1490, -1500,  2000,  -990); /* abri chantier gauche */
+  put_stat_rect_obst( 1170, -1500,  1330, -1400); /* distributeur gauche */
+  put_stat_rect_obst(  400, -1500,  1000, -1100); /* zone depart gauche  */
+  put_stat_rect_obst(    0, -1050,   100,  -330); /* galerie gauche      */
+  put_stat_rect_obst(    0,  -230,   100,   -70); /* distributeur gauche */
+  put_stat_rect_obst(    0,   -10,   300,    10); /* separateur central  */
+  put_stat_rect_obst(    0,   230,   100,    70); /* distributeur droit  */
+  put_stat_rect_obst(    0,  1050,   100,   330); /* galerie droite      */
+  put_stat_rect_obst(  400,  1500,  1000,  1100); /* zone depart droite  */
+  put_stat_rect_obst( 1170,  1500,  1330,  1400); /* distributeur droit  */
+  put_stat_triangle_obst( 2000,  1500,  1490,  1500,  2000,   990); /* abri chantier droit  */
 
   /* make backup */
   memcpy(m_stat_playground, m_playground, sizeof(m_playground));
@@ -465,8 +479,8 @@ void StratPlayground::put_pattern(int x_cm, int y_cm, unsigned char*_patt,
   }
 }
 
-void StratPlayground::put_stat_rect_obst(int x_min_mm, int x_max_mm,
-                                         int y_min_mm, int y_max_mm)
+void StratPlayground::put_stat_rect_obst(int x_min_mm, int y_min_mm,
+                                         int x_max_mm, int y_max_mm)
 {
   int x, y;
   int x_min_cm = x_min_mm/10;
@@ -494,6 +508,36 @@ void StratPlayground::put_stat_rect_obst(int x_min_mm, int x_max_mm,
     {
       m_playground[(y+Y_OFFSET_CM)*(X_SZ_CM) + x] = S_OBST;
       put_pattern(x, y, m_stat_pattern, S_PATT_SZ_CM, true);
+    }
+  }
+}
+
+void StratPlayground::put_stat_triangle_obst(int x1_mm, int y1_mm, int x2_mm, int y2_mm, int x3_mm, int y3_mm)
+{
+  int x, y;
+  int x_min_mm = std::min({x1_mm,x2_mm,x3_mm});
+  int y_min_mm = std::min({y1_mm,y2_mm,y3_mm});
+  int x_max_mm = std::max({x1_mm,x2_mm,x3_mm});
+  int y_max_mm = std::max({y1_mm,y2_mm,y3_mm});
+  int x_min_cm = x_min_mm/10;
+  int y_min_cm = y_min_mm/10;
+  int x_max_cm = x_max_mm/10;
+  int y_max_cm = y_max_mm/10;
+
+  goldo_vec_2d_t v1 = {(float)x1_mm, (float)y1_mm};
+  goldo_vec_2d_t v2 = {(float)x2_mm, (float)y2_mm};
+  goldo_vec_2d_t v3 = {(float)x3_mm, (float)y3_mm};
+
+  for (y=y_min_cm; y<y_max_cm; y++)
+  {
+    for (x=x_min_cm; x<x_max_cm; x++)
+    {
+      goldo_vec_2d_t p_mm = {10.0*x, 10.0*y};
+      if (goldo_point_in_triangle(p_mm,v1,v2,v3))
+      {
+        m_playground[(y+Y_OFFSET_CM)*(X_SZ_CM) + x] = S_OBST;
+        put_pattern(x, y, m_stat_pattern, S_PATT_SZ_CM, true);
+      }
     }
   }
 }

@@ -109,7 +109,7 @@ dbg_task:
       accel  : 9.999999
       deccel : 9.999999
       target:
-        [ 1850.0, -1750.0]
+        [ 1850.0, -750.0]
   - # action GO_TO_BORDER:
     min_duration_ms: 200
     max_duration_ms: 40000
@@ -129,7 +129,7 @@ dbg_task:
       accel  : 9.999999
       deccel : 9.999999
       target:
-        [ 1850.0, -750.0]
+        [ 1850.0, -290.0]
   - # action GO_TO_Y0_1:
     min_duration_ms: 400
     max_duration_ms: 100000
@@ -174,7 +174,7 @@ dbg_task:
       wp:
         - [  1850.0,  100.0]
         - [  1850.0,  290.0]
-  - # action POINT_TO_HOME:
+  - # action POINT_TO_HOME1:
     min_duration_ms: 400
     max_duration_ms: 6000
     type: POINT_TO
@@ -183,7 +183,7 @@ dbg_task:
       accel  : 9.999999
       deccel : 9.999999
       target:
-        [  400.0, -1100.0]
+        [  400.0, -900.0]
   - # action GO_TO_HOME1:
     min_duration_ms: 200
     max_duration_ms: 40000
@@ -194,6 +194,16 @@ dbg_task:
       deccel : 0.200000
       target:
         [  400.0, -900.0]
+  - # action POINT_TO_HOME2:
+    min_duration_ms: 400
+    max_duration_ms: 6000
+    type: POINT_TO
+    param_point:
+      speed  : 3.500000
+      accel  : 9.999999
+      deccel : 9.999999
+      target:
+        [  400.0, -1100.0]
   - # action GO_TO_HOME2:
     min_duration_ms: 400
     max_duration_ms: 100000

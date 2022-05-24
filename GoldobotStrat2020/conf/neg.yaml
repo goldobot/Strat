@@ -42,8 +42,8 @@ dbg_task:
         - [   450.0, -150.0]
         - [   250.0, -150.0]
   - # action GRAB_OBJ1:
-    min_duration_ms: 10000
-    max_duration_ms: 10000
+    min_duration_ms: 2000
+    max_duration_ms: 2000
     type: WAIT
   - # action POINT_TO_EXIT1:
     min_duration_ms: 400
@@ -77,8 +77,8 @@ dbg_task:
       target:
         [  100.0, -450.0]
   - # action PLACE_OBJ1:
-    min_duration_ms: 10000
-    max_duration_ms: 10000
+    min_duration_ms: 2000
+    max_duration_ms: 2000
     type: WAIT
   - # action POINT_TO_CENTER:
     min_duration_ms: 400
@@ -184,7 +184,7 @@ dbg_task:
       deccel : 9.999999
       target:
         [  400.0, -1100.0]
-  - # action GO_TO_HOME:
+  - # action GO_TO_HOME1:
     min_duration_ms: 200
     max_duration_ms: 40000
     type: GOTO_ASTAR
@@ -193,5 +193,16 @@ dbg_task:
       accel  : 0.200000
       deccel : 0.200000
       target:
-        [  400.0, -1100.0]
+        [  400.0, -900.0]
+  - # action GO_TO_HOME2:
+    min_duration_ms: 400
+    max_duration_ms: 100000
+    type: TRAJ
+    param_traj:
+      speed  : 0.400000
+      accel  : 0.400000
+      deccel : 0.400000
+      wp:
+        - [   400.0, -900.0]
+        - [   400.0, -1100.0]
 

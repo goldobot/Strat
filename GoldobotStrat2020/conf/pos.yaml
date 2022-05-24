@@ -109,7 +109,7 @@ dbg_task:
       accel  : 9.999999
       deccel : 9.999999
       target:
-        [ 1850.0,  750.0]
+        [ 1850.0,  650.0]
   - # action GO_TO_BORDER:
     min_duration_ms: 200
     max_duration_ms: 40000
@@ -119,7 +119,7 @@ dbg_task:
       accel  : 0.200000
       deccel : 0.200000
       target:
-        [ 1850.0,  750.0]
+        [ 1850.0,  650.0]
   - # action POINT_TO_Y0:
     min_duration_ms: 400
     max_duration_ms: 6000
@@ -139,7 +139,7 @@ dbg_task:
       accel  : 0.400000
       deccel : 0.400000
       wp:
-        - [  1850.0,  750.0]
+        - [  1850.0,  650.0]
         - [  1850.0,  290.0]
   - # action GO_TO_Y0_2:
     min_duration_ms: 400

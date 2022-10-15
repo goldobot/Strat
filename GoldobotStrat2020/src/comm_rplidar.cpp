@@ -350,7 +350,20 @@ void CommRplidar::taskFunction()
         double my_abs_y = my_R * sin (my_theta + l_odo_theta_rad) + l_odo_y_mm;
 
         /* minimalist obstacle detection */ 
-        /* check si proche des bords anterieur ou posterieurs du robot */ 
+        /* check si proche des bords anterieur ou posterieurs du robot */
+#if HOMOLOG
+        if(
+           (
+            ((m_x[pos]>200.0)&& (m_x[pos]<500.0)&& (l_forward_move)) 
+            ||
+            ((m_x[pos]<-200.0)&& (m_x[pos]>-350.0)&& (!l_forward_move))
+           ) 
+           && 
+           (
+            ((m_y[pos]>-350.0) && (m_y[pos]<350.0))
+           )
+          )
+#else /* match normal */
         if(
            (
             ((m_x[pos]>200.0)&& (m_x[pos]<350.0)&& (l_forward_move)) 
@@ -361,15 +374,20 @@ void CommRplidar::taskFunction()
            (
             ((m_y[pos]>-300.0) && (m_y[pos]<300.0))
            )
-          ) 
+          )
+#endif
         {
           //printf("GOLDO my_theta:%f my_R:%f m_x[pos]:%f m_y[pos]:%f\n", my_theta, my_R, m_x[pos], m_y[pos]);
 
-          /* check si a l'interieur du terain de jeu */ 
-          if ((my_abs_x >   100.0) && (my_abs_x < 1900.0) && 
-              (my_abs_y > -1400.0) && (my_abs_y < 1400.0)) 
+          /* check si obstacle a l'interieur du terrain de jeu & robot a l'exterieur de l'aire de depart */ 
+          if ((my_abs_x >    20.0) && (my_abs_x < 1980.0) && /* obstacle */
+              (my_abs_y > -1480.0) && (my_abs_y < 1480.0)) 
           {
-            if ((l_odo_y_mm>-1100) && (l_odo_y_mm<1100))
+#if HOMOLOG
+            if ((l_odo_y_mm>-1500) && (l_odo_y_mm<1500))
+#else /* match normal */
+            if ((l_odo_y_mm>-1100) && (l_odo_y_mm<1100)) /* position du robot sur le terrain */
+#endif
             {
               obstacle_plot_cnt++;
             }

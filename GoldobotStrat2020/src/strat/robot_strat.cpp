@@ -215,6 +215,10 @@ void RobotStrat::taskFunction()
   unsigned int emergency_lost_ms = 0;
 #endif
   int end_of_match_idx = -1;
+  int wait_final_idx = -1;
+  bool emergency_flag = false;
+  bool old_tirette_state = false;
+  bool new_tirette_state = false;
 
   m_task_running = true;
 
@@ -279,6 +283,11 @@ void RobotStrat::taskFunction()
   end_of_match_idx = m_task_dbg->get_action_idx_with_label(end_of_match_s);
   printf (" DEBUG: end_of_match_idx = %d\n", end_of_match_idx);
 
+  char wait_final_s[16];
+  strncpy(wait_final_s,"WAIT_FINAL",16);
+  wait_final_idx = m_task_dbg->get_action_idx_with_label(wait_final_s);
+  printf (" DEBUG: wait_final_idx = %d\n", wait_final_idx);
+
 #if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
   char last_wait_s[16];
   strncpy(last_wait_s,"LAST_WAIT",16);
@@ -305,6 +314,7 @@ void RobotStrat::taskFunction()
 
     clock_gettime(1, &my_tp);
     my_time_ms = my_tp.tv_sec*1000 + my_tp.tv_nsec/1000000;
+    new_tirette_state = RobotState::instance().tirette_present();
 
     if ((!m_dbg_step_by_step) && (!m_dbg_no_time_limit))
     {
@@ -329,7 +339,7 @@ void RobotStrat::taskFunction()
       match_funny_done = match_funny_done;
 #endif
 
-#if 1 /* FIXME : DEBUG : EXPERIMENTAL 2022 */
+#if 0 /* FIXME : DEBUG : EXPERIMENTAL 2022 */
       if ((match_start_ms!=0) && (my_time_ms>(match_start_ms+85000)) && (!m_end_match_flag))
       {
         printf ("\n");
@@ -348,11 +358,11 @@ void RobotStrat::taskFunction()
           cmd_emergency_stop();
           m_strat_state = STRAT_STATE_END_MATCH;
           state_change_dbg = true;
+          printf ("Disabling rplidar..\n");
+          RobotState::instance().m_lidar_detection_enabled = false;
+          RobotState::instance().set_obstacle_gpio(false);
+          emergency_flag = true;
         }
-
-        printf ("Disabling rplidar..\n");
-        RobotState::instance().m_lidar_detection_enabled = false;
-        RobotState::instance().set_obstacle_gpio(false);
       }
 
 #if 0
@@ -386,6 +396,8 @@ void RobotStrat::taskFunction()
     }
 
     if (RobotState::instance().emergency_stop() && 
+        (RobotState::instance().m_lidar_detection_enabled) &&
+        (m_strat_state!=STRAT_STATE_INIT) &&
         (m_strat_state!=STRAT_STATE_IDDLE) &&
         (m_strat_state!=STRAT_STATE_ERROR) &&
         (m_strat_state!=STRAT_STATE_EMERGENCY_STOP) &&
@@ -396,7 +408,7 @@ void RobotStrat::taskFunction()
       printf ("  last move dir : %s\n", m_last_move_forwards?"FORWARDS":"BACKWARDS");
       cmd_clear_prop_err();
       enter_emergency_time_ms = my_time_ms;
-      soft_deadline_ms = my_time_ms + 500;
+      soft_deadline_ms = my_time_ms + 4000;
       hard_deadline_ms = my_time_ms + m_task_dbg->m_obstacle_freeze_timeout_ms;
       recov_fail_cnt = 0;
       m_strat_state = STRAT_STATE_EMERGENCY_STOP;
@@ -405,6 +417,7 @@ void RobotStrat::taskFunction()
 
     if ((m_strat_state!=STRAT_STATE_IDDLE) &&
         (m_strat_state!=STRAT_STATE_ERROR) &&
+        (m_strat_state!=STRAT_STATE_INIT) &&
         (m_strat_state!=STRAT_STATE_EMERGENCY_WAIT) &&
         (m_strat_state!=STRAT_STATE_EMERGENCY_STOP) )
     {
@@ -434,7 +447,7 @@ void RobotStrat::taskFunction()
       /* FIXME : TODO : define random entry point for strategy? */
       m_task_dbg->m_curr_act_idx = 0;
 
-      if ((!RobotState::instance().tirette_present()) || m_start_match_sig)
+      if (((old_tirette_state==true) && (new_tirette_state==false)) || m_start_match_sig)
       {
         match_start_ms = my_time_ms;
 
@@ -640,6 +653,12 @@ void RobotStrat::taskFunction()
       soft_deadline_ms = my_time_ms + my_action->h.min_duration_ms;
       hard_deadline_ms = my_time_ms + my_action->h.max_duration_ms;
 
+      if ((my_action->h.type==STRAT_ACTION_TYPE_WAIT) && (m_task_dbg->m_curr_act_idx==wait_final_idx) && emergency_flag)
+      {
+        soft_deadline_ms = my_time_ms + 500;
+        hard_deadline_ms = my_time_ms + 500;
+      }
+
 #if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
       if (my_action->h.type==STRAT_ACTION_TYPE_CRIDF2021)
       {
@@ -835,7 +854,6 @@ void RobotStrat::taskFunction()
       }
 
       /* FIXME : TODO : what to do next? */
-
       cmd_clear_prop_err();
       soft_deadline_ms = my_time_ms + 10000;
       hard_deadline_ms = my_time_ms + 10000;
@@ -1076,6 +1094,8 @@ void RobotStrat::taskFunction()
       m_strat_state = STRAT_STATE_ERROR;
       state_change_dbg = true;
     }
+
+    old_tirette_state = new_tirette_state;
 
 #ifndef WIN32
     usleep(10000);

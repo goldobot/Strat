@@ -20,6 +20,8 @@ namespace goldobot
     STRAT_STATE_NULL = 0,
     STRAT_STATE_INIT = 1,
     STRAT_STATE_IDDLE,
+    STRAT_STATE_ERROR,
+    STRAT_STATE_CANCEL_ERROR,
 
     /* task management (complex tasks) */
     STRAT_STATE_SCHEDULE_TASK = 16,
@@ -43,8 +45,11 @@ namespace goldobot
     STRAT_STATE_EMERGENCY_ESCAPE_INIT,
     STRAT_STATE_EMERGENCY_ESCAPE,
 
+    /* end of match */
+    STRAT_STATE_END_MATCH = 128,
+
     /* debug states */
-    STRAT_STATE_PAUSE_DBG = 128,
+    STRAT_STATE_PAUSE_DBG = 65536,
     STRAT_STATE_PAUSE2_DBG,
   };
 
@@ -145,6 +150,8 @@ namespace goldobot
     bool m_start_match_sig;
 
     bool m_end_match_flag;
+
+    bool m_game_over_flag;
 
     StratPlayground m_path_find_pg;
 

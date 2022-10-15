@@ -108,6 +108,8 @@ enum class CommMessageType : uint16_t {
   /*    216 - 0x00d8 */ PropulsionConfigGetStatus,
   /*    217 - 0x00d9 */ PropulsionConfigSet,
 
+  /*    230 - 0x00e6 */ LiftHomingDone,
+
   /*    250 - 0x00fa */ WatchdogReset = 250,
   /*    251 - 0x00fb */ WatchdogStatus,
 

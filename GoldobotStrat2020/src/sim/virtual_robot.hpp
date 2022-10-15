@@ -2,7 +2,9 @@
 #include <cstdint>
 #include <cstddef>
 
+#ifdef HACK2022
 namespace goldo = goldobot;
+#endif
 
 #include "yaml-cpp/yaml.h"
 #include "yaml-cpp/eventhandler.h"

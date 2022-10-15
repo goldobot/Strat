@@ -87,6 +87,8 @@ RobotStrat::RobotStrat()
 
   m_end_match_flag = false;
 
+  m_game_over_flag = false;
+
   //m_core_astar.setMatrix(m_path_find_pg.X_SZ_CM, m_path_find_pg.Y_SZ_CM);
 
   m_last_move_forwards = true;
@@ -131,6 +133,8 @@ int RobotStrat::init(char *strat_file_name)
   m_start_match_sig = false;
 
   m_end_match_flag = false;
+
+  m_game_over_flag = false;
 
   m_path_find_pg.init();
 
@@ -210,6 +214,7 @@ void RobotStrat::taskFunction()
   unsigned int enter_emergency_time_ms = 0;
   unsigned int emergency_lost_ms = 0;
 #endif
+  int end_of_match_idx = -1;
 
   m_task_running = true;
 
@@ -230,7 +235,6 @@ void RobotStrat::taskFunction()
   log_lidar_fd = open ("/home/pi/goldo/strat2020/log/log_lidar.txt", O_RDWR);
 
 
-#if 1 /* FIXME : DEBUG : EXPERIMENTAL */
   goldo_conf_info_t& ci = GoldoConf::instance().c();
   unsigned int robot_sensors = RobotState::instance().s().robot_sensors;
   bool is_neg = ((robot_sensors&RobotState::GPIO_SIDE_SELECT_MASK) == 0);
@@ -270,6 +274,11 @@ void RobotStrat::taskFunction()
   printf (" DEBUG: color: %s\n", is_neg?"NEG":"POS");
   printf (" DEBUG: task_name: %s\n", m_task_dbg->m_task_name);
 
+  char end_of_match_s[16];
+  strncpy(end_of_match_s,"END_OF_MATCH",16);
+  end_of_match_idx = m_task_dbg->get_action_idx_with_label(end_of_match_s);
+  printf (" DEBUG: end_of_match_idx = %d\n", end_of_match_idx);
+
 #if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
   char last_wait_s[16];
   strncpy(last_wait_s,"LAST_WAIT",16);
@@ -282,7 +291,7 @@ void RobotStrat::taskFunction()
     printf (" DEBUG: last_wait_action->h.max_duration_ms = %d\n", last_wait_action->h.max_duration_ms);
   }
 #endif
-#endif
+  printf (" DEBUG: obstacle_freeze_timeout_ms = %d\n", m_task_dbg->m_obstacle_freeze_timeout_ms);
 
 #if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
   m_task_cridf2021->init(is_neg);
@@ -320,9 +329,43 @@ void RobotStrat::taskFunction()
       match_funny_done = match_funny_done;
 #endif
 
-      if ((match_start_ms!=0) && (my_time_ms>(match_start_ms+100000)) && (!m_end_match_flag))
+#if 1 /* FIXME : DEBUG : EXPERIMENTAL 2022 */
+      if ((match_start_ms!=0) && (my_time_ms>(match_start_ms+85000)) && (!m_end_match_flag))
       {
+        printf ("\n");
+        printf ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+        printf ("!!!!!!!!! ONLY 15 SEC REMAINING !!!!!!!!\n");
+        printf ("!!!!!!!!!!!  TIME TO GO HOME  !!!!!!!!!!\n");
+        printf ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+        printf ("\n");
+        printf ("match_time = %8.3f\n", 0.001*(my_time_ms-match_start_ms));
+        printf ("\n");
+
         m_end_match_flag = true;
+
+        if (m_strat_state!=STRAT_STATE_IDDLE)
+        {
+          cmd_emergency_stop();
+          m_strat_state = STRAT_STATE_END_MATCH;
+          state_change_dbg = true;
+        }
+
+        printf ("Disabling rplidar..\n");
+        RobotState::instance().m_lidar_detection_enabled = false;
+        RobotState::instance().set_obstacle_gpio(false);
+      }
+
+#if 0
+      if ((match_start_ms!=0) && (my_time_ms>(match_start_ms+90000)) && (my_time_ms<(match_start_ms+90500)))
+      {
+        RobotState::instance().m_lidar_detection_enabled = true;
+      }
+#endif
+#endif
+
+      if ((match_start_ms!=0) && (my_time_ms>(match_start_ms+100000)) && (!m_game_over_flag))
+      {
+        m_game_over_flag = true;
         RobotState::instance().s().strat_stop = true;
         cmd_emergency_stop();
         cmd_propulsion_disable();
@@ -344,6 +387,7 @@ void RobotStrat::taskFunction()
 
     if (RobotState::instance().emergency_stop() && 
         (m_strat_state!=STRAT_STATE_IDDLE) &&
+        (m_strat_state!=STRAT_STATE_ERROR) &&
         (m_strat_state!=STRAT_STATE_EMERGENCY_STOP) &&
         (m_strat_state!=STRAT_STATE_EMERGENCY_WAIT) &&
         (m_strat_state!=STRAT_STATE_EMERGENCY_MOVE_AWAY) )
@@ -360,6 +404,7 @@ void RobotStrat::taskFunction()
     }
 
     if ((m_strat_state!=STRAT_STATE_IDDLE) &&
+        (m_strat_state!=STRAT_STATE_ERROR) &&
         (m_strat_state!=STRAT_STATE_EMERGENCY_WAIT) &&
         (m_strat_state!=STRAT_STATE_EMERGENCY_STOP) )
     {
@@ -465,7 +510,7 @@ void RobotStrat::taskFunction()
         {
           printf (" Warning : NULL action pointer!\n");
           printf ("\n");
-          m_strat_state = STRAT_STATE_IDDLE;
+          m_strat_state = STRAT_STATE_ERROR;
           state_change_dbg = true;
         }
         else
@@ -527,13 +572,21 @@ void RobotStrat::taskFunction()
 
       if (action_ok)
       {
-        if (m_dbg_step_by_step)
+        if (my_action->h.type==STRAT_ACTION_TYPE_STOP)
         {
-          m_strat_state = STRAT_STATE_PAUSE2_DBG;
+          printf (" STOP => Forcing IDDLE state!\n");
+          m_strat_state = STRAT_STATE_IDDLE;
         }
         else
         {
-          m_strat_state = STRAT_STATE_WAIT_END_INIT;
+          if (m_dbg_step_by_step)
+          {
+            m_strat_state = STRAT_STATE_PAUSE2_DBG;
+          }
+          else
+          {
+            m_strat_state = STRAT_STATE_WAIT_END_INIT;
+          }
         }
         state_change_dbg = true;
       }
@@ -541,7 +594,7 @@ void RobotStrat::taskFunction()
       {
         /* FIXME : TODO : is this OK? */
         //m_strat_state = STRAT_STATE_END_ACTION;
-        m_strat_state = STRAT_STATE_IDDLE;
+        m_strat_state = STRAT_STATE_ERROR;
         state_change_dbg = true;
       }
 
@@ -727,6 +780,34 @@ void RobotStrat::taskFunction()
       }
       break;
 
+    case STRAT_STATE_END_MATCH:
+      if (state_change_dbg)
+      {
+        printf ("\n");
+        printf ("****************************************\n");
+        printf ("* STRAT_END_MATCH **********************\n");
+        printf ("****************************************\n");
+        printf ("\n");
+        state_change_dbg = false;
+      }
+
+      if (end_of_match_idx!=-1)
+      {
+        cmd_clear_prop_err();
+        m_task_dbg->m_curr_act_idx = end_of_match_idx;
+        m_strat_state = STRAT_STATE_GET_ACTION;
+        state_change_dbg = true;
+      }
+      else
+      {
+        /* FIXME : TODO */
+        printf ("WARNING! No END_OF_MATCH action: switching to IDDLE state.\n");
+        m_strat_state = STRAT_STATE_IDDLE;
+        state_change_dbg = true;
+      }
+
+      break;
+
     case STRAT_STATE_IDDLE:
       if (state_change_dbg)
       {
@@ -738,7 +819,45 @@ void RobotStrat::taskFunction()
         state_change_dbg = false;
       }
 
-      /* FIXME : TODO */
+      /* FIXME : TODO : what to do next? */
+
+      break;
+
+    case STRAT_STATE_ERROR:
+      if (state_change_dbg)
+      {
+        printf ("\n");
+        printf ("****************************************\n");
+        printf ("* STRAT_STATE_ERROR ********************\n");
+        printf ("****************************************\n");
+        printf ("\n");
+        state_change_dbg = false;
+      }
+
+      /* FIXME : TODO : what to do next? */
+
+      cmd_clear_prop_err();
+      soft_deadline_ms = my_time_ms + 10000;
+      hard_deadline_ms = my_time_ms + 10000;
+
+      m_strat_state = STRAT_STATE_CANCEL_ERROR;
+      state_change_dbg = true;
+
+      break;
+
+    case STRAT_STATE_CANCEL_ERROR:
+      if (state_change_dbg)
+      {
+        printf ("\n");
+        printf ("****************************************\n");
+        printf ("* STRAT_STATE_CANCEL_ERROR *************\n");
+        printf ("****************************************\n");
+        printf ("\n");
+        state_change_dbg = false;
+      }
+
+      state_change_dbg = check_deadlines_and_change_state(
+        my_time_ms, soft_deadline_ms, hard_deadline_ms, STRAT_STATE_END_MATCH, "CANCEL ERROR (DEBUG)");
 
       break;
 
@@ -832,7 +951,7 @@ void RobotStrat::taskFunction()
           if (recov_fail_cnt>20)
           {
 #if 1 /* FIXME : TODO : what to do next?!.. */
-            m_strat_state = STRAT_STATE_IDDLE;
+            m_strat_state = STRAT_STATE_ERROR;
             state_change_dbg = true;
 #endif
           }
@@ -902,7 +1021,7 @@ void RobotStrat::taskFunction()
         {
           printf ("Failed to init EMERGENCY_ESCAPE!\n");
 #if 1 /* FIXME : TODO : what to do next?!.. */
-          m_strat_state = STRAT_STATE_IDDLE;
+          m_strat_state = STRAT_STATE_ERROR;
           state_change_dbg = true;
 #endif
         }
@@ -954,7 +1073,7 @@ void RobotStrat::taskFunction()
       printf ("! Warning : unknown STRAT state! (%d)\n",m_strat_state);
       printf ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
       printf ("\n");
-      m_strat_state = STRAT_STATE_IDDLE;
+      m_strat_state = STRAT_STATE_ERROR;
       state_change_dbg = true;
     }
 
@@ -1001,7 +1120,7 @@ bool RobotStrat::check_deadlines_and_change_state(unsigned int my_time_ms,
     {
       printf ("\n");
       printf (" Propulsion ERROR\n");
-      m_strat_state = STRAT_STATE_IDDLE;
+      m_strat_state = STRAT_STATE_ERROR;
       state_changed = true;
     }
   }
@@ -1027,9 +1146,7 @@ bool RobotStrat::do_STRAT_STATE_INIT_ACTION(strat_action_t *my_action, bool send
     break;
   case STRAT_ACTION_TYPE_STOP:
     printf (" STRAT_ACTION_TYPE_STOP\n");
-    /* FIXME : TODO */
-    printf (" Forcing IDDLE state!\n");
-    action_ok = false;
+    action_ok = true;
     break;
   case STRAT_ACTION_TYPE_TRAJ:
     printf (" STRAT_ACTION_TYPE_TRAJ\n");
@@ -1203,6 +1320,10 @@ void RobotStrat::do_STRAT_STATE_EXEC_ACTION(strat_action_t *my_action)
   case STRAT_ACTION_TYPE_TRAJ:
   {
     strat_action_traj_t *act_traj= (strat_action_traj_t *) my_action;
+#if 1 /* FIXME : DEBUG : fix fscking bug!!! */
+  act_traj->wp[0].x_mm = RobotState::instance().s().x_mm;
+  act_traj->wp[0].y_mm = RobotState::instance().s().y_mm;
+#endif
     cmd_traj (act_traj->wp, act_traj->nwp, 
               act_traj->speed, act_traj->accel, act_traj->deccel);
   }
@@ -1798,6 +1919,22 @@ int RobotStrat::cmd_emergency_stop()
 /**  DEBUG  *******************************************************************/
 /******************************************************************************/
 
+unsigned long long dbg_t0_us = 0;
+void dbg_reset_time()
+{
+  struct timespec my_tp;
+  clock_gettime(1, &my_tp);
+  dbg_t0_us = my_tp.tv_sec*1000000 + my_tp.tv_nsec/1000;
+}
+unsigned long long dbg_get_time()
+{
+  struct timespec my_tp;
+  unsigned long long my_time_us = 0;
+  clock_gettime(1, &my_tp);
+  my_time_us = my_tp.tv_sec*1000000 + my_tp.tv_nsec/1000;
+  return (my_time_us-dbg_t0_us);
+}
+
 void RobotStrat::dbg_astar_test(int x_start_mm, int y_start_mm,
                                 int x_end_mm, int y_end_mm,
                                 int xo1_mm, int yo1_mm,
@@ -1816,19 +1953,27 @@ void RobotStrat::dbg_astar_test(int x_start_mm, int y_start_mm,
   int X_SZ_CM = m_path_find_pg.X_SZ_CM;
 
   /* clear playground */
+  dbg_reset_time();
   m_path_find_pg.erase_mob_obst();
+  printf ("TIME : erase_mob_obst() : %lld\n", dbg_get_time());
 
   /* put mobile obstacles */
+  dbg_reset_time();
   m_path_find_pg.put_mob_point_obst(xo1_mm, yo1_mm);
   m_path_find_pg.put_mob_point_obst(xo2_mm, yo2_mm);
   m_path_find_pg.put_mob_point_obst(xo3_mm, yo3_mm);
+  printf ("TIME : put_mob_point_obst() : %lld\n", dbg_get_time());
 
   /* put free zone around our robot initial position */
+  dbg_reset_time();
   m_path_find_pg.put_free_zone(x_start_mm, y_start_mm);
+  printf ("TIME : put_free_zone() : %lld\n", dbg_get_time());
 
   /* astar test */
+  dbg_reset_time();
   m_core_astar.setMatrix(m_path_find_pg.X_SZ_CM, m_path_find_pg.Y_SZ_CM);
   m_path_find_pg.feed_astar(m_core_astar);
+  printf ("TIME : feed_astar() : %lld\n", dbg_get_time());
 
   m_core_astar.setWay(x_start, y_start+Y_OFF_CM, 1);
   m_core_astar.setWay(x_end,   y_end+Y_OFF_CM,   1);
@@ -1836,10 +1981,14 @@ void RobotStrat::dbg_astar_test(int x_start_mm, int y_start_mm,
   m_core_astar.setStart(x_start, y_start+Y_OFF_CM);
   m_core_astar.setEnd(x_end, y_end+Y_OFF_CM);
 
+  dbg_reset_time();
   list<pair<UINT, UINT>> path= m_core_astar.getPathOnlyIfNeed(true, &isNewPath);
   printf ("path(OnlyIfNeed).size() = %d\n",(int)path.size());
+  printf ("TIME : getPathOnlyIfNeed() : %lld\n", dbg_get_time());
 
+  dbg_reset_time();
   path = m_core_astar.getPath(AStarPathType::raw);
+  printf ("TIME : getPath() : %lld\n", dbg_get_time());
   printf ("path(raw).size() = %d\n",(int)path.size());
   if(path.size() > 0)
   {

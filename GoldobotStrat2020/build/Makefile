@@ -118,7 +118,7 @@ sim_hack2022:
 	@if [ -z $(EXTERNAL_PRJ_PATH) ]; then \
 		echo "You must define EXTERNAL_PRJ_PATH"; \
 	else \
-		make MODULE_NAME=GoldobotSimul_hack2022 $(CYGWIN_CC_DEFS) EXTRA_FLAGS=-DROS;\
+		make MODULE_NAME=GoldobotSimul_hack2022 $(CYGWIN_CC_DEFS) EXTRA_FLAGS=-DROS EXTRA_FLAGS=-DHACK2022;\
 	fi
 
 sim_tuto0:

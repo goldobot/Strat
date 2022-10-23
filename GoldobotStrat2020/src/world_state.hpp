@@ -8,10 +8,12 @@
 
 namespace goldobot
 {
-  typedef struct _environment_observable_simple {
+  typedef struct _environment_observable_bool {
     char name[64];
+    double x_mm;
+    double y_mm;
     bool value;
-  } environment_observable_simple_t;
+  } environment_observable_bool_t;
 
   typedef struct _detected_object_info {
     unsigned int timestamp_ms;
@@ -29,7 +31,7 @@ namespace goldobot
     int                             n_detected_objects;
     detected_object_info_t          detected_object[10];
     int                             n_observ;
-    environment_observable_simple_t observable[4];
+    environment_observable_bool_t   observable[4];
   } world_state_info_t;
 
   class WorldState : public GoldoThread

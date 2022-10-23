@@ -41,11 +41,13 @@ int WorldState::init()
 {
   memset (&m_s, 0, sizeof(m_s));
 
-  /* FIXME : TODO : more observables..*/
-  //m_s.n_observ = sizeof(m_s.observable)/sizeof(environment_observable_simple_t);
   m_s.n_observ = 1;
-  strncpy(m_s.observable[0].name, "GIROUETTE_SUD", sizeof (m_s.observable[0].name)-1);
+  strncpy(m_s.observable[0].name, "BLUE_OBJ", sizeof (m_s.observable[0].name)-1);
+  m_s.observable[0].x_mm  = 0;
+  m_s.observable[0].y_mm  = 0;
   m_s.observable[0].value = false;
+
+  m_s.n_detected_objects = 0;
 
   pthread_mutex_init(&m_lock, NULL);
 
@@ -98,8 +100,7 @@ bool WorldState::get_observable_value(char *observable_name)
 {
   bool val = false;
 
-#if 0 /* FIXME : TODO : polling des differents observables dans taskFunction() */
-  for (int i=0; i<n_observ; i++)
+  for (int i=0; i<m_s.n_observ; i++)
   {
     if (strcmp(m_s.observable[i].name,observable_name)==0)
     {
@@ -107,30 +108,6 @@ bool WorldState::get_observable_value(char *observable_name)
       break;
     }
   }
-#else
-  if (strcmp(m_s.observable[0].name,observable_name)==0)
-  {
-    int goldo_girouette_fd;
-    char read_buf[8];
-    int res;
-
-    read_buf[0] = 0;
-
-    goldo_girouette_fd = open ("/tmp/girouette.txt", O_RDWR);
-    if (goldo_girouette_fd<0) {
-      printf ("error opening /tmp/girouette.txt\n");
-      return false;
-    }
-    res = read (goldo_girouette_fd,read_buf,1);
-    if (res<0) {
-      printf ("error reading girouette value\n");
-    }
-
-    if (read_buf[0]=='S') val=true;
-
-    close (goldo_girouette_fd);
-  }
-#endif
 
   return val;
 }

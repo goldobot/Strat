@@ -14,6 +14,7 @@
 #include <math.h>
 #include <pthread.h>
 
+#include "goldo_conf.hpp"
 #include "world_state.hpp"
 #include "comm_zmq.hpp"
 #include "comm_nucleo.hpp"
@@ -104,9 +105,18 @@ int CommZmq::init(int port_nb)
 
 void CommZmq::taskFunction()
 {
+  goldo_conf_info_t& ci = GoldoConf::instance().c();
+
   struct timespec curr_tp;
   int curr_time_ms = 0;
-  int old_time_ms = 0;
+
+  int dbg_cnt = 0;
+  //unsigned int dbg_color_code = 0;
+  unsigned int dbg_id_code = 0;
+  double dbg_x_rel = 0.0;
+  double dbg_y_rel = 0.0;
+  double dbg_x_abs = 0.0;
+  double dbg_y_abs = 0.0;
 
 
   zmq_pollitem_t poll_items[2]; /* FIXME : DEBUG : HACK CRIDF2021 (was 1) */
@@ -129,12 +139,6 @@ void CommZmq::taskFunction()
     clock_gettime(1, &curr_tp);
 
     curr_time_ms = curr_tp.tv_sec*1000 + curr_tp.tv_nsec/1000000;
-
-    if (curr_time_ms > (old_time_ms + 100)) {
-      /* FIXME : TODO : send some heartbeat message? */
-
-      old_time_ms = curr_time_ms;
-    }
 
     if(poll_items[0].revents && ZMQ_POLLIN)
     {            
@@ -193,14 +197,15 @@ void CommZmq::taskFunction()
         RobotStrat::instance().dbg_resume_match();
         break;
       }
-    }
+    } /* if(poll_items[0].revents && ZMQ_POLLIN) */
 
-#if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
+#if 1 /* FIXME : DEBUG : HACK CRIDF2021 & DEMO2022 */
     WorldState::instance().lock();
-    int obj_id = WorldState::instance().detected_object(0).id;
+    //int obj_id = WorldState::instance().detected_object(0).id;
     int obj_time_ms = WorldState::instance().detected_object(0).timestamp_ms;
-    if((obj_id!=0) && (curr_time_ms > (obj_time_ms+1000)))
+    if((WorldState::instance().s().n_detected_objects > 0) && (curr_time_ms > (obj_time_ms+1000)))
     {
+      WorldState::instance().s().n_detected_objects = 0;
       WorldState::instance().detected_object(0).id = 0;
       //printf ("CLEAN\n");
     }
@@ -222,7 +227,6 @@ void CommZmq::taskFunction()
         int *buff_i = (int *)buff;
         if (buff_i[0]==0x7d7f1892)
         {
-          bool hit = false;
           RobotState::instance().lock();
           int l_odo_x_mm      = RobotState::instance().s().x_mm;
           int l_odo_y_mm      = RobotState::instance().s().y_mm;
@@ -233,9 +237,15 @@ void CommZmq::taskFunction()
           double cos_theta = cos(l_odo_theta_rad);
           double sin_theta = sin(l_odo_theta_rad);
 
-          unsigned int color_code = buff_i[1];
+          //unsigned int color_code = buff_i[1];
+          unsigned int id_code = buff_i[1];
           double x_rel = buff_i[2];
           double y_rel = buff_i[3];
+
+          //dbg_color_code = color_code;
+          dbg_id_code = id_code;
+          dbg_x_rel = x_rel;
+          dbg_y_rel = y_rel;
 
           double x_abs = x_rel*cos_theta - y_rel*sin_theta + l_odo_x_mm;
           double y_abs = x_rel*sin_theta + y_rel*cos_theta + l_odo_y_mm;
@@ -244,9 +254,9 @@ void CommZmq::taskFunction()
           clock_gettime(1, &curr_tp);
           int detect_time_ms = curr_tp.tv_sec*1000 + curr_tp.tv_nsec/1000000;
 
+#if 0 /* HACK CRIDF2021 */
           if ((x_abs>150.0) && (x_abs<1600.0) && (y_abs>-800.0) && (y_abs<800.0) && ((color_code==1) || (color_code==2)))
           {
-            hit = true;
             WorldState::instance().lock();
             WorldState::instance().detected_object(0).timestamp_ms = detect_time_ms;
             WorldState::instance().detected_object(0).id = 1;
@@ -255,32 +265,36 @@ void CommZmq::taskFunction()
             WorldState::instance().detected_object(0).y_mm = y_abs;
             WorldState::instance().release();
           }
+#endif
 
-#if 0
-          if (hit)
+#if 1 /* HACK DEMO2022 */
+          if ((x_abs>1200.0) && (x_abs<1550.0) && (y_abs>-700.0) && (y_abs<700.0) &&
+              ((id_code==47) || (id_code==13) || (id_code==36) || (id_code==17)))
           {
-            printf ("HIT\n");
-            char color_s[16];
-            if (color_code==1)
-            {
-              strncpy(color_s,"RED  :",16);
-            }
-            else if (color_code==2)
-            {
-              strncpy(color_s,"GREEN:",16);
-            }
-            else
-            {
-              strncpy(color_s,"?????:",16);
-            }
-
-            printf ("%s:\n", color_s);
-            printf (" Prel=<%f,%f>\n", x_rel, y_rel);
-            printf (" Pabs=<%f,%f>\n", x_abs, y_abs);
-            printf ("\n");
+            WorldState::instance().lock();
+            WorldState::instance().detected_object(0).timestamp_ms = detect_time_ms;
+            WorldState::instance().detected_object(0).id = id_code;
+            WorldState::instance().detected_object(0).attr = 0;
+            WorldState::instance().detected_object(0).x_mm = x_abs;
+            WorldState::instance().detected_object(0).y_mm = y_abs;
+            WorldState::instance().release();
           }
-#else
-          hit = hit;
+
+          WorldState::instance().s().observable[0].value = false;
+          switch (id_code)
+          {
+          case 47: /* RED */
+            break;
+          case 13: /* BLUE */
+            WorldState::instance().s().observable[0].value = false;
+            WorldState::instance().s().observable[0].x_mm  = x_abs;
+            WorldState::instance().s().observable[0].y_mm  = y_abs;
+            break;
+          case 36: /* GREEN */
+            break;
+          case 17: /* NONE */
+            break;
+          }
 #endif
         }
         else
@@ -292,8 +306,51 @@ void CommZmq::taskFunction()
       {
         printf ("DETECT ERROR (bytes_read=%d)\n", (int)bytes_read);
       }
-    }
+    } /* if(poll_items[1].revents && ZMQ_POLLIN) */
+#endif /* FIXME : DEBUG : HACK CRIDF2021 & DEMO2022 */
+
+#if 1 /* FIXME : DEBUG : DISPLAY */
+    if(dbg_cnt==1)
+    {
+      if((ci.conf_dbg_log_enabled) && (WorldState::instance().s().n_detected_objects > 0))
+      {
+        printf ("DETECT:\n");
+
+#if 0 /* CRIDF2021 */
+        char color_s[16];
+        if (dbg_color_code==1)
+        {
+          strncpy(color_s,"RED  :",16);
+        }
+        else if (dbg_color_code==2)
+        {
+          strncpy(color_s,"GREEN:",16);
+        }
+        else
+        {
+          strncpy(color_s,"?????:",16);
+        }
+        printf ("%s:\n", color_s);
+        printf (" Prel=<%f,%f>\n", dbg_x_rel, dbg_y_rel);
+        printf (" Pabs=<%f,%f>\n", dbg_x_abs, dbg_y_abs);
+        printf ("\n");
 #endif
+
+#if 1 /* DEMO2022 */
+        printf (" ID=%d\n", dbg_id_code);
+        printf (" Prel=<%f,%f>\n", dbg_x_rel, dbg_y_rel);
+        printf (" Pabs=<%f,%f>\n", dbg_x_abs, dbg_y_abs);
+        printf ("\n");
+#endif
+      } /* if(WorldState::instance().s().n_detected_objects > 0) */
+
+      dbg_cnt = 0;
+    }
+    else
+    {
+      dbg_cnt++;
+    }
+#endif /* FIXME : DEBUG : DISPLAY */
 
 #ifndef WIN32
     pthread_yield();

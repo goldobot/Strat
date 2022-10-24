@@ -263,6 +263,7 @@ void CommZmq::taskFunction()
             WorldState::instance().detected_object(0).attr = color_code;
             WorldState::instance().detected_object(0).x_mm = x_abs;
             WorldState::instance().detected_object(0).y_mm = y_abs;
+            WorldState::instance().s().n_detected_objects = 1;
             WorldState::instance().release();
           }
 #endif
@@ -277,6 +278,7 @@ void CommZmq::taskFunction()
             WorldState::instance().detected_object(0).attr = 0;
             WorldState::instance().detected_object(0).x_mm = x_abs;
             WorldState::instance().detected_object(0).y_mm = y_abs;
+            WorldState::instance().s().n_detected_objects = 1;
             WorldState::instance().release();
           }
 

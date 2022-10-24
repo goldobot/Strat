@@ -230,7 +230,7 @@ void CommZmq::taskFunction()
           RobotState::instance().lock();
           int l_odo_x_mm      = RobotState::instance().s().x_mm;
           int l_odo_y_mm      = RobotState::instance().s().y_mm;
-          int l_odo_theta_deg = RobotState::instance().s().theta_deg;
+          double l_odo_theta_deg = RobotState::instance().s().theta_deg;
           RobotState::instance().release();
           double l_odo_theta_rad = l_odo_theta_deg*M_PI/180.0;
 

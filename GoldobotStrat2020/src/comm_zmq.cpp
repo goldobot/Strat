@@ -249,6 +249,8 @@ void CommZmq::taskFunction()
 
           double x_abs = x_rel*cos_theta - y_rel*sin_theta + l_odo_x_mm;
           double y_abs = x_rel*sin_theta + y_rel*cos_theta + l_odo_y_mm;
+          dbg_x_abs = x_abs;
+          dbg_y_abs = y_abs;
 
           struct timespec curr_tp;
           clock_gettime(1, &curr_tp);
@@ -334,14 +336,20 @@ void CommZmq::taskFunction()
         }
         printf ("%s:\n", color_s);
         printf (" Prel=<%f,%f>\n", dbg_x_rel, dbg_y_rel);
-        printf (" Pabs=<%f,%f>\n", dbg_x_abs, dbg_y_abs);
+        //printf (" Pabs=<%f,%f>\n", dbg_x_abs, dbg_y_abs);
+        printf (" OBJ : <%f,%f>\n",
+                WorldState::instance().detected_object(0).x_mm,
+                WorldState::instance().detected_object(0).y_mm);
         printf ("\n");
 #endif
 
 #if 1 /* DEMO2022 */
         printf (" ID=%d\n", dbg_id_code);
         printf (" Prel=<%f,%f>\n", dbg_x_rel, dbg_y_rel);
-        printf (" Pabs=<%f,%f>\n", dbg_x_abs, dbg_y_abs);
+        //printf (" Pabs=<%f,%f>\n", dbg_x_abs, dbg_y_abs);
+        printf (" OBJ : <%f,%f>\n",
+                WorldState::instance().detected_object(0).x_mm,
+                WorldState::instance().detected_object(0).y_mm);
         printf ("\n");
 #endif
       } /* if(WorldState::instance().s().n_detected_objects > 0) */

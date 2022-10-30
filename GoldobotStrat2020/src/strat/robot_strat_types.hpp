@@ -28,6 +28,11 @@ namespace goldobot
 
     /* FIXME : TODO : add other types */
 
+#if 1 /* FIXME : DEBUG : HACK DEMO2022 */
+    STRAT_ACTION_TYPE_FAST_TGT_POSE = 96,
+    STRAT_ACTION_TYPE_FAST_TGT_OBJECT = 97,
+#endif
+
 #if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
     STRAT_ACTION_TYPE_CRIDF2021 = 128,
 #endif
@@ -89,6 +94,28 @@ namespace goldobot
     char condition[64];
     char target_if_true[32];
   } strat_action_branch_t;
+
+#if 1 /* FIXME : DEBUG : HACK DEMO2022 */
+  typedef struct _strat_action_fast_tgt_pose {
+    strat_action_header_t h;
+    float speed;
+    float accel;
+    float deccel;
+    strat_way_point_t target;
+    strat_way_point_t wp[2];
+  } strat_action_fast_tgt_pose_t;
+
+  typedef struct _strat_action_fast_tgt_object {
+    strat_action_header_t h;
+    float speed;
+    float accel;
+    float deccel;
+    unsigned int obj_type;
+    unsigned int obj_attr;
+    strat_way_point_t wp[2];
+    bool target_ok;
+  } strat_action_fast_tgt_object_t;
+#endif
 
 #if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
   typedef struct _strat_action_cridf2021 {

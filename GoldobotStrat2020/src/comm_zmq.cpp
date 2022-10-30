@@ -25,6 +25,14 @@
 using namespace goldobot;
 
 
+#if 1 /* FIXME : DEBUG : HACK DEMO2022 */
+#define OBJ_ATTR_RED    47
+#define OBJ_ATTR_BLUE   13
+#define OBJ_ATTR_GREEN  36
+#define OBJ_ATTR_GRAY   17
+#endif
+
+
 CommZmq CommZmq::s_instance;
 
 CommZmq& CommZmq::instance()
@@ -111,12 +119,11 @@ void CommZmq::taskFunction()
   int curr_time_ms = 0;
 
   int dbg_cnt = 0;
-  //unsigned int dbg_color_code = 0;
-  unsigned int dbg_id_code = 0;
+  unsigned int dbg_attr_code = 0;
   double dbg_x_rel = 0.0;
   double dbg_y_rel = 0.0;
-  double dbg_x_abs = 0.0;
-  double dbg_y_abs = 0.0;
+  //double dbg_x_abs = 0.0;
+  //double dbg_y_abs = 0.0;
 
 
   zmq_pollitem_t poll_items[2]; /* FIXME : DEBUG : HACK CRIDF2021 (was 1) */
@@ -201,12 +208,13 @@ void CommZmq::taskFunction()
 
 #if 1 /* FIXME : DEBUG : HACK CRIDF2021 & DEMO2022 */
     WorldState::instance().lock();
-    //int obj_id = WorldState::instance().detected_object(0).id;
+    //int obj_type = WorldState::instance().detected_object(0).type;
     int obj_time_ms = WorldState::instance().detected_object(0).timestamp_ms;
     if((WorldState::instance().s().n_detected_objects > 0) && (curr_time_ms > (obj_time_ms+1000)))
     {
       WorldState::instance().s().n_detected_objects = 0;
-      WorldState::instance().detected_object(0).id = 0;
+      WorldState::instance().detected_object(0).type = 0;
+      WorldState::instance().detected_object(0).attr = 0;
       //printf ("CLEAN\n");
     }
     WorldState::instance().release();
@@ -237,32 +245,30 @@ void CommZmq::taskFunction()
           double cos_theta = cos(l_odo_theta_rad);
           double sin_theta = sin(l_odo_theta_rad);
 
-          //unsigned int color_code = buff_i[1];
-          unsigned int id_code = buff_i[1];
+          unsigned int attr_code = buff_i[1];
           double x_rel = buff_i[2];
           double y_rel = buff_i[3];
 
-          //dbg_color_code = color_code;
-          dbg_id_code = id_code;
+          dbg_attr_code = attr_code;
           dbg_x_rel = x_rel;
           dbg_y_rel = y_rel;
 
           double x_abs = x_rel*cos_theta - y_rel*sin_theta + l_odo_x_mm;
           double y_abs = x_rel*sin_theta + y_rel*cos_theta + l_odo_y_mm;
-          dbg_x_abs = x_abs;
-          dbg_y_abs = y_abs;
+          //dbg_x_abs = x_abs;
+          //dbg_y_abs = y_abs;
 
           struct timespec curr_tp;
           clock_gettime(1, &curr_tp);
           int detect_time_ms = curr_tp.tv_sec*1000 + curr_tp.tv_nsec/1000000;
 
 #if 0 /* HACK CRIDF2021 */
-          if ((x_abs>150.0) && (x_abs<1600.0) && (y_abs>-800.0) && (y_abs<800.0) && ((color_code==1) || (color_code==2)))
+          if ((x_abs>150.0) && (x_abs<1600.0) && (y_abs>-800.0) && (y_abs<800.0) && ((attr_code==1) || (attr_code==2)))
           {
             WorldState::instance().lock();
             WorldState::instance().detected_object(0).timestamp_ms = detect_time_ms;
-            WorldState::instance().detected_object(0).id = 1;
-            WorldState::instance().detected_object(0).attr = color_code;
+            WorldState::instance().detected_object(0).type = 1;
+            WorldState::instance().detected_object(0).attr = attr_code;
             WorldState::instance().detected_object(0).x_mm = x_abs;
             WorldState::instance().detected_object(0).y_mm = y_abs;
             WorldState::instance().s().n_detected_objects = 1;
@@ -272,12 +278,12 @@ void CommZmq::taskFunction()
 
 #if 1 /* HACK DEMO2022 */
           if ((x_abs>1200.0) && (x_abs<1550.0) && (y_abs>-700.0) && (y_abs<700.0) &&
-              ((id_code==47) || (id_code==13) || (id_code==36) || (id_code==17)))
+              ((attr_code==OBJ_ATTR_RED) || (attr_code==OBJ_ATTR_BLUE) || (attr_code==OBJ_ATTR_GREEN) || (attr_code==OBJ_ATTR_GRAY)))
           {
             WorldState::instance().lock();
             WorldState::instance().detected_object(0).timestamp_ms = detect_time_ms;
-            WorldState::instance().detected_object(0).id = id_code;
-            WorldState::instance().detected_object(0).attr = 0;
+            WorldState::instance().detected_object(0).type = 1;
+            WorldState::instance().detected_object(0).attr = attr_code;
             WorldState::instance().detected_object(0).x_mm = x_abs;
             WorldState::instance().detected_object(0).y_mm = y_abs;
             WorldState::instance().s().n_detected_objects = 1;
@@ -285,18 +291,18 @@ void CommZmq::taskFunction()
           }
 
           WorldState::instance().s().observable[0].value = false;
-          switch (id_code)
+          switch (attr_code)
           {
-          case 47: /* RED */
+          case OBJ_ATTR_RED:
             break;
-          case 13: /* BLUE */
+          case OBJ_ATTR_BLUE:
             WorldState::instance().s().observable[0].value = false;
             WorldState::instance().s().observable[0].x_mm  = x_abs;
             WorldState::instance().s().observable[0].y_mm  = y_abs;
             break;
-          case 36: /* GREEN */
+          case OBJ_ATTR_GREEN:
             break;
-          case 17: /* NONE */
+          case OBJ_ATTR_GRAY:
             break;
           }
 #endif
@@ -322,11 +328,11 @@ void CommZmq::taskFunction()
 
 #if 0 /* CRIDF2021 */
         char color_s[16];
-        if (dbg_color_code==1)
+        if (dbg_attr_code==1)
         {
           strncpy(color_s,"RED  :",16);
         }
-        else if (dbg_color_code==2)
+        else if (dbg_attr_code==2)
         {
           strncpy(color_s,"GREEN:",16);
         }
@@ -344,7 +350,7 @@ void CommZmq::taskFunction()
 #endif
 
 #if 1 /* DEMO2022 */
-        printf (" ID=%d\n", dbg_id_code);
+        printf (" ID=%d\n", dbg_attr_code);
         printf (" Prel=<%f,%f>\n", dbg_x_rel, dbg_y_rel);
         //printf (" Pabs=<%f,%f>\n", dbg_x_abs, dbg_y_abs);
         printf (" OBJ : <%f,%f>\n",

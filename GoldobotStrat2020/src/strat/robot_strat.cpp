@@ -534,6 +534,14 @@ void RobotStrat::taskFunction()
               (strat_action_goto_astar_t *) my_action;
             m_task_dbg->m_current_action_final_wp = act_ast->target;
           }
+#if 1 /* FIXME : DEBUG : HACK DEMO2022 */
+          else if (my_action->h.type==STRAT_ACTION_TYPE_FAST_TGT_POSE)
+          {
+            strat_action_fast_tgt_pose_t *act_tgt= 
+              (strat_action_fast_tgt_pose_t *) my_action;
+            m_task_dbg->m_current_action_final_wp = act_tgt->target;
+          }
+#endif
           else if (my_action->h.type==STRAT_ACTION_TYPE_TRAJ)
           {
             strat_action_traj_t *act_traj= 
@@ -577,7 +585,9 @@ void RobotStrat::taskFunction()
 
       action_ok = do_STRAT_STATE_INIT_ACTION(my_action, true);
 
-      if (my_action->h.type==STRAT_ACTION_TYPE_GOTO_ASTAR)
+      if ((my_action->h.type==STRAT_ACTION_TYPE_GOTO_ASTAR) ||
+          (my_action->h.type==STRAT_ACTION_TYPE_FAST_TGT_POSE) ||
+          (my_action->h.type==STRAT_ACTION_TYPE_FAST_TGT_OBJECT))
       {
         soft_deadline_ms = my_time_ms + my_action->h.min_duration_ms;
         hard_deadline_ms = my_time_ms + my_action->h.max_duration_ms;
@@ -624,7 +634,9 @@ void RobotStrat::taskFunction()
         state_change_dbg = false;
       }
 
-      if (my_action->h.type==STRAT_ACTION_TYPE_GOTO_ASTAR)
+      if ((my_action->h.type==STRAT_ACTION_TYPE_GOTO_ASTAR) ||
+          (my_action->h.type==STRAT_ACTION_TYPE_FAST_TGT_POSE) ||
+          (my_action->h.type==STRAT_ACTION_TYPE_FAST_TGT_OBJECT))
       {
         state_change_dbg = check_deadlines_and_change_state(
           my_time_ms, soft_deadline_ms, hard_deadline_ms, STRAT_STATE_EXEC_ACTION, "INIT DONE");
@@ -1316,6 +1328,55 @@ bool RobotStrat::do_STRAT_STATE_INIT_ACTION(strat_action_t *my_action, bool send
     printf (" STRAT_ACTION_TYPE_BRANCH\n");
     action_ok = true;
     break;
+#if 1 /* FIXME : DEBUG : HACK DEMO2022 */
+  case STRAT_ACTION_TYPE_FAST_TGT_POSE:
+  {
+    strat_action_fast_tgt_pose_t *act_tgt= 
+      (strat_action_fast_tgt_pose_t *) my_action;
+    printf (" STRAT_ACTION_TYPE_FAST_TGT_POSE\n");
+    action_ok = true;
+    act_tgt->wp[0].x_mm = RobotState::instance().s().x_mm;
+    act_tgt->wp[0].y_mm = RobotState::instance().s().y_mm;
+    act_tgt->wp[1].x_mm = act_tgt->target.x_mm;
+    act_tgt->wp[1].y_mm = act_tgt->target.y_mm;
+    if (action_ok)
+    {
+      /* FIXME : TODO : configuration for speed, acc and dec.. */
+      cmd_point_to (&(act_tgt->wp[1]), 3.5, 10.0, 10.0);
+    }
+  }
+  break;
+  case STRAT_ACTION_TYPE_FAST_TGT_OBJECT:
+  {
+    strat_action_fast_tgt_object_t *act_tgt= 
+      (strat_action_fast_tgt_object_t *) my_action;
+    printf (" STRAT_ACTION_TYPE_FAST_TGT_OBJECT\n");
+    action_ok = true;
+    int n_obj = WorldState::instance().s().n_detected_objects;
+    unsigned int obj_type = WorldState::instance().detected_object(0).type;
+    unsigned int obj_attr = WorldState::instance().detected_object(0).attr;
+    if ((n_obj>0) && (obj_type==act_tgt->obj_type) && (obj_attr==act_tgt->obj_attr))
+    {
+      act_tgt->target_ok = true;
+      act_tgt->wp[0].x_mm = RobotState::instance().s().x_mm;
+      act_tgt->wp[0].y_mm = RobotState::instance().s().y_mm;
+      act_tgt->wp[1].x_mm = WorldState::instance().detected_object(0).x_mm;
+      act_tgt->wp[1].y_mm = WorldState::instance().detected_object(0).y_mm;
+      printf (" TARGET AT : <%d,%d>\n", (int)act_tgt->wp[1].x_mm, (int)act_tgt->wp[1].x_mm);
+    }
+    else
+    {
+      act_tgt->target_ok = false;
+      printf (" NO TARGET!\n");
+    }
+    if (act_tgt->target_ok)
+    {
+      /* FIXME : TODO : configuration for speed, acc and dec.. */
+      cmd_point_to (&(act_tgt->wp[1]), 3.5, 10.0, 10.0);
+    }
+  }
+  break;
+#endif
 #if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
   case STRAT_ACTION_TYPE_CRIDF2021:
     printf (" STRAT_ACTION_TYPE_CRIDF2021\n");
@@ -1341,8 +1402,8 @@ void RobotStrat::do_STRAT_STATE_EXEC_ACTION(strat_action_t *my_action)
   {
     strat_action_traj_t *act_traj= (strat_action_traj_t *) my_action;
 #if 1 /* FIXME : DEBUG : fix fscking bug!!! */
-  act_traj->wp[0].x_mm = RobotState::instance().s().x_mm;
-  act_traj->wp[0].y_mm = RobotState::instance().s().y_mm;
+    act_traj->wp[0].x_mm = RobotState::instance().s().x_mm;
+    act_traj->wp[0].y_mm = RobotState::instance().s().y_mm;
 #endif
     cmd_traj (act_traj->wp, act_traj->nwp, 
               act_traj->speed, act_traj->accel, act_traj->deccel);
@@ -1373,6 +1434,27 @@ void RobotStrat::do_STRAT_STATE_EXEC_ACTION(strat_action_t *my_action)
   break;
   case STRAT_ACTION_TYPE_BRANCH:
     break;
+#if 1 /* FIXME : DEBUG : HACK DEMO2022 */
+  case STRAT_ACTION_TYPE_FAST_TGT_POSE:
+  {
+    strat_action_fast_tgt_pose_t *act_tgt= 
+      (strat_action_fast_tgt_pose_t *) my_action;
+    cmd_traj (act_tgt->wp, 2, 
+              act_tgt->speed, act_tgt->accel, act_tgt->deccel);
+  }
+  break;
+  case STRAT_ACTION_TYPE_FAST_TGT_OBJECT:
+  {
+    strat_action_fast_tgt_object_t *act_tgt= 
+      (strat_action_fast_tgt_object_t *) my_action;
+    if (act_tgt->target_ok)
+    {
+      cmd_traj (act_tgt->wp, 2, 
+                act_tgt->speed, act_tgt->accel, act_tgt->deccel);
+    }
+  }
+  break;
+#endif
 #if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
   case STRAT_ACTION_TYPE_CRIDF2021:
     break;
@@ -2224,21 +2306,21 @@ void TaskCRIDF2021::do_step(float _time_ms)
 
 #if 0 /* FIXME : DEBUG : TEST */
     m_target.timestamp_ms = _time_ms;
-    m_target.id = 1;
+    m_target.type = 1;
     m_target.attr = 2; /* GREEN */
     m_target.x_mm = 800;
     m_target.y_mm = 400;
 #else
     WorldState::instance().lock();
     m_target.timestamp_ms = WorldState::instance().detected_object(0).timestamp_ms;
-    m_target.id           = WorldState::instance().detected_object(0).id;
+    m_target.type         = WorldState::instance().detected_object(0).type;
     m_target.attr         = WorldState::instance().detected_object(0).attr;
     m_target.x_mm         = WorldState::instance().detected_object(0).x_mm;
     m_target.y_mm         = WorldState::instance().detected_object(0).y_mm;
     WorldState::instance().release();
 #endif
 
-    if (m_target.id != 0)
+    if (m_target.type != 0)
     {
       printf ("  target : %s@<%f,%f>\n", (m_target.attr==1)?"RED":"GREEN",m_target.x_mm, m_target.y_mm);
       set_state(TASK_STATE_POINT_TO_TARGET, _time_ms);

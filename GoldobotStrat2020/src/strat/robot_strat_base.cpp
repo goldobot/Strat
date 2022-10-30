@@ -285,6 +285,50 @@ int StratTask::read_yaml_conf(YAML::Node &yconf)
       m_action_list[i] = (strat_action_t *) action;
       curr_act_p += sizeof(*action);
     }
+#if 1 /* FIXME : DEBUG : HACK DEMO2022 */
+    else if (strcmp(act_type_str,"FAST_TGT_POSE")==0)
+    {
+      strat_action_fast_tgt_pose_t *action = (strat_action_fast_tgt_pose_t *) curr_act_p;
+      action->h.type = STRAT_ACTION_TYPE_FAST_TGT_POSE;
+      my_str = act_node["min_duration_ms"].as<std::string>().c_str();
+      action->h.min_duration_ms = strtoul(my_str, NULL, 10);
+      my_str = act_node["max_duration_ms"].as<std::string>().c_str();
+      action->h.max_duration_ms = strtoul(my_str, NULL, 10);
+      my_str = act_node["param_fast_tgt_pose"]["speed"].as<std::string>().c_str();
+      action->speed = strtof(my_str, NULL);
+      my_str = act_node["param_fast_tgt_pose"]["accel"].as<std::string>().c_str();
+      action->accel = strtof(my_str, NULL);
+      my_str = act_node["param_fast_tgt_pose"]["deccel"].as<std::string>().c_str();
+      action->deccel = strtof(my_str, NULL);
+      my_str = act_node["param_fast_tgt_pose"]["target"][0].as<std::string>().c_str();
+      action->target.x_mm = strtof(my_str, NULL);
+      my_str = act_node["param_fast_tgt_pose"]["target"][1].as<std::string>().c_str();
+      action->target.y_mm = strtof(my_str, NULL);
+      m_action_list[i] = (strat_action_t *) action;
+      curr_act_p += sizeof(*action);
+    }
+    else if (strcmp(act_type_str,"FAST_TGT_OBJECT")==0)
+    {
+      strat_action_fast_tgt_object_t *action = (strat_action_fast_tgt_object_t *) curr_act_p;
+      action->h.type = STRAT_ACTION_TYPE_FAST_TGT_OBJECT;
+      my_str = act_node["min_duration_ms"].as<std::string>().c_str();
+      action->h.min_duration_ms = strtoul(my_str, NULL, 10);
+      my_str = act_node["max_duration_ms"].as<std::string>().c_str();
+      action->h.max_duration_ms = strtoul(my_str, NULL, 10);
+      my_str = act_node["param_fast_tgt_object"]["speed"].as<std::string>().c_str();
+      action->speed = strtof(my_str, NULL);
+      my_str = act_node["param_fast_tgt_object"]["accel"].as<std::string>().c_str();
+      action->accel = strtof(my_str, NULL);
+      my_str = act_node["param_fast_tgt_object"]["deccel"].as<std::string>().c_str();
+      action->deccel = strtof(my_str, NULL);
+      my_str = act_node["param_fast_tgt_object"]["obj_type"].as<std::string>().c_str();
+      action->obj_type = strtoul(my_str, NULL, 10);
+      my_str = act_node["param_fast_tgt_object"]["obj_attr"].as<std::string>().c_str();
+      action->obj_attr = strtoul(my_str, NULL, 10);
+      m_action_list[i] = (strat_action_t *) action;
+      curr_act_p += sizeof(*action);
+    }
+#endif
 #if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
     else if (strcmp(act_type_str,"CRIDF2021")==0)
     {
@@ -712,11 +756,6 @@ void StratPlayground::send_playground_ppm()
 void StratTask::dbg_dump_task()
 {
   int i,j;
-  strat_action_traj_t       *act_traj   = NULL;
-  strat_action_point_to_t   *act_point  = NULL;
-  strat_action_nucleo_seq_t *act_nuc    = NULL;
-  strat_action_goto_astar_t *act_astar  = NULL;
-  strat_action_branch_t     *act_branch = NULL;
 
   printf ("\n");
   printf ("dbg_task:\n");
@@ -750,7 +789,8 @@ void StratTask::dbg_dump_task()
       printf ("    type: STOP\n");
       break;
     case STRAT_ACTION_TYPE_TRAJ:
-      act_traj = (strat_action_traj_t *)act;
+    {
+      strat_action_traj_t *act_traj = (strat_action_traj_t *)act;
       printf ("    type: TRAJ\n");
       printf ("    param_traj:\n");
       printf ("      speed  : %f\n", act_traj->speed);
@@ -764,8 +804,10 @@ void StratTask::dbg_dump_task()
                 act_traj->wp[j].x_mm, act_traj->wp[j].y_mm);
       }
       break;
+    }
     case STRAT_ACTION_TYPE_POINT_TO:
-      act_point = (strat_action_point_to_t *)act;
+    {
+      strat_action_point_to_t *act_point = (strat_action_point_to_t *)act;
       printf ("    type: POINT_TO\n");
       printf ("    param_point:\n");
       printf ("      speed  : %f\n", act_point->speed);
@@ -775,14 +817,18 @@ void StratTask::dbg_dump_task()
       printf ("        [%8.1f,%8.1f]\n", 
               act_point->target.x_mm, act_point->target.y_mm);
       break;
+    }
     case STRAT_ACTION_TYPE_NUCLEO_SEQ:
-      act_nuc = (strat_action_nucleo_seq_t *)act;
+    {
+      strat_action_nucleo_seq_t *act_nuc = (strat_action_nucleo_seq_t *)act;
       printf ("    type: NUCLEO_SEQ\n");
       printf ("    param_nucleo_seq:\n");
       printf ("      nucleo_seq_id: %d\n", act_nuc->nucleo_seq_id);
       break;
+    }
     case STRAT_ACTION_TYPE_GOTO_ASTAR:
-      act_astar = (strat_action_goto_astar_t *)act;
+    {
+      strat_action_goto_astar_t *act_astar = (strat_action_goto_astar_t *)act;
       printf ("    type: GOTO_ASTAR\n");
       printf ("    param_goto_astar:\n");
       printf ("      speed  : %f\n", act_astar->speed);
@@ -792,13 +838,43 @@ void StratTask::dbg_dump_task()
       printf ("        [%8.1f,%8.1f]\n", 
               act_astar->target.x_mm, act_astar->target.y_mm);
       break;
+    }
     case STRAT_ACTION_TYPE_BRANCH:
-      act_branch = (strat_action_branch_t *)act;
+    {
+      strat_action_branch_t *act_branch = (strat_action_branch_t *)act;
       printf ("    type: BRANCH\n");
       printf ("    param_branch:\n");
       printf ("      condition       : %s\n", act_branch->condition);
       printf ("      target_if_true  : %s\n", act_branch->target_if_true);
       break;
+    }
+#if 1 /* FIXME : DEBUG : HACK DEMO2022 */
+    case STRAT_ACTION_TYPE_FAST_TGT_POSE:
+    {
+      strat_action_fast_tgt_pose_t *act_fast_tgt_pose = (strat_action_fast_tgt_pose_t *)act;
+      printf ("    type: FAST_TGT_POSE\n");
+      printf ("    param_fast_tgt_pose:\n");
+      printf ("      speed  : %f\n", act_fast_tgt_pose->speed);
+      printf ("      accel  : %f\n", act_fast_tgt_pose->accel);
+      printf ("      deccel : %f\n", act_fast_tgt_pose->deccel);
+      printf ("      target:\n");
+      printf ("        [%8.1f,%8.1f]\n", 
+              act_fast_tgt_pose->target.x_mm, act_fast_tgt_pose->target.y_mm);
+      break;
+    }
+    case STRAT_ACTION_TYPE_FAST_TGT_OBJECT:
+    {
+      strat_action_fast_tgt_object_t *act_fast_tgt_object = (strat_action_fast_tgt_object_t *)act;
+      printf ("    type: FAST_TGT_OBJECT\n");
+      printf ("    param_fast_tgt_object:\n");
+      printf ("      speed  : %f\n", act_fast_tgt_object->speed);
+      printf ("      accel  : %f\n", act_fast_tgt_object->accel);
+      printf ("      deccel : %f\n", act_fast_tgt_object->deccel);
+      printf ("      obj_type : %d\n", act_fast_tgt_object->obj_type);
+      printf ("      obj_attr : %d\n", act_fast_tgt_object->obj_attr);
+      break;
+    }
+#endif
 #if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
     case STRAT_ACTION_TYPE_CRIDF2021:
       printf ("    type: CRIDF2021\n");

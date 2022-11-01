@@ -345,6 +345,11 @@ void RobotStrat::taskFunction()
   m_task_cridf2021->init(is_neg);
 #endif
 
+#ifndef WIN32
+    usleep(100000);
+#else
+    Sleep(100);
+#endif
   printf ("========================================\n");
 
   while(!m_stop_task)
@@ -600,8 +605,9 @@ void RobotStrat::taskFunction()
             m_task_dbg->m_current_action_final_wp.x_mm = 1000.0;
             m_task_dbg->m_current_action_final_wp.y_mm = 0.0;
           }
-          printf (" Got action : %s (%d)\n", action_name(my_action->h.type), my_action->h.type);
-          printf (" Final wp : <%f,%f>\n",
+          printf ("ACTION %d : %s (%d)\n", m_task_dbg->m_curr_act_idx, action_name(my_action->h.type), my_action->h.type);
+          printf (" -label : %s\n", my_action->h.label);
+          printf (" -final wp : <%f,%f>\n",
                   m_task_dbg->m_current_action_final_wp.x_mm,
                   m_task_dbg->m_current_action_final_wp.y_mm);
           printf ("\n");
@@ -649,17 +655,25 @@ void RobotStrat::taskFunction()
         }
         else if (my_action->h.type==STRAT_ACTION_TYPE_FAST_TGT_OBJECT)
         {
-          strat_action_fast_tgt_object_t *act_tgt= (strat_action_fast_tgt_object_t *) my_action;
-          int fallback_idx = m_task_dbg->get_action_idx_with_label(act_tgt->fallback_action);
-          if (fallback_idx<0)
+          strat_action_fast_tgt_object_t *act_tgt= 
+            (strat_action_fast_tgt_object_t *) my_action;
+          if (act_tgt->target_ok)
           {
-            printf (" Warning : Cannot find action with label '%s'! (no fallback action)\n", act_tgt->fallback_action);
-            m_strat_state = STRAT_STATE_END_ACTION;
+            m_strat_state = STRAT_STATE_WAIT_END_INIT;
           }
           else
           {
-            m_task_dbg->m_curr_act_idx = fallback_idx;
-            m_strat_state = STRAT_STATE_GET_ACTION;
+            int fallback_idx = m_task_dbg->get_action_idx_with_label(act_tgt->fallback_action);
+            if (fallback_idx<0)
+            {
+              printf (" Warning : Cannot find action with label '%s'! (no fallback action)\n", act_tgt->fallback_action);
+              m_strat_state = STRAT_STATE_END_ACTION;
+            }
+            else
+            {
+              m_task_dbg->m_curr_act_idx = fallback_idx;
+              m_strat_state = STRAT_STATE_GET_ACTION;
+            }
           }
         }
         else

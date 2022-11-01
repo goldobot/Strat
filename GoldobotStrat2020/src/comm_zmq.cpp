@@ -30,6 +30,11 @@ using namespace goldobot;
 #define OBJ_ATTR_BLUE   13
 #define OBJ_ATTR_GREEN  36
 #define OBJ_ATTR_GRAY   17
+
+#define DETECTION_ZONE_X_MIN  ( 1000)
+#define DETECTION_ZONE_X_MAX  ( 1800)
+#define DETECTION_ZONE_Y_MIN  (-1000)
+#define DETECTION_ZONE_Y_MAX  ( 1000)
 #endif
 
 
@@ -277,7 +282,8 @@ void CommZmq::taskFunction()
 #endif
 
 #if 1 /* HACK DEMO2022 */
-          if ((x_abs>1200.0) && (x_abs<1550.0) && (y_abs>-700.0) && (y_abs<700.0) &&
+          if ((x_abs>DETECTION_ZONE_X_MIN) && (x_abs<DETECTION_ZONE_X_MAX) &&
+              (y_abs>DETECTION_ZONE_Y_MIN) && (y_abs<DETECTION_ZONE_Y_MAX) &&
               ((attr_code==OBJ_ATTR_RED) || (attr_code==OBJ_ATTR_BLUE) || (attr_code==OBJ_ATTR_GREEN) || (attr_code==OBJ_ATTR_GRAY)))
           {
             WorldState::instance().lock();

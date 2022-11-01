@@ -325,6 +325,8 @@ int StratTask::read_yaml_conf(YAML::Node &yconf)
       action->obj_type = strtoul(my_str, NULL, 10);
       my_str = act_node["param_fast_tgt_object"]["obj_attr"].as<std::string>().c_str();
       action->obj_attr = strtoul(my_str, NULL, 10);
+      my_str = act_node["param_fast_tgt_object"]["fallback_action"].as<std::string>().c_str();
+      strncpy(action->fallback_action, my_str, sizeof (action->fallback_action)-1);
       m_action_list[i] = (strat_action_t *) action;
       curr_act_p += sizeof(*action);
     }

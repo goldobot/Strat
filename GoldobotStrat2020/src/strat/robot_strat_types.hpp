@@ -112,6 +112,7 @@ namespace goldobot
     float deccel;
     unsigned int obj_type;
     unsigned int obj_attr;
+    char fallback_action[32];
     strat_way_point_t wp[2];
     bool target_ok;
   } strat_action_fast_tgt_object_t;

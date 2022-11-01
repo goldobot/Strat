@@ -28,6 +28,9 @@
 using namespace goldobot;
 
 /* FIXME : DEBUG */
+#define DEBUG_DISPLAY_STATE_CHANGE false
+
+/* FIXME : DEBUG */
 #define DEBUG_OBST_AVOIDANCE 1
 
 #ifdef DEBUG_OBST_AVOIDANCE /* FIXME : DEBUG */
@@ -202,6 +205,7 @@ int RobotStrat::read_yaml_conf(char *fname)
 void RobotStrat::taskFunction()
 {
   bool state_change_dbg = true;
+  bool display_state_change_dbg = DEBUG_DISPLAY_STATE_CHANGE;
   unsigned int soft_deadline_ms = 0;
   unsigned int hard_deadline_ms = 0;
   unsigned int recov_fail_cnt = 0;
@@ -306,6 +310,8 @@ void RobotStrat::taskFunction()
   m_task_cridf2021->init(is_neg);
 #endif
 
+  printf ("========================================\n");
+
   while(!m_stop_task)
   {
     struct timespec my_tp;
@@ -381,10 +387,12 @@ void RobotStrat::taskFunction()
         cmd_propulsion_disable();
         cmd_motors_disable();
         m_strat_state = STRAT_STATE_IDDLE;
+        printf ("========================================\n");
         printf ("\n");
         printf ("GAME OVER!\n");
         printf ("match_time = %8.3f\n", 0.001*(my_time_ms-match_start_ms));
         printf ("\n");
+        printf ("========================================\n");
         state_change_dbg = true;
       }
     }
@@ -434,15 +442,15 @@ void RobotStrat::taskFunction()
     /*************************************/
     switch (m_strat_state) {
     case STRAT_STATE_INIT:
-      if (state_change_dbg)
+      if (state_change_dbg && display_state_change_dbg)
       {
         printf ("\n");
         printf ("****************************************\n");
         printf ("* STRAT_STATE_INIT *********************\n");
         printf ("****************************************\n");
         printf ("\n");
-        state_change_dbg = false;
       }
+      state_change_dbg = false;
 
       /* FIXME : TODO : define random entry point for strategy? */
       m_task_dbg->m_curr_act_idx = 0;
@@ -470,15 +478,16 @@ void RobotStrat::taskFunction()
       break;
 
     case STRAT_STATE_GET_ACTION:
-      if (state_change_dbg)
+      if (state_change_dbg && display_state_change_dbg)
       {
         printf ("\n");
         printf ("****************************************\n");
         printf ("* STRAT_STATE_GET_ACTION ***************\n");
         printf ("****************************************\n");
         printf ("\n");
-        state_change_dbg = false;
+        printf ("----------------------------------------\n");
       }
+      state_change_dbg = false;
 
       if (m_task_dbg->m_curr_act_idx < m_task_dbg->m_n_actions)
       {
@@ -573,15 +582,15 @@ void RobotStrat::taskFunction()
     case STRAT_STATE_INIT_ACTION:
       action_ok = false;
 
-      if (state_change_dbg)
+      if (state_change_dbg && display_state_change_dbg)
       {
         printf ("\n");
         printf ("****************************************\n");
         printf ("* STRAT_STATE_INIT_ACTION **************\n");
         printf ("****************************************\n");
         printf ("\n");
-        state_change_dbg = false;
       }
+      state_change_dbg = false;
 
       action_ok = do_STRAT_STATE_INIT_ACTION(my_action, true);
 
@@ -599,6 +608,21 @@ void RobotStrat::taskFunction()
         {
           printf (" STOP => Forcing IDDLE state!\n");
           m_strat_state = STRAT_STATE_IDDLE;
+        }
+        else if (my_action->h.type==STRAT_ACTION_TYPE_FAST_TGT_OBJECT)
+        {
+          strat_action_fast_tgt_object_t *act_tgt= (strat_action_fast_tgt_object_t *) my_action;
+          int fallback_idx = m_task_dbg->get_action_idx_with_label(act_tgt->fallback_action);
+          if (fallback_idx<0)
+          {
+            printf (" Warning : Cannot find action with label '%s'! (no fallback action)\n", act_tgt->fallback_action);
+            m_strat_state = STRAT_STATE_END_ACTION;
+          }
+          else
+          {
+            m_task_dbg->m_curr_act_idx = fallback_idx;
+            m_strat_state = STRAT_STATE_GET_ACTION;
+          }
         }
         else
         {
@@ -624,15 +648,15 @@ void RobotStrat::taskFunction()
       break;
 
     case STRAT_STATE_WAIT_END_INIT:
-      if (state_change_dbg)
+      if (state_change_dbg && display_state_change_dbg)
       {
         printf ("\n");
         printf ("****************************************\n");
         printf ("* STRAT_STATE_WAIT_END_INIT ************\n");
         printf ("****************************************\n");
         printf ("\n");
-        state_change_dbg = false;
       }
+      state_change_dbg = false;
 
       if ((my_action->h.type==STRAT_ACTION_TYPE_GOTO_ASTAR) ||
           (my_action->h.type==STRAT_ACTION_TYPE_FAST_TGT_POSE) ||
@@ -652,15 +676,15 @@ void RobotStrat::taskFunction()
       break;
 
     case STRAT_STATE_EXEC_ACTION:
-      if (state_change_dbg)
+      if (state_change_dbg && display_state_change_dbg)
       {
         printf ("\n");
         printf ("****************************************\n");
         printf ("* STRAT_STATE_EXEC_ACTION **************\n");
         printf ("****************************************\n");
         printf ("\n");
-        state_change_dbg = false;
       }
+      state_change_dbg = false;
 
       soft_deadline_ms = my_time_ms + my_action->h.min_duration_ms;
       hard_deadline_ms = my_time_ms + my_action->h.max_duration_ms;
@@ -689,15 +713,15 @@ void RobotStrat::taskFunction()
       break;
 
     case STRAT_STATE_WAIT_END_ACTION:
-      if (state_change_dbg)
+      if (state_change_dbg && display_state_change_dbg)
       {
         printf ("\n");
         printf ("****************************************\n");
         printf ("* STRAT_STATE_WAIT_END_ACTION **********\n");
         printf ("****************************************\n");
         printf ("\n");
-        state_change_dbg = false;
       }
+      state_change_dbg = false;
 
       state_change_dbg = check_deadlines_and_change_state(
         my_time_ms, soft_deadline_ms, hard_deadline_ms, STRAT_STATE_END_ACTION, "EXEC DONE");
@@ -706,16 +730,19 @@ void RobotStrat::taskFunction()
 
 #if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
     case STRAT_STATE_EXEC_TASK_CRIDF2021:
-      if (state_change_dbg)
+      if (state_change_dbg && display_state_change_dbg)
       {
         printf ("\n");
         printf ("****************************************\n");
         printf ("* STRAT_STATE_EXEC_TASK_CRIDF2021 ******\n");
         printf ("****************************************\n");
         printf ("\n");
-        state_change_dbg = false;
+      }
+      if (state_change_dbg)
+      {
         m_task_cridf2021->set_state(TASK_STATE_GO_TO_OBSERVATION_POINT, my_time_ms);
       }
+      state_change_dbg = false;
 
       if (my_time_ms > hard_deadline_ms)
       {
@@ -732,17 +759,20 @@ void RobotStrat::taskFunction()
 #endif
 
     case STRAT_STATE_END_ACTION:
-      if (state_change_dbg)
+      if (state_change_dbg && display_state_change_dbg)
       {
         printf ("\n");
         printf ("****************************************\n");
         printf ("* STRAT_STATE_END_ACTION ***************\n");
         printf ("****************************************\n");
         printf ("\n");
+      }
+      if (state_change_dbg)
+      {
         printf ("match_time = %8.3f\n", 0.001*(my_time_ms-match_start_ms));
         printf ("\n");
-        state_change_dbg = false;
       }
+      state_change_dbg = false;
 
       m_task_dbg->m_curr_act_idx++;
 
@@ -772,7 +802,7 @@ void RobotStrat::taskFunction()
       break;
 
     case STRAT_STATE_PAUSE_DBG:
-      if (state_change_dbg)
+      if (state_change_dbg && display_state_change_dbg)
       {
         printf ("\n");
         //printf ("****************************************\n");
@@ -780,8 +810,8 @@ void RobotStrat::taskFunction()
         //printf ("****************************************\n");
         printf ("! DBG_PAUSE\n");
         printf ("\n");
-        state_change_dbg = false;
       }
+      state_change_dbg = false;
 
       if (m_dbg_resume_match_sig)
       {
@@ -792,7 +822,7 @@ void RobotStrat::taskFunction()
       break;
 
     case STRAT_STATE_PAUSE2_DBG:
-      if (state_change_dbg)
+      if (state_change_dbg && display_state_change_dbg)
       {
         printf ("\n");
         //printf ("****************************************\n");
@@ -800,8 +830,8 @@ void RobotStrat::taskFunction()
         //printf ("****************************************\n");
         printf ("! DBG_PAUSE\n");
         printf ("\n");
-        state_change_dbg = false;
       }
+      state_change_dbg = false;
 
       if (m_dbg_resume_match_sig)
       {
@@ -812,15 +842,15 @@ void RobotStrat::taskFunction()
       break;
 
     case STRAT_STATE_END_MATCH:
-      if (state_change_dbg)
+      if (state_change_dbg && display_state_change_dbg)
       {
         printf ("\n");
         printf ("****************************************\n");
         printf ("* STRAT_END_MATCH **********************\n");
         printf ("****************************************\n");
         printf ("\n");
-        state_change_dbg = false;
       }
+      state_change_dbg = false;
 
       if (end_of_match_idx!=-1)
       {
@@ -840,30 +870,30 @@ void RobotStrat::taskFunction()
       break;
 
     case STRAT_STATE_IDDLE:
-      if (state_change_dbg)
+      if (state_change_dbg && display_state_change_dbg)
       {
         printf ("\n");
         printf ("****************************************\n");
         printf ("* STRAT_STATE_IDDLE ********************\n");
         printf ("****************************************\n");
         printf ("\n");
-        state_change_dbg = false;
       }
+      state_change_dbg = false;
 
       /* FIXME : TODO : what to do next? */
 
       break;
 
     case STRAT_STATE_ERROR:
-      if (state_change_dbg)
+      if (state_change_dbg && display_state_change_dbg)
       {
         printf ("\n");
         printf ("****************************************\n");
         printf ("* STRAT_STATE_ERROR ********************\n");
         printf ("****************************************\n");
         printf ("\n");
-        state_change_dbg = false;
       }
+      state_change_dbg = false;
 
       /* FIXME : TODO : what to do next? */
       cmd_clear_prop_err();
@@ -876,15 +906,15 @@ void RobotStrat::taskFunction()
       break;
 
     case STRAT_STATE_CANCEL_ERROR:
-      if (state_change_dbg)
+      if (state_change_dbg && display_state_change_dbg)
       {
         printf ("\n");
         printf ("****************************************\n");
         printf ("* STRAT_STATE_CANCEL_ERROR *************\n");
         printf ("****************************************\n");
         printf ("\n");
-        state_change_dbg = false;
       }
+      state_change_dbg = false;
 
       state_change_dbg = check_deadlines_and_change_state(
         my_time_ms, soft_deadline_ms, hard_deadline_ms, STRAT_STATE_END_MATCH, "CANCEL ERROR (DEBUG)");
@@ -892,15 +922,15 @@ void RobotStrat::taskFunction()
       break;
 
     case STRAT_STATE_EMERGENCY_STOP:
-      if (state_change_dbg)
+      if (state_change_dbg && display_state_change_dbg)
       {
         printf ("\n");
         printf ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
         printf ("! STRAT_STATE_EMERGENCY_STOP !!!!!!!!!!!\n");
         printf ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
         printf ("\n");
-        state_change_dbg = false;
       }
+      state_change_dbg = false;
 
 #if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
       if (my_action->h.type==STRAT_ACTION_TYPE_CRIDF2021)
@@ -919,15 +949,15 @@ void RobotStrat::taskFunction()
       break;
 
     case STRAT_STATE_EMERGENCY_WAIT:
-      if (state_change_dbg)
+      if (state_change_dbg && display_state_change_dbg)
       {
         printf ("\n");
         printf ("****************************************\n");
         printf ("* STRAT_STATE_EMERGENCY_WAIT ***********\n");
         printf ("****************************************\n");
         printf ("\n");
-        state_change_dbg = false;
       }
+      state_change_dbg = false;
 
 #ifdef DEBUG_OBST_AVOIDANCE /* FIXME : DEBUG */
       s_moved_away_reason = 0;
@@ -1024,15 +1054,15 @@ void RobotStrat::taskFunction()
       break;
 
     case STRAT_STATE_EMERGENCY_MOVE_AWAY:
-      if (state_change_dbg)
+      if (state_change_dbg && display_state_change_dbg)
       {
         printf ("\n");
         printf ("****************************************\n");
         printf ("* STRAT_STATE_EMERGENCY_MOVE_AWAY ******\n");
         printf ("****************************************\n");
         printf ("\n");
-        state_change_dbg = false;
       }
+      state_change_dbg = false;
 
       state_change_dbg = check_deadlines_and_change_state(
         my_time_ms, soft_deadline_ms, hard_deadline_ms, STRAT_STATE_NULL, "MOVE_AWAY DONE");
@@ -1060,15 +1090,15 @@ void RobotStrat::taskFunction()
       break;
 
     case STRAT_STATE_EMERGENCY_ESCAPE_INIT:
-      if (state_change_dbg)
+      if (state_change_dbg && display_state_change_dbg)
       {
         printf ("\n");
         printf ("****************************************\n");
         printf ("* STRAT_STATE_EMERGENCY_ESCAPE_INIT ****\n");
         printf ("****************************************\n");
         printf ("\n");
-        state_change_dbg = false;
       }
+      state_change_dbg = false;
 
       state_change_dbg = check_deadlines_and_change_state(
         my_time_ms, soft_deadline_ms, hard_deadline_ms, STRAT_STATE_EMERGENCY_ESCAPE, "ESCAPE INIT DONE");
@@ -1082,15 +1112,15 @@ void RobotStrat::taskFunction()
       break;
 
     case STRAT_STATE_EMERGENCY_ESCAPE:
-      if (state_change_dbg)
+      if (state_change_dbg && display_state_change_dbg)
       {
         printf ("\n");
         printf ("****************************************\n");
         printf ("* STRAT_STATE_EMERGENCY_ESCAPE *********\n");
         printf ("****************************************\n");
         printf ("\n");
-        state_change_dbg = false;
       }
+      state_change_dbg = false;
 
       state_change_dbg = check_deadlines_and_change_state(
         my_time_ms, soft_deadline_ms, hard_deadline_ms, STRAT_STATE_END_ACTION, "ESCAPE DONE");
@@ -1368,6 +1398,7 @@ bool RobotStrat::do_STRAT_STATE_INIT_ACTION(strat_action_t *my_action, bool send
     {
       act_tgt->target_ok = false;
       printf (" NO TARGET!\n");
+      printf (" Fallback action: %s\n", act_tgt->fallback_action);
     }
     if (act_tgt->target_ok)
     {

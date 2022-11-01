@@ -346,9 +346,9 @@ void RobotStrat::taskFunction()
 #endif
 
 #ifndef WIN32
-    usleep(100000);
+    usleep(1000000);
 #else
-    Sleep(100);
+    Sleep(1000);
 #endif
   printf ("========================================\n");
 

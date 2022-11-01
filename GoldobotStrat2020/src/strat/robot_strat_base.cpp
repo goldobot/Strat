@@ -358,6 +358,11 @@ int StratTask::get_action_idx_with_label(char *label)
 {
   int idx = -1;
 
+  if ((label==NULL) || (label[0]=='\0'))
+  {
+    return -1;
+  }
+
   for (int i=0; i<m_n_actions; i++)
   {
     strat_action_t *action = m_action_list[i];
@@ -874,6 +879,7 @@ void StratTask::dbg_dump_task()
       printf ("      deccel : %f\n", act_fast_tgt_object->deccel);
       printf ("      obj_type : %d\n", act_fast_tgt_object->obj_type);
       printf ("      obj_attr : %d\n", act_fast_tgt_object->obj_attr);
+      printf ("      fallback_action : %s\n", act_fast_tgt_object->fallback_action);
       break;
     }
 #endif

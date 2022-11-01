@@ -28,7 +28,7 @@
 using namespace goldobot;
 
 /* FIXME : DEBUG */
-#define DEBUG_DISPLAY_STATE_CHANGE false
+#define DEBUG_DISPLAY false
 
 /* FIXME : DEBUG */
 #define DEBUG_OBST_AVOIDANCE 1
@@ -53,6 +53,41 @@ float s_delta_y_mm = 0.0;
 #endif
 
 #define MAX(a,b) ((a>b)?a:b)
+
+const char *action_name(strat_action_type_t type)
+{
+  switch (type) {
+  case STRAT_ACTION_TYPE_NONE:
+    return "STRAT_ACTION_TYPE_NONE";
+  case STRAT_ACTION_TYPE_WAIT:
+    return "STRAT_ACTION_TYPE_WAIT";
+  case STRAT_ACTION_TYPE_STOP:
+    return "STRAT_ACTION_TYPE_STOP";
+  case STRAT_ACTION_TYPE_TRAJ:
+    return "STRAT_ACTION_TYPE_TRAJ";
+  case STRAT_ACTION_TYPE_POINT_TO:
+    return "STRAT_ACTION_TYPE_POINT_TO";
+  case STRAT_ACTION_TYPE_NUCLEO_SEQ:
+    return "STRAT_ACTION_TYPE_NUCLEO_SEQ";
+  case STRAT_ACTION_TYPE_GOTO_ASTAR:
+    return "STRAT_ACTION_TYPE_GOTO_ASTAR";
+  case STRAT_ACTION_TYPE_BRANCH:
+    return "STRAT_ACTION_TYPE_BRANCH";
+#if 1 /* FIXME : DEBUG : HACK DEMO2022 */
+  case STRAT_ACTION_TYPE_FAST_TGT_POSE:
+    return "STRAT_ACTION_TYPE_FAST_TGT_POSE";
+  case STRAT_ACTION_TYPE_FAST_TGT_OBJECT:
+    return "STRAT_ACTION_TYPE_FAST_TGT_OBJECT";
+#endif
+#if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
+  case STRAT_ACTION_TYPE_CRIDF2021:
+    return "STRAT_ACTION_TYPE_CRIDF2021";
+#endif
+  } /* switch (my_action->h.type) */
+
+  return "UNKNOWN";
+}
+
 
 
 /******************************************************************************/
@@ -205,7 +240,7 @@ int RobotStrat::read_yaml_conf(char *fname)
 void RobotStrat::taskFunction()
 {
   bool state_change_dbg = true;
-  bool display_state_change_dbg = DEBUG_DISPLAY_STATE_CHANGE;
+  bool display_dbg = DEBUG_DISPLAY;
   unsigned int soft_deadline_ms = 0;
   unsigned int hard_deadline_ms = 0;
   unsigned int recov_fail_cnt = 0;
@@ -442,7 +477,7 @@ void RobotStrat::taskFunction()
     /*************************************/
     switch (m_strat_state) {
     case STRAT_STATE_INIT:
-      if (state_change_dbg && display_state_change_dbg)
+      if (state_change_dbg && display_dbg)
       {
         printf ("\n");
         printf ("****************************************\n");
@@ -478,13 +513,16 @@ void RobotStrat::taskFunction()
       break;
 
     case STRAT_STATE_GET_ACTION:
-      if (state_change_dbg && display_state_change_dbg)
+      if (state_change_dbg && display_dbg)
       {
         printf ("\n");
         printf ("****************************************\n");
         printf ("* STRAT_STATE_GET_ACTION ***************\n");
         printf ("****************************************\n");
         printf ("\n");
+      }
+      if (state_change_dbg)
+      {
         printf ("----------------------------------------\n");
       }
       state_change_dbg = false;
@@ -562,7 +600,7 @@ void RobotStrat::taskFunction()
             m_task_dbg->m_current_action_final_wp.x_mm = 1000.0;
             m_task_dbg->m_current_action_final_wp.y_mm = 0.0;
           }
-          printf (" Got action : %d.\n", my_action->h.type);
+          printf (" Got action : %s (%d)\n", action_name(my_action->h.type), my_action->h.type);
           printf (" Final wp : <%f,%f>\n",
                   m_task_dbg->m_current_action_final_wp.x_mm,
                   m_task_dbg->m_current_action_final_wp.y_mm);
@@ -582,7 +620,7 @@ void RobotStrat::taskFunction()
     case STRAT_STATE_INIT_ACTION:
       action_ok = false;
 
-      if (state_change_dbg && display_state_change_dbg)
+      if (state_change_dbg && display_dbg)
       {
         printf ("\n");
         printf ("****************************************\n");
@@ -648,7 +686,7 @@ void RobotStrat::taskFunction()
       break;
 
     case STRAT_STATE_WAIT_END_INIT:
-      if (state_change_dbg && display_state_change_dbg)
+      if (state_change_dbg && display_dbg)
       {
         printf ("\n");
         printf ("****************************************\n");
@@ -667,8 +705,11 @@ void RobotStrat::taskFunction()
       }
       else
       {
-        printf ("\n");
-        printf (" No prep action. SKIPPING init wait state.\n");
+        if (display_dbg)
+        {
+          printf ("\n");
+          printf (" No prep action. SKIPPING init wait state.\n");
+        }
         m_strat_state = STRAT_STATE_EXEC_ACTION;
         state_change_dbg = true;
       }
@@ -676,7 +717,7 @@ void RobotStrat::taskFunction()
       break;
 
     case STRAT_STATE_EXEC_ACTION:
-      if (state_change_dbg && display_state_change_dbg)
+      if (state_change_dbg && display_dbg)
       {
         printf ("\n");
         printf ("****************************************\n");
@@ -713,7 +754,7 @@ void RobotStrat::taskFunction()
       break;
 
     case STRAT_STATE_WAIT_END_ACTION:
-      if (state_change_dbg && display_state_change_dbg)
+      if (state_change_dbg && display_dbg)
       {
         printf ("\n");
         printf ("****************************************\n");
@@ -730,7 +771,7 @@ void RobotStrat::taskFunction()
 
 #if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
     case STRAT_STATE_EXEC_TASK_CRIDF2021:
-      if (state_change_dbg && display_state_change_dbg)
+      if (state_change_dbg && display_dbg)
       {
         printf ("\n");
         printf ("****************************************\n");
@@ -759,7 +800,7 @@ void RobotStrat::taskFunction()
 #endif
 
     case STRAT_STATE_END_ACTION:
-      if (state_change_dbg && display_state_change_dbg)
+      if (state_change_dbg && display_dbg)
       {
         printf ("\n");
         printf ("****************************************\n");
@@ -802,7 +843,7 @@ void RobotStrat::taskFunction()
       break;
 
     case STRAT_STATE_PAUSE_DBG:
-      if (state_change_dbg && display_state_change_dbg)
+      if (state_change_dbg && display_dbg)
       {
         printf ("\n");
         //printf ("****************************************\n");
@@ -822,7 +863,7 @@ void RobotStrat::taskFunction()
       break;
 
     case STRAT_STATE_PAUSE2_DBG:
-      if (state_change_dbg && display_state_change_dbg)
+      if (state_change_dbg && display_dbg)
       {
         printf ("\n");
         //printf ("****************************************\n");
@@ -842,7 +883,7 @@ void RobotStrat::taskFunction()
       break;
 
     case STRAT_STATE_END_MATCH:
-      if (state_change_dbg && display_state_change_dbg)
+      if (state_change_dbg && display_dbg)
       {
         printf ("\n");
         printf ("****************************************\n");
@@ -870,7 +911,7 @@ void RobotStrat::taskFunction()
       break;
 
     case STRAT_STATE_IDDLE:
-      if (state_change_dbg && display_state_change_dbg)
+      if (state_change_dbg && display_dbg)
       {
         printf ("\n");
         printf ("****************************************\n");
@@ -885,7 +926,7 @@ void RobotStrat::taskFunction()
       break;
 
     case STRAT_STATE_ERROR:
-      if (state_change_dbg && display_state_change_dbg)
+      if (state_change_dbg && display_dbg)
       {
         printf ("\n");
         printf ("****************************************\n");
@@ -906,7 +947,7 @@ void RobotStrat::taskFunction()
       break;
 
     case STRAT_STATE_CANCEL_ERROR:
-      if (state_change_dbg && display_state_change_dbg)
+      if (state_change_dbg && display_dbg)
       {
         printf ("\n");
         printf ("****************************************\n");
@@ -922,7 +963,7 @@ void RobotStrat::taskFunction()
       break;
 
     case STRAT_STATE_EMERGENCY_STOP:
-      if (state_change_dbg && display_state_change_dbg)
+      if (state_change_dbg && display_dbg)
       {
         printf ("\n");
         printf ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
@@ -949,7 +990,7 @@ void RobotStrat::taskFunction()
       break;
 
     case STRAT_STATE_EMERGENCY_WAIT:
-      if (state_change_dbg && display_state_change_dbg)
+      if (state_change_dbg && display_dbg)
       {
         printf ("\n");
         printf ("****************************************\n");
@@ -1054,7 +1095,7 @@ void RobotStrat::taskFunction()
       break;
 
     case STRAT_STATE_EMERGENCY_MOVE_AWAY:
-      if (state_change_dbg && display_state_change_dbg)
+      if (state_change_dbg && display_dbg)
       {
         printf ("\n");
         printf ("****************************************\n");
@@ -1090,7 +1131,7 @@ void RobotStrat::taskFunction()
       break;
 
     case STRAT_STATE_EMERGENCY_ESCAPE_INIT:
-      if (state_change_dbg && display_state_change_dbg)
+      if (state_change_dbg && display_dbg)
       {
         printf ("\n");
         printf ("****************************************\n");
@@ -1112,7 +1153,7 @@ void RobotStrat::taskFunction()
       break;
 
     case STRAT_STATE_EMERGENCY_ESCAPE:
-      if (state_change_dbg && display_state_change_dbg)
+      if (state_change_dbg && display_dbg)
       {
         printf ("\n");
         printf ("****************************************\n");
@@ -1203,30 +1244,24 @@ bool RobotStrat::do_STRAT_STATE_INIT_ACTION(strat_action_t *my_action, bool send
 
   switch (my_action->h.type) {
   case STRAT_ACTION_TYPE_WAIT:
-    printf (" STRAT_ACTION_TYPE_WAIT\n");
     action_ok = true;
     break;
   case STRAT_ACTION_TYPE_STOP:
-    printf (" STRAT_ACTION_TYPE_STOP\n");
     action_ok = true;
     break;
   case STRAT_ACTION_TYPE_TRAJ:
-    printf (" STRAT_ACTION_TYPE_TRAJ\n");
     action_ok = true;
     break;
   case STRAT_ACTION_TYPE_POINT_TO:
-    printf (" STRAT_ACTION_TYPE_POINT_TO\n");
     action_ok = true;
     break;
   case STRAT_ACTION_TYPE_NUCLEO_SEQ:
-    printf (" STRAT_ACTION_TYPE_NUCLEO_SEQ\n");
     action_ok = true;
     break;
   case STRAT_ACTION_TYPE_GOTO_ASTAR:
   {
     strat_action_goto_astar_t *act_ast= 
       (strat_action_goto_astar_t *) my_action;
-    printf (" STRAT_ACTION_TYPE_GOTO_ASTAR\n");
     action_ok = true;
     /* clear playground */
     m_path_find_pg.erase_mob_obst();
@@ -1257,8 +1292,9 @@ bool RobotStrat::do_STRAT_STATE_INIT_ACTION(strat_action_t *my_action, bool send
     int y_end_cm   = act_ast->target.y_mm/10;
     int Y_OFF_CM   = m_path_find_pg.Y_OFFSET_CM;
     int X_SZ_CM    = m_path_find_pg.X_SZ_CM;
-    printf ("START(cm) : <%d,%d>\n", x_start_cm, y_start_cm);
-    printf ("END(cm) : <%d,%d>\n", x_end_cm, y_end_cm);
+    printf ("ASTAR INIT:\n");
+    printf (" START(cm) : <%d,%d>\n", x_start_cm, y_start_cm);
+    printf (" END(cm) : <%d,%d>\n", x_end_cm, y_end_cm);
     m_core_astar.setWay(x_start_cm, y_start_cm+Y_OFF_CM, 1);
     m_core_astar.setWay(x_end_cm,   y_end_cm+Y_OFF_CM,   1);
     m_core_astar.setStart(x_start_cm, y_start_cm+Y_OFF_CM);
@@ -1355,7 +1391,6 @@ bool RobotStrat::do_STRAT_STATE_INIT_ACTION(strat_action_t *my_action, bool send
   }
   break;
   case STRAT_ACTION_TYPE_BRANCH:
-    printf (" STRAT_ACTION_TYPE_BRANCH\n");
     action_ok = true;
     break;
 #if 1 /* FIXME : DEBUG : HACK DEMO2022 */
@@ -1363,7 +1398,6 @@ bool RobotStrat::do_STRAT_STATE_INIT_ACTION(strat_action_t *my_action, bool send
   {
     strat_action_fast_tgt_pose_t *act_tgt= 
       (strat_action_fast_tgt_pose_t *) my_action;
-    printf (" STRAT_ACTION_TYPE_FAST_TGT_POSE\n");
     action_ok = true;
     act_tgt->wp[0].x_mm = RobotState::instance().s().x_mm;
     act_tgt->wp[0].y_mm = RobotState::instance().s().y_mm;
@@ -1380,11 +1414,11 @@ bool RobotStrat::do_STRAT_STATE_INIT_ACTION(strat_action_t *my_action, bool send
   {
     strat_action_fast_tgt_object_t *act_tgt= 
       (strat_action_fast_tgt_object_t *) my_action;
-    printf (" STRAT_ACTION_TYPE_FAST_TGT_OBJECT\n");
     action_ok = true;
     int n_obj = WorldState::instance().s().n_detected_objects;
     unsigned int obj_type = WorldState::instance().detected_object(0).type;
     unsigned int obj_attr = WorldState::instance().detected_object(0).attr;
+    printf ("FAST_TGT INIT:\n");
     if ((n_obj>0) && (obj_type==act_tgt->obj_type) && (obj_attr==act_tgt->obj_attr))
     {
       act_tgt->target_ok = true;
@@ -1392,7 +1426,7 @@ bool RobotStrat::do_STRAT_STATE_INIT_ACTION(strat_action_t *my_action, bool send
       act_tgt->wp[0].y_mm = RobotState::instance().s().y_mm;
       act_tgt->wp[1].x_mm = WorldState::instance().detected_object(0).x_mm;
       act_tgt->wp[1].y_mm = WorldState::instance().detected_object(0).y_mm;
-      printf (" TARGET AT : <%d,%d>\n", (int)act_tgt->wp[1].x_mm, (int)act_tgt->wp[1].x_mm);
+      printf (" TARGET @ : <%d,%d>\n", (int)act_tgt->wp[1].x_mm, (int)act_tgt->wp[1].x_mm);
     }
     else
     {
@@ -1410,12 +1444,11 @@ bool RobotStrat::do_STRAT_STATE_INIT_ACTION(strat_action_t *my_action, bool send
 #endif
 #if 1 /* FIXME : DEBUG : HACK CRIDF2021 */
   case STRAT_ACTION_TYPE_CRIDF2021:
-    printf (" STRAT_ACTION_TYPE_CRIDF2021\n");
     action_ok = true;
     break;
 #endif
   default:
-    printf (" Warning : Unknown action type!\n");
+    printf ("do_STRAT_STATE_INIT_ACTION() : Warning : Unknown action type!\n");
     action_ok = false;
   } /* switch (my_action->h.type) */
 

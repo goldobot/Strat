@@ -457,7 +457,7 @@ int DirectUartNucleo::send(const unsigned char *msg_buf, size_t msg_len, unsigne
   pc = (unsigned char *) &m_send_buf[8];
   memcpy (pc, msg_buf, msg_len);
 
-#if 1 /* FIXME : DEBUG */
+#if 0 /* FIXME : DEBUG */
   {
     int i;
     int dbg_len = msg_len + 8;

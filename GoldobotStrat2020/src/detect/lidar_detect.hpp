@@ -46,7 +46,7 @@ namespace goldobot
 
     bool sampleInBeaconZone(double x_mm, double y_mm);
 
-    void sendPlot(unsigned int ts_ms, double x_mm, double y_mm);
+    void sendPlot(unsigned int ts_ms, double x_mm, double y_mm, double odo_x_mm, double odo_y_mm, double odo_theta_deg);
 
     void recordNewLidarSample(unsigned int ts_ms, double x_mm, double y_mm);
 
@@ -65,6 +65,7 @@ namespace goldobot
     static constexpr int MAX_NB_OF_DETECTED_ROBOTS = 3;
     static constexpr double OBSTACLE_SIZE_MM = 80.0;
     static constexpr int MAX_NB_OF_CACHED_SAMPLES = 10000;
+    static constexpr int MAX_NB_OF_BEACON_ZONES = 10;
 
     unsigned int m_quality_threshold = 1;
 
@@ -88,7 +89,7 @@ namespace goldobot
     detected_robot_info_t m_detect_export[MAX_NB_OF_DETECTED_ROBOTS]; /* copie de m_detect_t_* pour visibilite depuis classes externes */
 
     int m_beacon_zone_cnt;
-    beacon_zone_t m_beacon_zone[10];
+    beacon_zone_t m_beacon_zone[MAX_NB_OF_BEACON_ZONES];
 
     static double dist(double x0, double y0, double x1, double y1);
 

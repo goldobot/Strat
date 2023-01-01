@@ -90,7 +90,7 @@ int CommRplidar::init(char* rplidar_dev, int baudrate)
   }
 
   goldo_conf_info_t& ci = GoldoConf::instance().c();
-  m_calib_ns = ci.conf_calib_lidar_nsamples;
+  m_calib_ns = ci.conf_calib_lidar_ns;
   for (unsigned int i=0; i<m_calib_ns; i++)
   {
     m_calib[i] = ci.conf_calib_lidar_sample[i];
@@ -398,8 +398,11 @@ void CommRplidar::taskFunction()
         clock_gettime(1, &my_tp);
         int my_thread_time_ms = my_tp.tv_sec*1000 + my_tp.tv_nsec/1000000;
 
-        /* FIXME : DEBUG : envoi des plots lidar (pour les balises et/ou pour le debug) */ 
-        //LidarDetect::instance().sendPlot(my_thread_time_ms, my_abs_x, my_abs_y);
+        /* envoi des plots lidar (pour les balises et/ou pour le debug) */
+        if (ci.conf_rplidar_send_plot_enabled)
+        {
+          LidarDetect::instance().sendPlot(my_thread_time_ms, my_abs_x, my_abs_y, l_odo_x_mm, l_odo_y_mm, l_odo_theta_deg);
+        }
 
         /* envoi des echantillons au tracker d'adversaire (detection robots) */ 
         if ((my_abs_x >   100.0) && (my_abs_x < 1900.0) && 

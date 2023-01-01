@@ -2,9 +2,13 @@ environment:
   conf_viewer_addr_str:          192.168.0.241
   conf_theta_correction_deg:     30.0
   conf_rho_correction_factor:    1.03
-  conf_rplidar_plot_lifetime_ms: 300
   conf_rplidar_dev_str:          /dev/rplidar
   conf_rplidar_baudrate:         115200
+  conf_rplidar_plot_lifetime_ms: 300
+  conf_rplidar_send_plot:        disabled
+  conf_rplidar_extended_plot:    disabled
+  conf_rplidar_plot_zone:
+    - [  -100.0, -1600.0,  2100.0,  1600.0]
   conf_nucleo_uart_dev_str:      /dev/odometry
   conf_nucleo_uart_baudrate:     115200
   conf_zmq_port:                 3101

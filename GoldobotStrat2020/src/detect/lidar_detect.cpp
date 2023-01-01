@@ -45,6 +45,8 @@ LidarDetect::LidarDetect()
 
 int LidarDetect::init()
 {
+  goldo_conf_info_t& ci = GoldoConf::instance().c();
+
   m_cur_ts_ms = 0;
 
   m_quality_threshold = 1;
@@ -92,37 +94,15 @@ int LidarDetect::init()
 
   m_last_free_cache = 0;
 
-  /* FIXME : TODO : add beacon zones in conf! */
-  m_beacon_zone_cnt = 4;
+  m_beacon_zone_cnt = ci.conf_rplidar_plot_nz<MAX_NB_OF_BEACON_ZONES?ci.conf_rplidar_plot_nz:MAX_NB_OF_BEACON_ZONES;
 
-  m_beacon_zone[0].x_min_mm =  1000.0 - 100.0;
-  m_beacon_zone[0].y_min_mm = -1500.0 - 100.0;
-  m_beacon_zone[0].x_max_mm =  1000.0 + 100.0;
-  m_beacon_zone[0].y_max_mm = -1500.0 +  20.0;
-
-  m_beacon_zone[1].x_min_mm =    50.0 - 100.0;
-  m_beacon_zone[1].y_min_mm =  1500.0 -  20.0;
-  m_beacon_zone[1].x_max_mm =    50.0 + 100.0;
-  m_beacon_zone[1].y_max_mm =  1500.0 + 100.0;
-
-  m_beacon_zone[2].x_min_mm =  1950.0 - 100.0;
-  m_beacon_zone[2].y_min_mm =  1500.0 -  20.0;
-  m_beacon_zone[2].x_max_mm =  1950.0 + 100.0;
-  m_beacon_zone[2].y_max_mm =  1500.0 + 100.0;
-
-#if 0
-/* FIXME : EXPERIMENTAL : girouette */
-  m_beacon_zone[3].x_min_mm =  -200.0;
-  m_beacon_zone[3].y_min_mm =  -200.0;
-  m_beacon_zone[3].x_max_mm =   200.0;
-  m_beacon_zone[3].y_max_mm =   200.0;
-#else
-/* FIXME : DEBUG : CALIB / DEMO */
-  m_beacon_zone[3].x_min_mm =  -200.0;
-  m_beacon_zone[3].y_min_mm = -1700.0;
-  m_beacon_zone[3].x_max_mm =  2200.0;
-  m_beacon_zone[3].y_max_mm =  1700.0;
-#endif
+  for (int i=0; i<m_beacon_zone_cnt; i++)
+  {
+    m_beacon_zone[i].x_min_mm = ci.conf_rplidar_plot_zone[i].x_min_mm;
+    m_beacon_zone[i].y_min_mm = ci.conf_rplidar_plot_zone[i].y_min_mm;
+    m_beacon_zone[i].x_max_mm = ci.conf_rplidar_plot_zone[i].x_max_mm;
+    m_beacon_zone[i].y_max_mm = ci.conf_rplidar_plot_zone[i].y_max_mm;
+  }
 
   return 0;
 }
@@ -269,20 +249,46 @@ bool LidarDetect::sampleInBeaconZone(double x_mm, double y_mm)
 }
 
 
-void LidarDetect::sendPlot(unsigned int ts_ms, double x_mm, double y_mm)
+void LidarDetect::sendPlot(unsigned int ts_ms, double x_mm, double y_mm, double odo_x_mm, double odo_y_mm, double odo_theta_deg)
 {
-  lidar_plot_msg_t my_plot_message;
-  /* FIXME : TODO : use mesage_types.hpp */
-  unsigned short my_message_type = 1270;
+  goldo_conf_info_t& ci = GoldoConf::instance().c();
 
-  if (sampleInBeaconZone(x_mm,y_mm))
+  if (ci.conf_rplidar_extended_plot_enabled)
   {
-    my_plot_message.timestamp_ms = ts_ms;
-    my_plot_message.x_mm         = x_mm;
-    my_plot_message.y_mm         = y_mm;
-    CommZmq::instance().send((const char*)(&my_message_type), 2, ZMQ_SNDMORE);
-    CommZmq::instance().send((const char*)(&my_plot_message), 
-                             sizeof(my_plot_message), 0);
+    lidar_extended_plot_msg_t my_ex_plot_message;
+
+    /* FIXME : TODO : use mesage_types.hpp */
+    unsigned short my_message_type = 1271; /* RplidarPlotExtended */
+
+    if (sampleInBeaconZone(x_mm,y_mm))
+    {
+      my_ex_plot_message.timestamp_ms = ts_ms;
+      my_ex_plot_message.x_mm         = x_mm;
+      my_ex_plot_message.y_mm         = y_mm;
+      my_ex_plot_message.odo_x_mm     = odo_x_mm;
+      my_ex_plot_message.odo_y_mm     = odo_y_mm;
+      my_ex_plot_message.odo_theta_deg= odo_theta_deg;
+      CommZmq::instance().send((const char*)(&my_message_type), 2, ZMQ_SNDMORE);
+      CommZmq::instance().send((const char*)(&my_ex_plot_message), 
+                               sizeof(my_ex_plot_message), 0);
+    }
+  }
+  else
+  {
+    lidar_plot_msg_t my_plot_message;
+
+    /* FIXME : TODO : use mesage_types.hpp */
+    unsigned short my_message_type = 1270; /* RplidarPlot */
+
+    if (sampleInBeaconZone(x_mm,y_mm))
+    {
+      my_plot_message.timestamp_ms = ts_ms;
+      my_plot_message.x_mm         = x_mm;
+      my_plot_message.y_mm         = y_mm;
+      CommZmq::instance().send((const char*)(&my_message_type), 2, ZMQ_SNDMORE);
+      CommZmq::instance().send((const char*)(&my_plot_message), 
+                               sizeof(my_plot_message), 0);
+    }
   }
 }
 

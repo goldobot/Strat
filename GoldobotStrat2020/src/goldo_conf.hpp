@@ -13,13 +13,24 @@ namespace goldobot
     double meas_d;
   } goldo_conf_calib_lidar_sample_t;
 
+  typedef struct _goldo_conf_plot_zone {
+    double x_min_mm;
+    double y_min_mm;
+    double x_max_mm;
+    double y_max_mm;
+  } goldo_conf_plot_zone_t;
+
   typedef struct _goldo_conf_info {
     char   conf_viewer_addr_str[128];
     double conf_theta_correction_deg;
     double conf_rho_correction_factor;
-    _u32   conf_rplidar_plot_lifetime_ms;
     char   conf_rplidar_dev_str[128];
     _u32   conf_rplidar_baudrate;
+    _u32   conf_rplidar_plot_lifetime_ms;
+    bool   conf_rplidar_send_plot_enabled;
+    bool   conf_rplidar_extended_plot_enabled;
+    _u32   conf_rplidar_plot_nz;
+    goldo_conf_plot_zone_t conf_rplidar_plot_zone[100];
     char   conf_nucleo_uart_dev_str[128];
     _u32   conf_nucleo_uart_baudrate;
     _u32   conf_zmq_port;
@@ -29,7 +40,7 @@ namespace goldobot
     char   conf_strat_file_neg_str[128];
     char   conf_simul_file_str[128];
     bool   conf_dbg_log_enabled;
-    _u32   conf_calib_lidar_nsamples;
+    _u32   conf_calib_lidar_ns;
     goldo_conf_calib_lidar_sample_t conf_calib_lidar_sample[30];
   } goldo_conf_info_t;
 
@@ -56,23 +67,27 @@ namespace goldobot
     int parse_yaml_conf(const char * yaml_fname);
 
     static char   conf_viewer_addr_str_def[];
-    static constexpr double conf_theta_correction_deg_def     = 
+    static constexpr double conf_theta_correction_deg_def          = 
       30.0f; /* PR 28/05/2019 */
-    static constexpr double conf_rho_correction_factor_def    = 
+    static constexpr double conf_rho_correction_factor_def         = 
       1.05f;
-    static constexpr _u32   conf_rplidar_plot_lifetime_ms_def = 
+    static constexpr _u32   conf_rplidar_plot_lifetime_ms_def      = 
       300;
     static char   conf_rplidar_dev_str_def[];
-    static constexpr _u32   conf_rplidar_baudrate_def         = 
+    static constexpr _u32   conf_rplidar_baudrate_def              = 
       115200;
-    static char   conf_nucleo_uart_dev_str_def[];
-    static constexpr _u32   conf_nucleo_uart_baudrate_def     = 
-      115200;
-    static constexpr _u32   conf_zmq_port_def                 = 
-      3101;
-    static constexpr bool   conf_dbg_log_enabled_def          = 
+    static constexpr bool   conf_rplidar_send_plot_enabled_def     = 
       false;
-    static constexpr _u32   conf_n_obstacles_def              = 
+    static constexpr bool   conf_rplidar_extended_plot_enabled_def = 
+      false;
+    static char   conf_nucleo_uart_dev_str_def[];
+    static constexpr _u32   conf_nucleo_uart_baudrate_def          = 
+      115200;
+    static constexpr _u32   conf_zmq_port_def                      = 
+      3101;
+    static constexpr bool   conf_dbg_log_enabled_def               = 
+      false;
+    static constexpr _u32   conf_n_obstacles_def                   = 
       3;
     static char   conf_strat_file_str_def[];
     static char   conf_strat_file_pos_str_def[];

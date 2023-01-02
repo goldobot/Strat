@@ -28,7 +28,7 @@ namespace goldobot
     _u32   conf_rplidar_baudrate;
     _u32   conf_rplidar_plot_lifetime_ms;
     bool   conf_rplidar_send_plot_enabled;
-    bool   conf_rplidar_extended_plot_enabled;
+    bool   conf_rplidar_debug_plot_enabled;
     _u32   conf_rplidar_plot_nz;
     goldo_conf_plot_zone_t conf_rplidar_plot_zone[100];
     char   conf_nucleo_uart_dev_str[128];
@@ -78,7 +78,7 @@ namespace goldobot
       115200;
     static constexpr bool   conf_rplidar_send_plot_enabled_def     = 
       false;
-    static constexpr bool   conf_rplidar_extended_plot_enabled_def = 
+    static constexpr bool   conf_rplidar_debug_plot_enabled_def    = 
       false;
     static char   conf_nucleo_uart_dev_str_def[];
     static constexpr _u32   conf_nucleo_uart_baudrate_def          = 

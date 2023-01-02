@@ -9,14 +9,14 @@ namespace goldobot
     short int y_mm;
   } lidar_plot_msg_t;
 
-  typedef struct _lidar_extended_plot_msg {
+  typedef struct _lidar_debug_plot_msg {
     unsigned int timestamp_ms;
-    float x_mm;
-    float y_mm;
+    float raw_R_mm;
+    float raw_theta_rad;
     float odo_x_mm;
     float odo_y_mm;
-    float odo_theta_deg;
-  } lidar_extended_plot_msg_t;
+    float odo_theta_rad;
+  } lidar_debug_plot_msg_t;
 
   typedef struct _robot_detection_msg {
     unsigned int timestamp_ms;

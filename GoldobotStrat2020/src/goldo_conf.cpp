@@ -51,7 +51,7 @@ void GoldoConf::set_default()
   m_c.conf_rplidar_baudrate = conf_rplidar_baudrate_def;
   m_c.conf_rplidar_plot_lifetime_ms = conf_rplidar_plot_lifetime_ms_def;
   m_c.conf_rplidar_send_plot_enabled = conf_rplidar_send_plot_enabled_def;
-  m_c.conf_rplidar_extended_plot_enabled = conf_rplidar_extended_plot_enabled_def;
+  m_c.conf_rplidar_debug_plot_enabled = conf_rplidar_debug_plot_enabled_def;
   m_c.conf_rplidar_plot_nz = 0;
   strncpy(m_c.conf_nucleo_uart_dev_str, conf_nucleo_uart_dev_str_def, 
           sizeof(m_c.conf_nucleo_uart_dev_str)-1);
@@ -219,13 +219,13 @@ int GoldoConf::parse_yaml_conf(const char * yaml_fname)
       }
     }
 
-    conf_node = yconf["environment"]["conf_rplidar_extended_plot"];
+    conf_node = yconf["environment"]["conf_rplidar_debug_plot"];
     if (conf_node) 
     {
       my_str = (const char *) conf_node.as<std::string>().c_str();
       if (strncmp(my_str,"enabled",7)==0)
       {
-        m_c.conf_rplidar_extended_plot_enabled = true;
+        m_c.conf_rplidar_debug_plot_enabled = true;
       }
     }
 
@@ -286,8 +286,8 @@ void GoldoConf::display_conf()
              m_c.conf_rplidar_baudrate);
   printf ("  conf_rplidar_send_plot        = %s\n", 
              m_c.conf_rplidar_send_plot_enabled?"enabled":"disabled");
-  printf ("  conf_rplidar_extended_plot    = %s\n", 
-             m_c.conf_rplidar_extended_plot_enabled?"enabled":"disabled");
+  printf ("  conf_rplidar_debug_plot       = %s\n", 
+             m_c.conf_rplidar_debug_plot_enabled?"enabled":"disabled");
   printf ("  conf_rplidar_plot_zones:\n");
   for (_u32 i=0; i<m_c.conf_rplidar_plot_nz; i++)
   {

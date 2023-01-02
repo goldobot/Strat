@@ -6,7 +6,7 @@ environment:
   conf_rplidar_baudrate:         115200
   conf_rplidar_plot_lifetime_ms: 300
   conf_rplidar_send_plot:        disabled
-  conf_rplidar_extended_plot:    disabled
+  conf_rplidar_debug_plot:       disabled
   conf_rplidar_plot_zone:
     - [  -100.0, -1600.0,  2100.0,  1600.0]
   conf_nucleo_uart_dev_str:      /dev/odometry

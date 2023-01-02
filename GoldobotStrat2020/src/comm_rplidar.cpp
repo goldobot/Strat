@@ -401,7 +401,7 @@ void CommRplidar::taskFunction()
         /* envoi des plots lidar (pour les balises et/ou pour le debug) */
         if (ci.conf_rplidar_send_plot_enabled)
         {
-          LidarDetect::instance().sendPlot(my_thread_time_ms, my_abs_x, my_abs_y, l_odo_x_mm, l_odo_y_mm, l_odo_theta_deg);
+          LidarDetect::instance().sendPlot(my_thread_time_ms, my_abs_x, my_abs_y, l_odo_x_mm, l_odo_y_mm, l_odo_theta_rad, my_R, my_theta);
         }
 
         /* envoi des echantillons au tracker d'adversaire (detection robots) */ 

@@ -249,25 +249,25 @@ bool LidarDetect::sampleInBeaconZone(double x_mm, double y_mm)
 }
 
 
-void LidarDetect::sendPlot(unsigned int ts_ms, double x_mm, double y_mm, double odo_x_mm, double odo_y_mm, double odo_theta_deg)
+void LidarDetect::sendPlot(unsigned int ts_ms, double x_mm, double y_mm, double odo_x_mm, double odo_y_mm, double odo_theta_rad, double raw_R_mm, double raw_theta_rad)
 {
   goldo_conf_info_t& ci = GoldoConf::instance().c();
 
-  if (ci.conf_rplidar_extended_plot_enabled)
+  if (ci.conf_rplidar_debug_plot_enabled)
   {
-    lidar_extended_plot_msg_t my_ex_plot_message;
+    lidar_debug_plot_msg_t my_ex_plot_message;
 
     /* FIXME : TODO : use mesage_types.hpp */
-    unsigned short my_message_type = 1271; /* RplidarPlotExtended */
+    unsigned short my_message_type = 1271; /* RplidarPlotDebug */
 
     if (sampleInBeaconZone(x_mm,y_mm))
     {
       my_ex_plot_message.timestamp_ms = ts_ms;
-      my_ex_plot_message.x_mm         = x_mm;
-      my_ex_plot_message.y_mm         = y_mm;
+      my_ex_plot_message.raw_R_mm     = raw_R_mm;
+      my_ex_plot_message.raw_theta_rad= raw_theta_rad;
       my_ex_plot_message.odo_x_mm     = odo_x_mm;
       my_ex_plot_message.odo_y_mm     = odo_y_mm;
-      my_ex_plot_message.odo_theta_deg= odo_theta_deg;
+      my_ex_plot_message.odo_theta_rad= odo_theta_rad;
       CommZmq::instance().send((const char*)(&my_message_type), 2, ZMQ_SNDMORE);
       CommZmq::instance().send((const char*)(&my_ex_plot_message), 
                                sizeof(my_ex_plot_message), 0);

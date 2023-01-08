@@ -262,13 +262,14 @@ void LidarDetect::sendPlot(unsigned int ts_ms, double x_mm, double y_mm, double 
 
     if (sampleInBeaconZone(x_mm,y_mm))
     {
-      my_ex_plot_message.timestamp_ms = ts_ms;
-      my_ex_plot_message.raw_R_mm     = raw_R_mm;
-      my_ex_plot_message.raw_theta_rad= raw_theta_rad;
-      my_ex_plot_message.odo_x_mm     = odo_x_mm;
-      my_ex_plot_message.odo_y_mm     = odo_y_mm;
-      my_ex_plot_message.dbg_i        = 0;
-      my_ex_plot_message.dbg_f        = 0.0;
+      my_ex_plot_message.timestamp_ms  = ts_ms;
+      my_ex_plot_message.raw_R_mm      = raw_R_mm;
+      my_ex_plot_message.raw_theta_rad = raw_theta_rad;
+      my_ex_plot_message.odo_x_mm      = odo_x_mm;
+      my_ex_plot_message.odo_y_mm      = odo_y_mm;
+      my_ex_plot_message.odo_theta_rad = odo_theta_rad;
+      my_ex_plot_message.dbg_i         = 0;
+      my_ex_plot_message.dbg_f         = 0.0;
       CommZmq::instance().send((const char*)(&my_message_type), 2, ZMQ_SNDMORE);
       CommZmq::instance().send((const char*)(&my_ex_plot_message), 
                                sizeof(my_ex_plot_message), 0);

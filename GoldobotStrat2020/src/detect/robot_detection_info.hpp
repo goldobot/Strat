@@ -16,6 +16,8 @@ namespace goldobot
     float odo_x_mm;
     float odo_y_mm;
     float odo_theta_rad;
+    unsigned int dbg_i;
+    float dbg_f;
   } lidar_debug_plot_msg_t;
 
   typedef struct _robot_detection_msg {
